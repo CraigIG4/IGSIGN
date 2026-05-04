@@ -239,3 +239,80 @@ turbo-frame#drawer,
 .card {
   isolation: auto !important;
 }
+
+/* ============================================================
+   IGSIGN Brand Upgrade — Login/Auth page overrides
+   ============================================================ */
+
+/* Remove DaisyUI theme chrome from auth pages */
+[data-theme='docuseal'] .igsign-login-wrap { --rounded-btn: 8px; }
+
+/* Flash/alert messages — premium style */
+.alert {
+  border-radius: 8px !important;
+  border-left: 4px solid !important;
+  font-size: 14px !important;
+}
+.alert-success { border-left-color: #45AC34 !important; }
+.alert-error, .alert-warning { border-left-color: #162B3C !important; }
+
+/* Nav active indicator */
+.navbar-item.active, .menu li a.active {
+  border-left: 3px solid #45AC34 !important;
+  font-weight: 700 !important;
+}
+
+/* Dashboard stat cards */
+.stat {
+  background: #fff !important;
+  border: 1px solid var(--ig-border) !important;
+  border-radius: var(--ig-radius) !important;
+  box-shadow: var(--ig-shadow) !important;
+}
+.stat-title { color: #7B787F !important; font-size: 12px !important; text-transform: uppercase !important; letter-spacing: 0.06em !important; font-weight: 600 !important; }
+.stat-value { color: #162B3C !important; font-weight: 800 !important; }
+.stat-desc { color: #45AC34 !important; font-weight: 600 !important; font-size: 12px !important; }
+
+/* Template cards — richer hover */
+.template-card, [data-controller=template] {
+  transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+}
+.template-card:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 24px rgba(22,43,60,0.12) !important; }
+
+/* Green accent on active/selected states */
+input[type='checkbox']:checked, input[type='radio']:checked {
+  accent-color: #45AC34 !important;
+}
+
+/* Submission status chips — more distinctive */
+.badge {
+  font-size: 11px !important; font-weight: 700 !important;
+  letter-spacing: 0.04em !important; text-transform: uppercase !important;
+  padding: 3px 10px !important; border-radius: 100px !important;
+}
+
+/* Page section headers */
+.page-title, h1.text-4xl, h1.text-3xl, h1.text-2xl {
+  letter-spacing: -0.03em !important;
+}
+
+/* Breadcrumb trail */
+.breadcrumbs { font-size: 13px !important; }
+.breadcrumbs a { color: #7B787F !important; }
+.breadcrumbs li:last-child { color: #162B3C !important; font-weight: 600 !important; }
+
+/* Signing form page — brand header enhancement */
+.igsign-form-header {
+  background: linear-gradient(135deg, #162B3C 0%, #1e3a52 100%) !important;
+}
+
+/* Smooth transitions globally */
+.btn, .card, .badge, input, select, textarea {
+  transition: all 0.15s ease !important;
+}
+
+/* Empty state illustrations */
+.empty-state { text-align: center; padding: 60px 24px; }
+.empty-state svg { opacity: 0.4; }
+.empty-state h3 { color: #162B3C; font-weight: 700; font-size: 18px; margin-top: 16px; }
+.empty-state p { color: #7B787F; font-size: 14px; margin-top: 8px; }

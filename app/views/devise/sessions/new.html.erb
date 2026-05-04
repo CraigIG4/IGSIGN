@@ -1,41 +1,178 @@
 <%= content_for(:canonical_url, new_user_session_url) %>
-<div class="max-w-lg mx-auto px-2">
-  <%= render 'devise/shared/select_server' if Docuseal.multitenant? %>
-  <h1 class="text-4xl font-bold text-center mt-8"><%= t('sign_in') %></h1>
-  <%= form_for(resource, as: resource_name, html: { class: 'space-y-6' }, data: { turbo: params[:redir].blank? }, url: session_path(resource_name)) do |f| %>
-    <%= render 'hidden_fields' %>
-    <div class="space-y-2" dir="auto">
-      <div class="form-control">
-        <%= f.label :email, t(:email), class: 'label' %>
-        <%= f.email_field :email, autofocus: true, autocomplete: 'email', class: 'base-input' %>
+
+<style>
+  body { background: #162B3C !important; }
+  .igsign-login-wrap {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  @media (max-width: 768px) {
+    .igsign-login-wrap { grid-template-columns: 1fr; }
+    .igsign-login-left { display: none; }
+  }
+  .igsign-login-left {
+    background: #162B3C;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 64px;
+    overflow: hidden;
+    min-height: 100vh;
+  }
+  .igsign-login-left::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('/brand/igsign-background-pattern.svg');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.45;
+    pointer-events: none;
+  }
+  .igsign-login-left-content { position: relative; z-index: 1; width: 100%; }
+  .igsign-login-right {
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 64px 48px;
+    min-height: 100vh;
+  }
+  .igsign-login-form { width: 100%; max-width: 380px; }
+  .igsign-field-label { font-size: 13px; font-weight: 600; color: #162B3C; margin-bottom: 6px; display: block; }
+  .igsign-field {
+    width: 100%; padding: 11px 14px;
+    border: 1.5px solid #e2e6ea;
+    border-radius: 8px;
+    font-size: 14px; color: #162B3C;
+    background: #f8fafc;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none; box-sizing: border-box;
+  }
+  .igsign-field:focus {
+    border-color: #162B3C;
+    box-shadow: 0 0 0 3px rgba(22,43,60,0.10);
+    background: #fff;
+  }
+  .igsign-submit {
+    width: 100%; padding: 13px;
+    background: #162B3C; color: #fff;
+    border: none; border-radius: 8px;
+    font-size: 15px; font-weight: 700;
+    letter-spacing: 0.3px; cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.15s, transform 0.1s;
+    position: relative; overflow: hidden;
+  }
+  .igsign-submit::after {
+    content: ''; position: absolute; left: 0; bottom: 0;
+    width: 100%; height: 3px; background: #45AC34;
+  }
+  .igsign-submit:hover { background: #0e2130; transform: translateY(-1px); }
+  .igsign-feature-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: 100px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.14);
+    font-size: 13px; color: rgba(255,255,255,0.85);
+    margin-bottom: 10px;
+  }
+  .igsign-feature-dot { width: 6px; height: 6px; border-radius: 50%; background: #45AC34; flex-shrink: 0; }
+  .igsign-divider { display: flex; align-items: center; gap: 12px; margin: 24px 0; color: #c5cbd0; font-size: 12px; }
+  .igsign-divider::before, .igsign-divider::after { content: ''; flex: 1; height: 1px; background: #e8ebed; }
+</style>
+
+<div class="igsign-login-wrap">
+
+  <%# ── LEFT BRAND PANEL ── %>
+  <div class="igsign-login-left">
+    <div class="igsign-login-left-content">
+
+      <%= render 'shared/logo', dark: true, height: '44', tagline: true %>
+
+      <div style="margin-top:56px; margin-bottom:40px;">
+        <p style="font-size:12px; color:rgba(255,255,255,0.45); letter-spacing:3.5px; text-transform:uppercase; margin-bottom:18px;">INTERNAL E-SIGNING PORTAL</p>
+        <h2 style="font-size:36px; font-weight:800; color:#ffffff; line-height:1.18; letter-spacing:-0.8px; margin:0;">
+          Sign, track &amp;<br>secure &mdash; all in one.
+        </h2>
+        <div style="width:48px; height:3px; background:#45AC34; border-radius:2px; margin-top:20px;"></div>
       </div>
-      <div class="form-control">
-        <%= f.label :password, t(:password), class: 'label' %>
-        <%= f.password_field :password, autocomplete: 'current-password', class: 'base-input' %>
+
+      <div>
+        <div class="igsign-feature-pill"><span class="igsign-feature-dot"></span>ECT Act 25 of 2002 compliant</div><br>
+        <div class="igsign-feature-pill"><span class="igsign-feature-dot"></span>Full audit trail &amp; signing certificate</div><br>
+        <div class="igsign-feature-pill"><span class="igsign-feature-dot"></span>Self-hosted &mdash; your data stays internal</div>
+      </div>
+
+      <div style="position:absolute; bottom:40px; left:64px; display:flex; align-items:center; gap:12px;">
+        <img src="/brand/ig-logo-white.webp" alt="Ignition Group" style="height:22px; opacity:0.55;">
+        <span style="width:1px; height:18px; background:rgba(255,255,255,0.18);"></span>
+        <span style="font-size:11px; color:rgba(255,255,255,0.35); letter-spacing:1.5px; text-transform:uppercase;">Internal Tool</span>
       </div>
     </div>
-    <div class="form-control">
-      <%= f.button button_title(title: t(:sign_in), disabled_with: t(:signing_in)), class: 'base-button' %>
-    </div>
-  <% end %>
-  <% if devise_mapping.omniauthable? %>
-    <div class="space-y-4">
-      <% if User.omniauth_providers.include?(:google_oauth2) %>
-        <%= form_for '', url: omniauth_authorize_path(resource_name, :google_oauth2), data: { turbo: false }, method: :post do |f| %>
-          <set-timezone data-input-id="state" data-params="true"></set-timezone>
-          <%= hidden_field_tag :state, { redir: params[:redir].to_s }.compact_blank.to_query %>
-          <%= f.button button_title(title: t('sign_in_with_google'), icon: svg_icon('brand_google', class: 'w-6 h-6')), class: 'white-button w-full mt-4' %>
+  </div>
+
+  <%# ── RIGHT FORM PANEL ── %>
+  <div class="igsign-login-right">
+    <div class="igsign-login-form">
+
+      <div style="margin-bottom:32px;">
+        <%= render 'shared/logo', dark: false, height: '36' %>
+      </div>
+
+      <div style="font-size:26px; font-weight:800; color:#162B3C; letter-spacing:-0.4px; margin-bottom:6px;">Welcome back</div>
+      <div style="font-size:14px; color:#7B787F; margin-bottom:36px; line-height:1.5;">Sign in to your IGSIGN account</div>
+
+      <%= form_for(resource, as: resource_name, html: {}, data: { turbo: params[:redir].blank? }, url: session_path(resource_name)) do |f| %>
+        <%= render 'hidden_fields' %>
+
+        <div style="margin-bottom:18px;">
+          <label class="igsign-field-label">Email address</label>
+          <%= f.email_field :email, autofocus: true, autocomplete: 'email', class: 'igsign-field', placeholder: 'you@ignitiongroup.co.za' %>
+        </div>
+
+        <div style="margin-bottom:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:baseline;">
+            <label class="igsign-field-label">Password</label>
+            <%= link_to 'Forgot password?', new_user_password_path, style: 'font-size:12px; color:#45AC34; font-weight:600; text-decoration:none;' %>
+          </div>
+          <%= f.password_field :password, autocomplete: 'current-password', class: 'igsign-field', placeholder: '••••••••' %>
+        </div>
+
+        <div style="margin-top:24px;">
+          <%= f.button button_title(title: 'Sign in to IGSIGN', disabled_with: 'Signing in&hellip;'), class: 'igsign-submit' %>
+        </div>
+      <% end %>
+
+      <% if devise_mapping.omniauthable? && User.omniauth_providers.any? %>
+        <div class="igsign-divider">or continue with</div>
+        <% if User.omniauth_providers.include?(:google_oauth2) %>
+          <%= form_for '', url: omniauth_authorize_path(resource_name, :google_oauth2), data: { turbo: false }, method: :post do |f| %>
+            <set-timezone data-input-id="state" data-params="true"></set-timezone>
+            <%= hidden_field_tag :state, { redir: params[:redir].to_s }.compact_blank.to_query %>
+            <%= f.button button_title(title: 'Continue with Google', icon: svg_icon('brand_google', class: 'w-5 h-5')), class: 'white-button w-full mb-2' %>
+          <% end %>
+        <% end %>
+        <% if User.omniauth_providers.include?(:microsoft_office365) %>
+          <%= form_for '', url: omniauth_authorize_path(resource_name, :microsoft_office365), data: { turbo: false }, method: :post do |f| %>
+            <set-timezone data-input-id="state_microsoft" data-params="true"></set-timezone>
+            <%= hidden_field_tag :state, { redir: params[:redir].to_s }.compact_blank.to_query, id: 'state_microsoft' %>
+            <%= f.button button_title(title: 'Continue with Microsoft', icon: svg_icon('brand_microsoft', class: 'w-5 h-5')), class: 'white-button w-full' %>
+          <% end %>
         <% end %>
       <% end %>
-      <% if User.omniauth_providers.include?(:microsoft_office365) %>
-        <%= form_for '', url: omniauth_authorize_path(resource_name, :microsoft_office365), data: { turbo: false }, method: :post do |f| %>
-          <set-timezone data-input-id="state_microsoft" data-params="true"></set-timezone>
-          <%= hidden_field_tag :state, { redir: params[:redir].to_s }.compact_blank.to_query, id: 'state_microsoft' %>
-          <%= f.button button_title(title: t('sign_in_with_microsoft'), icon: svg_icon('brand_microsoft', class: 'w-6 h-6')), class: 'white-button w-full' %>
-        <% end %>
-      <% end %>
+
+      <div style="margin-top:40px; font-size:11.5px; color:#b0b8c2; text-align:center; line-height:1.7;">
+        Access is by invitation only.<br>
+        Contact your IGSIGN administrator to request access.<br>
+        <span style="color:#d0d6dc; margin-top:6px; display:block;">ECT Act 25 of 2002 &nbsp;&middot;&nbsp; Ignition Group Internal</span>
+      </div>
+
     </div>
-  <% end %>
-  <%= render 'extra_links' %>
-  <%= render 'devise/shared/links' %>
+  </div>
+
 </div>
