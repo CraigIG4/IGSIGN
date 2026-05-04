@@ -2,17 +2,16 @@
 
 source 'https://rubygems.org'
 
-ruby '4.0.1'
+ruby '3.4.7'
 
-gem 'addressable'
-gem 'arabic-letter-connector', require: false
+gem 'arabic-letter-connector', require: 'arabic-letter-connector/logic'
 gem 'aws-sdk-s3', require: false
 gem 'aws-sdk-secretsmanager', require: false
-gem 'azure-blob', require: false
+gem 'azure-storage-blob', require: false
 gem 'bootsnap', require: false
 gem 'cancancan'
-gem 'csv', require: false
-gem 'csv-safe', require: false
+gem 'csv'
+gem 'csv-safe'
 gem 'devise'
 gem 'devise-two-factor'
 gem 'dotenv', require: false
@@ -22,28 +21,30 @@ gem 'faraday-follow_redirects'
 gem 'google-cloud-storage', require: false
 gem 'hexapdf'
 gem 'image_processing'
-gem 'jwt', require: false
+gem 'jwt'
 gem 'lograge'
-gem 'numo-narray-alt', require: false
+gem 'mysql2', require: false
+gem 'numo-narray'
 gem 'oj'
-gem 'onnxruntime', require: false
+gem 'onnxruntime'
 gem 'pagy'
 gem 'pg', require: false
+gem 'premailer-rails'
 gem 'pretender'
 gem 'puma', require: false
 gem 'rack'
 gem 'rails'
+gem 'rails_autolink'
 gem 'rails-i18n'
 gem 'rotp'
 gem 'rouge', require: false
-gem 'rqrcode', require: false
+gem 'rqrcode'
 gem 'ruby-vips'
-gem 'rubyXL', require: false
+gem 'rubyXL'
 gem 'shakapacker'
 gem 'sidekiq'
 gem 'sqlite3', require: false
 gem 'strip_attributes'
-gem 'trilogy', require: false
 gem 'turbo-rails'
 gem 'twitter_cldr', require: false
 gem 'tzinfo-data'
