@@ -1,37 +1,48 @@
 <%
   dark    = local_assigns.fetch(:dark, false)
   tagline = local_assigns.fetch(:tagline, false)
-  h       = local_assigns.fetch(:height, '44').to_s.gsub(/[^0-9]/, '')
+  h       = local_assigns.fetch(:height, '44').to_s.gsub(/[^0-9]/, '').presence || '44'
   w       = local_assigns.fetch(:width, nil).to_s.gsub(/[^0-9]/, '').presence
   css     = local_assigns.fetch(:class, nil)
 
-  text_col = dark ? '#FFFFFF' : '#162B3C'
-  tag_col  = dark ? 'rgba(255,255,255,0.60)' : '#7B787F'
-  green    = '#45AC34'
+  text_col  = dark ? '#FFFFFF' : '#162B3C'
+  tag_col   = dark ? 'rgba(255,255,255,0.55)' : '#7B787F'
+  green     = '#45AC34'
 
-  # Use CSS for sizing — avoids Rails 8 strict-tag-interpolation errors
-  dim_style = "height:#{h}px;#{w ? " width:#{w}px;" : ''} display:block; overflow:visible;"
+  dim_style = "height:#{h}px;#{w ? " width:#{w}px;" : ''} display:block; overflow:visible; flex-shrink:0;"
 %>
 <% if tagline %>
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 80"
+  <%# Full lockup — green bar | IGSIGN | ─── POWERED BY POSSIBILITY ─── %>
+  <%# viewBox 0 0 360 72 — proportioned so tagline is comfortably readable at h>=60 %>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 72"
        style="<%= dim_style %>" class="<%= css %>"
        role="img" aria-label="IGSIGN — Powered by Possibility">
-    <rect x="0" y="8" width="4" height="40" rx="2" fill="<%= green %>"/>
-    <text x="14" y="44" font-family="'DM Sans',Avenir,Arial,sans-serif"
-          font-weight="800" font-size="38" letter-spacing="4" fill="<%= text_col %>">IGSIGN</text>
-    <line x1="14" y1="62" x2="38" y2="62" stroke="<%= green %>" stroke-width="2"/>
-    <text x="46" y="66" font-family="'DM Sans',Avenir,Arial,sans-serif"
-          font-weight="500" font-size="11" letter-spacing="2.5" fill="<%= tag_col %>">POWERED BY</text>
-    <text x="152" y="66" font-family="'DM Sans',Avenir,Arial,sans-serif"
-          font-weight="700" font-size="11" letter-spacing="2.5" fill="<%= green %>">POSSIBILITY</text>
-    <line x1="282" y1="62" x2="306" y2="62" stroke="<%= green %>" stroke-width="2"/>
+    <rect x="0" y="6" width="4" height="36" rx="2" fill="<%= green %>"/>
+    <text x="13" y="37"
+          font-family="'DM Sans',Avenir,Arial,sans-serif"
+          font-weight="800" font-size="34" letter-spacing="3"
+          fill="<%= text_col %>">IGSIGN</text>
+    <line x1="13" y1="54" x2="34" y2="54" stroke="<%= green %>" stroke-width="1.5"/>
+    <text x="42" y="58"
+          font-family="'DM Sans',Avenir,Arial,sans-serif"
+          font-weight="500" font-size="10.5" letter-spacing="2.8"
+          fill="<%= tag_col %>">POWERED BY</text>
+    <text x="140" y="58"
+          font-family="'DM Sans',Avenir,Arial,sans-serif"
+          font-weight="700" font-size="10.5" letter-spacing="2.8"
+          fill="<%= green %>">POSSIBILITY</text>
+    <line x1="254" y1="54" x2="275" y2="54" stroke="<%= green %>" stroke-width="1.5"/>
   </svg>
 <% else %>
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 190 40"
+  <%# Compact wordmark — green accent bar | IGSIGN %>
+  <%# viewBox 0 0 180 38 — scales cleanly from 28px to 56px height %>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 38"
        style="<%= dim_style %>" class="<%= css %>"
        role="img" aria-label="IGSIGN">
-    <rect x="0" y="4" width="3" height="32" rx="1.5" fill="<%= green %>"/>
-    <text x="10" y="30" font-family="'DM Sans',Avenir,Arial,sans-serif"
-          font-weight="800" font-size="26" letter-spacing="3" fill="<%= text_col %>">IGSIGN</text>
+    <rect x="0" y="3" width="3" height="32" rx="1.5" fill="<%= green %>"/>
+    <text x="10" y="28"
+          font-family="'DM Sans',Avenir,Arial,sans-serif"
+          font-weight="800" font-size="25" letter-spacing="3"
+          fill="<%= text_col %>">IGSIGN</text>
   </svg>
 <% end %>

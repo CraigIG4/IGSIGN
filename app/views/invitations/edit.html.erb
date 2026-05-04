@@ -1,28 +1,53 @@
-<div class="max-w-xl mx-auto px-2">
-  <h1 class="flex text-4xl font-bold items-center justify-center my-8 space-x-2">
-    <%= svg_icon('waving_hand', class: 'h-10 w-10') %>
-    <span><%= t('welcome_to_product_name', product_name: Docuseal.product_name) %></span>
-  </h1>
-  <%= form_for(resource, as: resource_name, url: invitation_path, html: { method: :put, class: 'space-y-6' }) do |f| %>
-    <div class="space-y-2">
-      <%= render 'devise/shared/error_messages', resource: %>
+<style>
+  body { background: #f5f7f9 !important; }
+</style>
+
+<div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:32px 16px;">
+  <div style="width:100%; max-width:440px; background:#fff; border-radius:16px; padding:48px 40px; box-shadow:0 8px 32px rgba(22,43,60,0.10); border:1px solid #edf0f3;">
+
+    <div style="margin-bottom:36px;">
+      <%= render 'shared/logo', dark: false, height: '36' %>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+      <div style="width:40px; height:40px; border-radius:50%; background:#45AC34; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <%= svg_icon('waving_hand', class: 'w-5 h-5', style: 'color:#fff; fill:white;') %>
+      </div>
+      <h1 style="font-size:22px; font-weight:800; color:#162B3C; margin:0; letter-spacing:-0.3px;">Welcome to IGSIGN</h1>
+    </div>
+
+    <p style="font-size:14px; color:#7B787F; margin:0 0 32px; line-height:1.6;">
+      You've been invited to Ignition Group's e-signing portal. Set your password below to get started.
+    </p>
+
+    <%= form_for(resource, as: resource_name, url: invitation_path, html: { method: :put }) do |f| %>
+      <%= render 'devise/shared/error_messages', resource: resource %>
       <%= f.hidden_field :reset_password_token %>
-      <div class="form-control">
-        <%= f.label :password, t('set_password'), class: 'label' %>
-        <%= f.password_field :password, autofocus: true, autocomplete: 'new-password', class: 'base-input' %>
+
+      <div style="margin-bottom:18px;">
+        <label style="font-size:13px; font-weight:600; color:#162B3C; margin-bottom:6px; display:block;">New password</label>
+        <%= f.password_field :password, autofocus: true, autocomplete: 'new-password',
+            style: 'width:100%; padding:11px 14px; border:1.5px solid #e2e6ea; border-radius:8px; font-size:14px; color:#162B3C; background:#f9fbfc; outline:none; box-sizing:border-box;',
+            placeholder: 'Choose a strong password' %>
         <% if @minimum_password_length %>
-          <label class="label">
-            <span class="label-text">(<%= t('minimum_password_length_characters_minimum', minimum_password_length: @minimum_password_length) %>)</span>
-          </label>
+          <p style="font-size:12px; color:#9aa3ae; margin:6px 0 0;">Minimum <%= @minimum_password_length %> characters</p>
         <% end %>
       </div>
-      <div class="form-control">
-        <%= f.label :password_confirmation, t('confirm_password'), class: 'label' %>
-        <%= f.password_field :password_confirmation, autocomplete: 'new-password', class: 'base-input' %>
+
+      <div style="margin-bottom:24px;">
+        <label style="font-size:13px; font-weight:600; color:#162B3C; margin-bottom:6px; display:block;">Confirm password</label>
+        <%= f.password_field :password_confirmation, autocomplete: 'new-password',
+            style: 'width:100%; padding:11px 14px; border:1.5px solid #e2e6ea; border-radius:8px; font-size:14px; color:#162B3C; background:#f9fbfc; outline:none; box-sizing:border-box;',
+            placeholder: 'Re-enter your password' %>
       </div>
+
+      <%= f.button button_title(title: 'Set password &amp; sign in', disabled_with: 'Saving&hellip;'),
+          style: 'width:100%; padding:13px; background:#162B3C; color:#fff; border:none; border-radius:8px; font-size:15px; font-weight:700; cursor:pointer; position:relative; overflow:hidden; font-family:inherit;' %>
+    <% end %>
+
+    <div style="margin-top:28px; padding-top:20px; border-top:1px solid #f0f2f5; text-align:center; font-size:11.5px; color:#b0bac4; line-height:1.7;">
+      ECT Act 25 of 2002 &nbsp;&middot;&nbsp; Ignition Group Internal
     </div>
-    <div class="form-control">
-      <%= f.button button_title(title: t('save_password_and_sign_in'), disabled_with: t('saving')), class: 'base-button' %>
-    </div>
-  <% end %>
+
+  </div>
 </div>

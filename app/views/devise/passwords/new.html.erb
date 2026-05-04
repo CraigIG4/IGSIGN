@@ -1,16 +1,16 @@
 <style>
-  body { background: #162B3C !important; }
+  body { background: #f5f7f9 !important; }
 </style>
 
-<div style="min-height:100vh; display:flex; align-items:center; justify-content:center; background:#f5f7f9;">
-  <div style="width:100%; max-width:420px; margin:32px auto; padding:48px 40px; background:#fff; border-radius:16px; box-shadow:0 8px 32px rgba(22,43,60,0.12);">
+<div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:32px 16px;">
+  <div style="width:100%; max-width:400px; background:#fff; border-radius:16px; padding:48px 40px; box-shadow:0 8px 32px rgba(22,43,60,0.10); border:1px solid #edf0f3;">
 
     <div style="margin-bottom:32px;">
       <%= render 'shared/logo', dark: false, height: '36' %>
     </div>
 
-    <div style="font-size:22px; font-weight:800; color:#162B3C; margin-bottom:8px;">Reset your password</div>
-    <div style="font-size:14px; color:#7B787F; margin-bottom:32px;">Enter your email and we'll send you a reset link.</div>
+    <h1 style="font-size:22px; font-weight:800; color:#162B3C; margin:0 0 8px; letter-spacing:-0.3px;">Reset your password</h1>
+    <p style="font-size:14px; color:#7B787F; margin:0 0 30px; line-height:1.6;">Enter your email address and we'll send you a reset link.</p>
 
     <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post }) do |f| %>
       <%= render 'devise/shared/error_messages', resource: resource %>
@@ -18,19 +18,22 @@
       <div style="margin-bottom:20px;">
         <label style="font-size:13px; font-weight:600; color:#162B3C; margin-bottom:6px; display:block;">Email address</label>
         <%= f.email_field :email, autofocus: true, autocomplete: 'email',
-            style: 'width:100%; padding:11px 14px; border:1.5px solid #e2e6ea; border-radius:8px; font-size:14px; color:#162B3C; background:#f8fafc; outline:none; box-sizing:border-box;',
+            style: 'width:100%; padding:11px 14px; border:1.5px solid #e2e6ea; border-radius:8px; font-size:14px; color:#162B3C; background:#f9fbfc; outline:none; box-sizing:border-box;',
             placeholder: 'you@ignitiongroup.co.za' %>
       </div>
 
-      <div>
-        <%= f.button button_title(title: 'Send reset instructions', disabled_with: 'Sending…'),
-            style: 'width:100%; padding:13px; background:#162B3C; color:#fff; border:none; border-radius:8px; font-size:15px; font-weight:700; cursor:pointer; position:relative; overflow:hidden;' %>
-      </div>
+      <%= f.button button_title(title: 'Send reset instructions', disabled_with: 'Sending&hellip;'),
+          style: 'width:100%; padding:13px; background:#162B3C; color:#fff; border:none; border-radius:8px; font-size:15px; font-weight:700; cursor:pointer; position:relative; overflow:hidden; font-family:inherit;' %>
     <% end %>
 
-    <div style="margin-top:28px; text-align:center;">
+    <div style="margin-top:24px; text-align:center;">
       <%= link_to '← Back to sign in', new_user_session_path,
           style: 'font-size:13px; color:#45AC34; font-weight:600; text-decoration:none;' %>
     </div>
+
+    <div style="margin-top:28px; padding-top:20px; border-top:1px solid #f0f2f5; text-align:center; font-size:11.5px; color:#b0bac4;">
+      ECT Act 25 of 2002 &nbsp;&middot;&nbsp; Ignition Group Internal
+    </div>
+
   </div>
 </div>

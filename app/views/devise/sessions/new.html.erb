@@ -1,24 +1,24 @@
 <%= content_for(:canonical_url, new_user_session_url) %>
 
 <style>
-  body { background: #162B3C !important; }
+  body { background: #162B3C !important; margin: 0; padding: 0; }
   .igsign-login-wrap {
     min-height: 100vh;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 55% 45%;
   }
-  @media (max-width: 768px) {
+  @media (max-width: 860px) {
     .igsign-login-wrap { grid-template-columns: 1fr; }
     .igsign-login-left { display: none; }
   }
+  /* ── LEFT BRAND PANEL ── */
   .igsign-login-left {
     background: #162B3C;
     position: relative;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 64px;
+    justify-content: space-between;
+    padding: 56px 64px;
     overflow: hidden;
     min-height: 100vh;
   }
@@ -28,128 +28,161 @@
     inset: 0;
     background-image: url('/brand/igsign-background-pattern.svg');
     background-size: cover;
-    background-position: center;
-    opacity: 0.45;
+    background-position: center right;
+    opacity: 0.5;
     pointer-events: none;
   }
-  .igsign-login-left-content { position: relative; z-index: 1; width: 100%; }
+  /* Green accent line at top */
+  .igsign-login-left::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #45AC34 0%, rgba(69,172,52,0.3) 100%);
+  }
+  .igsign-left-top, .igsign-left-mid, .igsign-left-bot { position: relative; z-index: 1; }
+  /* ── RIGHT FORM PANEL ── */
   .igsign-login-right {
     background: #ffffff;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 64px 48px;
+    padding: 48px 52px;
     min-height: 100vh;
+    position: relative;
   }
-  .igsign-login-form { width: 100%; max-width: 380px; }
-  .igsign-field-label { font-size: 13px; font-weight: 600; color: #162B3C; margin-bottom: 6px; display: block; }
-  .igsign-field {
+  .igsign-login-right::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, rgba(22,43,60,0.08) 20%, rgba(22,43,60,0.08) 80%, transparent);
+  }
+  .igsign-login-form { width: 100%; max-width: 360px; }
+  /* Form elements */
+  .igsign-label { font-size: 13px; font-weight: 600; color: #162B3C; margin-bottom: 6px; display: block; }
+  .igsign-input {
     width: 100%; padding: 11px 14px;
     border: 1.5px solid #e2e6ea;
     border-radius: 8px;
     font-size: 14px; color: #162B3C;
-    background: #f8fafc;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    background: #f9fbfc;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
     outline: none; box-sizing: border-box;
+    font-family: 'DM Sans', Arial, sans-serif;
   }
-  .igsign-field:focus {
+  .igsign-input:focus {
     border-color: #162B3C;
     box-shadow: 0 0 0 3px rgba(22,43,60,0.10);
     background: #fff;
   }
-  .igsign-submit {
+  .igsign-input::placeholder { color: #b0bac4; }
+  .igsign-btn {
     width: 100%; padding: 13px;
     background: #162B3C; color: #fff;
     border: none; border-radius: 8px;
     font-size: 15px; font-weight: 700;
-    letter-spacing: 0.3px; cursor: pointer;
-    margin-top: 8px;
-    transition: background 0.15s, transform 0.1s;
+    font-family: 'DM Sans', Arial, sans-serif;
+    letter-spacing: 0.2px; cursor: pointer;
     position: relative; overflow: hidden;
+    transition: background 0.15s, transform 0.1s;
+    display: block;
   }
-  .igsign-submit::after {
-    content: ''; position: absolute; left: 0; bottom: 0;
-    width: 100%; height: 3px; background: #45AC34;
+  .igsign-btn::after {
+    content: ''; position: absolute;
+    left: 0; bottom: 0; right: 0; height: 3px;
+    background: #45AC34;
   }
-  .igsign-submit:hover { background: #0e2130; transform: translateY(-1px); }
-  .igsign-feature-pill {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 8px 16px; border-radius: 100px;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.14);
-    font-size: 13px; color: rgba(255,255,255,0.85);
-    margin-bottom: 10px;
+  .igsign-btn:hover { background: #0e2130; transform: translateY(-1px); }
+  .igsign-btn:active { transform: translateY(0); }
+  /* Feature pills */
+  .igsign-pill {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 10px 18px; border-radius: 100px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.13);
+    font-size: 13px; color: rgba(255,255,255,0.88);
+    margin-bottom: 10px; line-height: 1;
   }
-  .igsign-feature-dot { width: 6px; height: 6px; border-radius: 50%; background: #45AC34; flex-shrink: 0; }
-  .igsign-divider { display: flex; align-items: center; gap: 12px; margin: 24px 0; color: #c5cbd0; font-size: 12px; }
-  .igsign-divider::before, .igsign-divider::after { content: ''; flex: 1; height: 1px; background: #e8ebed; }
+  .igsign-pill-dot { width: 6px; height: 6px; border-radius: 50%; background: #45AC34; flex-shrink: 0; }
+  /* Divider */
+  .igsign-or { display: flex; align-items: center; gap: 12px; margin: 22px 0; }
+  .igsign-or::before, .igsign-or::after { content: ''; flex: 1; height: 1px; background: #edf0f3; }
+  .igsign-or span { font-size: 12px; color: #b8c0ca; white-space: nowrap; }
 </style>
 
 <div class="igsign-login-wrap">
 
-  <%# ── LEFT BRAND PANEL ── %>
+  <%# ══════════ LEFT BRAND PANEL ══════════ %>
   <div class="igsign-login-left">
-    <div class="igsign-login-left-content">
 
-      <%= render 'shared/logo', dark: true, height: '44', tagline: true %>
+    <div class="igsign-left-top">
+      <%= render 'shared/logo', dark: true, height: '72', tagline: true %>
+    </div>
 
-      <div style="margin-top:56px; margin-bottom:40px;">
-        <p style="font-size:12px; color:rgba(255,255,255,0.45); letter-spacing:3.5px; text-transform:uppercase; margin-bottom:18px;">INTERNAL E-SIGNING PORTAL</p>
-        <h2 style="font-size:36px; font-weight:800; color:#ffffff; line-height:1.18; letter-spacing:-0.8px; margin:0;">
-          Sign, track &amp;<br>secure &mdash; all in one.
-        </h2>
-        <div style="width:48px; height:3px; background:#45AC34; border-radius:2px; margin-top:20px;"></div>
-      </div>
+    <div class="igsign-left-mid">
+      <p style="font-size:11px; color:rgba(255,255,255,0.4); letter-spacing:4px; text-transform:uppercase; margin-bottom:20px; margin-top:0;">INTERNAL E-SIGNING PORTAL</p>
+
+      <h2 style="font-size:40px; font-weight:800; color:#ffffff; line-height:1.15; letter-spacing:-1px; margin:0 0 12px;">
+        Sign, track<br>and secure —<br>all in one place.
+      </h2>
+      <p style="font-size:15px; color:rgba(255,255,255,0.55); line-height:1.65; margin:0 0 36px; max-width:340px;">
+        Ignition Group's internal e-signing platform. Structured approvals, compliant signatures, and full document audit trails.
+      </p>
 
       <div>
-        <div class="igsign-feature-pill"><span class="igsign-feature-dot"></span>ECT Act 25 of 2002 compliant</div><br>
-        <div class="igsign-feature-pill"><span class="igsign-feature-dot"></span>Full audit trail &amp; signing certificate</div><br>
-        <div class="igsign-feature-pill"><span class="igsign-feature-dot"></span>Self-hosted &mdash; your data stays internal</div>
-      </div>
-
-      <div style="position:absolute; bottom:40px; left:64px; display:flex; align-items:center; gap:12px;">
-        <img src="/brand/ig-logo-white.webp" alt="Ignition Group" style="height:22px; opacity:0.55;">
-        <span style="width:1px; height:18px; background:rgba(255,255,255,0.18);"></span>
-        <span style="font-size:11px; color:rgba(255,255,255,0.35); letter-spacing:1.5px; text-transform:uppercase;">Internal Tool</span>
+        <div class="igsign-pill"><span class="igsign-pill-dot"></span>ECT Act 25 of 2002 compliant</div><br>
+        <div class="igsign-pill"><span class="igsign-pill-dot"></span>Full audit trail &amp; signing certificate</div><br>
+        <div class="igsign-pill"><span class="igsign-pill-dot"></span>Self-hosted — your data stays internal</div>
       </div>
     </div>
+
+    <div class="igsign-left-bot" style="display:flex; align-items:center; gap:14px;">
+      <img src="/brand/ig-logo-white.webp" alt="Ignition Group" style="height:20px; opacity:0.5; display:block;">
+      <span style="width:1px; height:16px; background:rgba(255,255,255,0.15);"></span>
+      <span style="font-size:11px; color:rgba(255,255,255,0.3); letter-spacing:2px; text-transform:uppercase;">Internal Tool</span>
+    </div>
+
   </div>
 
-  <%# ── RIGHT FORM PANEL ── %>
+  <%# ══════════ RIGHT FORM PANEL ══════════ %>
   <div class="igsign-login-right">
     <div class="igsign-login-form">
 
-      <div style="margin-bottom:32px;">
-        <%= render 'shared/logo', dark: false, height: '36' %>
+      <div style="margin-bottom:36px;">
+        <%= render 'shared/logo', dark: false, height: '34' %>
       </div>
 
-      <div style="font-size:26px; font-weight:800; color:#162B3C; letter-spacing:-0.4px; margin-bottom:6px;">Welcome back</div>
-      <div style="font-size:14px; color:#7B787F; margin-bottom:36px; line-height:1.5;">Sign in to your IGSIGN account</div>
+      <h1 style="font-size:24px; font-weight:800; color:#162B3C; letter-spacing:-0.4px; margin:0 0 6px;">Welcome back</h1>
+      <p style="font-size:14px; color:#7B787F; margin:0 0 32px; line-height:1.5;">Sign in to your IGSIGN account</p>
 
       <%= form_for(resource, as: resource_name, html: {}, data: { turbo: params[:redir].blank? }, url: session_path(resource_name)) do |f| %>
         <%= render 'hidden_fields' %>
 
         <div style="margin-bottom:18px;">
-          <label class="igsign-field-label">Email address</label>
-          <%= f.email_field :email, autofocus: true, autocomplete: 'email', class: 'igsign-field', placeholder: 'you@ignitiongroup.co.za' %>
+          <label class="igsign-label">Email address</label>
+          <%= f.email_field :email, autofocus: true, autocomplete: 'email',
+              class: 'igsign-input', placeholder: 'you@ignitiongroup.co.za' %>
         </div>
 
-        <div style="margin-bottom:8px;">
-          <div style="display:flex; justify-content:space-between; align-items:baseline;">
-            <label class="igsign-field-label">Password</label>
-            <%= link_to 'Forgot password?', new_user_password_path, style: 'font-size:12px; color:#45AC34; font-weight:600; text-decoration:none;' %>
+        <div style="margin-bottom:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <label class="igsign-label" style="margin-bottom:0;">Password</label>
+            <%= link_to 'Forgot password?', new_user_password_path,
+                style: 'font-size:12px; color:#45AC34; font-weight:600; text-decoration:none;' %>
           </div>
-          <%= f.password_field :password, autocomplete: 'current-password', class: 'igsign-field', placeholder: '••••••••' %>
+          <%= f.password_field :password, autocomplete: 'current-password',
+              class: 'igsign-input', placeholder: '••••••••' %>
         </div>
 
         <div style="margin-top:24px;">
-          <%= f.button button_title(title: 'Sign in to IGSIGN', disabled_with: 'Signing in&hellip;'), class: 'igsign-submit' %>
+          <%= f.button button_title(title: 'Sign in to IGSIGN', disabled_with: 'Signing in&hellip;'), class: 'igsign-btn' %>
         </div>
       <% end %>
 
       <% if devise_mapping.omniauthable? && User.omniauth_providers.any? %>
-        <div class="igsign-divider">or continue with</div>
+        <div class="igsign-or"><span>or continue with</span></div>
         <% if User.omniauth_providers.include?(:google_oauth2) %>
           <%= form_for '', url: omniauth_authorize_path(resource_name, :google_oauth2), data: { turbo: false }, method: :post do |f| %>
             <set-timezone data-input-id="state" data-params="true"></set-timezone>
@@ -166,10 +199,14 @@
         <% end %>
       <% end %>
 
-      <div style="margin-top:40px; font-size:11.5px; color:#b0b8c2; text-align:center; line-height:1.7;">
-        Access is by invitation only.<br>
-        Contact your IGSIGN administrator to request access.<br>
-        <span style="color:#d0d6dc; margin-top:6px; display:block;">ECT Act 25 of 2002 &nbsp;&middot;&nbsp; Ignition Group Internal</span>
+      <div style="margin-top:36px; padding-top:24px; border-top:1px solid #f0f2f5; text-align:center;">
+        <p style="font-size:12px; color:#b0bac4; line-height:1.7; margin:0;">
+          Access is by invitation only.<br>
+          Contact your IGSIGN administrator to request access.
+        </p>
+        <p style="font-size:11px; color:#cdd2d8; margin:8px 0 0;">
+          ECT Act 25 of 2002 &nbsp;&middot;&nbsp; Ignition Group Internal
+        </p>
       </div>
 
     </div>
