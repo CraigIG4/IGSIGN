@@ -1,0 +1,12 @@
+{
+  "name": "IGSIGN",
+  "postStartCommand": "/workspaces/docuseal/.devcontainer/start.sh",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "IGSIGN App",
+      "onAutoForward": "openPreview",
+      "visibility": "public"
+    }
+  }
+}

@@ -1,19 +1,53 @@
-<%#
-  IGSIGN Logo Partial — Brand v5 (img-based, clean at all sizes)
-  dark:true  → igsign-primary-dark.svg (white on navy, blends into Arctic Black navbar)
-  dark:false → igsign-primary-light.svg (navy on white, for light backgrounds)
-  tagline:true → show full lockup including tagline
-  height → display height in px (default 44)
-%>
 <%
-  dark       = local_assigns.fetch(:dark, false)
-  show_tag   = local_assigns.fetch(:tagline, false)
-  h          = local_assigns.fetch(:height, '44').to_s.to_i
-  src        = dark ? '/brand/igsign-primary-dark.svg' : '/brand/igsign-primary-light.svg'
-  # The primary SVGs are 1400x520. Crop viewBox to just icon+wordmark (no tagline)
-  # by controlling rendered height — tagline sits below y=330, so at h<=52 it's invisible
+  dark     = local_assigns.fetch(:dark, false)
+  tagline  = local_assigns.fetch(:tagline, false)
+  h        = local_assigns.fetch(:height, '44').to_s
+  w        = local_assigns.fetch(:width, nil)
+  css      = local_assigns.fetch(:class, nil)
+
+  # Colour palette
+  text_col = dark ? '#FFFFFF' : '#162B3C'
+  tag_col  = dark ? 'rgba(255,255,255,0.60)' : '#7B787F'
+  green    = '#45AC34'
+
+  svg_height = h.to_s.gsub(/[^0-9]/, '')
+  svg_width  = w.to_s.gsub(/[^0-9]/, '').presence
+  svg_class  = css.present? ? %( class="#{css}") : ''
 %>
-<img src="<%= src %>"
-     height="<%= h %>"
-     alt="IGSIGN — Ignition Group e-Signing Portal"
-     style="display:block; max-width:none; flex-shrink:0;">
+<% if tagline %>
+  <%# Full lockup with tagline — landing hero, large contexts %>
+  <svg xmlns="http://www.w3.org/2000/svg"
+       viewBox="0 0 400 80"
+       height="<%= svg_height %>"<%= svg_width ? %( width="#{svg_width}") : '' %>
+       style="display:block; overflow:visible;"<%= svg_class.html_safe %>
+       role="img" aria-label="IGSIGN — Powered by Possibility">
+    <rect x="0" y="8" width="4" height="40" rx="2" fill="<%= green %>"/>
+    <text x="14" y="44"
+          font-family="'DM Sans',Avenir,Arial,sans-serif"
+          font-weight="800" font-size="38" letter-spacing="4"
+          fill="<%= text_col %>">IGSIGN</text>
+    <line x1="14" y1="62" x2="38" y2="62" stroke="<%= green %>" stroke-width="2"/>
+    <text x="46" y="66"
+          font-family="'DM Sans',Avenir,Arial,sans-serif"
+          font-weight="500" font-size="11" letter-spacing="2.5"
+          fill="<%= tag_col %>">POWERED BY</text>
+    <text x="152" y="66"
+          font-family="'DM Sans',Avenir,Arial,sans-serif"
+          font-weight="700" font-size="11" letter-spacing="2.5"
+          fill="<%= green %>">POSSIBILITY</text>
+    <line x1="282" y1="62" x2="306" y2="62" stroke="<%= green %>" stroke-width="2"/>
+  </svg>
+<% else %>
+  <%# Compact wordmark — navbar, form headers, tight spaces %>
+  <svg xmlns="http://www.w3.org/2000/svg"
+       viewBox="0 0 190 40"
+       height="<%= svg_height %>"<%= svg_width ? %( width="#{svg_width}") : '' %>
+       style="display:block; overflow:visible;"<%= svg_class.html_safe %>
+       role="img" aria-label="IGSIGN">
+    <rect x="0" y="4" width="3" height="32" rx="1.5" fill="<%= green %>"/>
+    <text x="10" y="30"
+          font-family="'DM Sans',Avenir,Arial,sans-serif"
+          font-weight="800" font-size="26" letter-spacing="3"
+          fill="<%= text_col %>">IGSIGN</text>
+  </svg>
+<% end %>
