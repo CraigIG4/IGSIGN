@@ -1,0 +1,214 @@
+/* ============================================================
+   IGSIGN Design System — Ignition Group Brand v4
+   Arctic Black #162B3C | Innovation Green #45AC34 | Cool Grey #7B787F
+   ============================================================ */
+
+:root {
+  --ig-black:   #162B3C;
+  --ig-green:   #45AC34;
+  --ig-grey:    #7B787F;
+  --ig-bg:      #f5f7f9;
+  --ig-surface: #ffffff;
+  --ig-border:  #e8ebed;
+  --ig-shadow:  0 1px 3px rgba(22,43,60,0.08), 0 1px 2px rgba(22,43,60,0.06);
+  --ig-shadow-md: 0 4px 6px rgba(22,43,60,0.07), 0 2px 4px rgba(22,43,60,0.05);
+  --ig-radius:  8px;
+}
+
+html, body {
+  font-family: 'DM Sans','Avenir',Arial,sans-serif !important;
+  background-color: var(--ig-bg) !important;
+  color: var(--ig-black) !important;
+}
+h1,h2,h3,h4,h5,h6 {
+  font-family: 'DM Sans','Avenir',Arial,sans-serif !important;
+  color: var(--ig-black) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+}
+*, button, input, select, textarea, th, td, label, a, span, p, div {
+  font-family: 'DM Sans','Avenir',Arial,sans-serif !important;
+}
+
+/* Watermark */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='92'%3E%3Cpolygon points='40,4 74,23 74,61 40,80 6,61 6,23' fill='none' stroke='%23162B3C' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 80px 92px;
+}
+body > * { position: relative; z-index: 1; }
+
+/* Buttons */
+.btn-primary, .base-button, .btn-neutral {
+  background-color: var(--ig-black) !important;
+  border-color: var(--ig-black) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+.btn-primary:hover, .base-button:hover, .btn-neutral:hover {
+  opacity: 0.88 !important;
+}
+.btn-success, .btn-accent {
+  background-color: var(--ig-green) !important;
+  border-color: var(--ig-green) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+.btn-outline {
+  border-color: var(--ig-black) !important;
+  color: var(--ig-black) !important;
+}
+.btn-outline:hover {
+  background-color: var(--ig-black) !important;
+  color: #ffffff !important;
+}
+.btn { min-height: 40px !important; }
+
+/* Inputs */
+.input,.select,.textarea,input[type="text"],input[type="email"],
+input[type="password"],input[type="search"],input[type="number"],textarea,select {
+  background-color: #ffffff !important;
+  border-color: var(--ig-border) !important;
+  color: var(--ig-black) !important;
+  border-radius: var(--ig-radius) !important;
+}
+.input:focus,.select:focus,.textarea:focus,input:focus,textarea:focus,select:focus {
+  outline: none !important;
+  border-color: var(--ig-black) !important;
+  box-shadow: 0 0 0 3px rgba(22,43,60,0.12) !important;
+}
+
+/* Cards */
+.card {
+  background-color: var(--ig-surface) !important;
+  border: 1px solid var(--ig-border) !important;
+  box-shadow: var(--ig-shadow) !important;
+  border-radius: var(--ig-radius) !important;
+}
+.card:hover { box-shadow: var(--ig-shadow-md) !important; }
+.card-body { background-color: var(--ig-surface) !important; }
+.bg-base-200 {
+  background-color: var(--ig-surface) !important;
+  border: 1px solid var(--ig-border) !important;
+}
+.bg-base-300 { background-color: #f0f2f4 !important; }
+/* Tables */
+.table th, table thead th {
+  background-color: var(--ig-black) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  border-bottom: 2px solid #45AC34 !important;
+  padding: 10px 16px !important;
+}
+.table tr:nth-child(even) td { background-color: rgba(22,43,60,0.02) !important; }
+.table tr:hover td { background-color: rgba(69,172,52,0.05) !important; }
+.table td {
+  border-bottom: 1px solid var(--ig-border) !important;
+  padding: 10px 16px !important;
+  vertical-align: middle !important;
+}
+
+/* Badges */
+.badge-primary, .badge-neutral {
+  background-color: var(--ig-black) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.04em !important;
+}
+.badge-success {
+  background-color: rgba(69,172,52,0.12) !important;
+  color: #2d7a22 !important;
+  border-color: rgba(69,172,52,0.3) !important;
+  font-weight: 600 !important;
+}
+.badge-outline {
+  border-color: var(--ig-grey) !important;
+  color: var(--ig-grey) !important;
+  background: transparent !important;
+}
+
+/* Links */
+a:not(.btn):not([class*="menu"]) {
+  color: var(--ig-black) !important;
+  font-weight: 500;
+}
+a:not(.btn):hover { color: #45AC34 !important; }
+
+/* Settings nav */
+#account_settings_menu li a {
+  border-radius: var(--ig-radius) !important;
+  transition: all 0.12s ease !important;
+}
+#account_settings_menu li a:hover {
+  background-color: rgba(22,43,60,0.06) !important;
+  color: var(--ig-black) !important;
+}
+#account_settings_menu li a.active {
+  background-color: var(--ig-black) !important;
+  color: #ffffff !important;
+  border-left: 3px solid #45AC34 !important;
+}
+
+/* Dropdowns */
+.dropdown-content {
+  border: 1px solid var(--ig-border) !important;
+  box-shadow: var(--ig-shadow-md) !important;
+  border-radius: var(--ig-radius) !important;
+}
+.dropdown-content li a:hover, .dropdown-content li button:hover {
+  background-color: rgba(22,43,60,0.05) !important;
+}
+
+/* Checkboxes / Toggles */
+.checkbox:checked { background-color: var(--ig-black) !important; border-color: var(--ig-black) !important; }
+.radio:checked { background-color: var(--ig-black) !important; border-color: var(--ig-black) !important; }
+.toggle:checked { background-color: #45AC34 !important; }
+
+/* Alerts */
+.alert-success { background-color: rgba(69,172,52,0.1) !important; border-color: rgba(69,172,52,0.3) !important; color: #2d7a22 !important; }
+
+/* Tabs */
+.tab-active { border-bottom-color: var(--ig-black) !important; color: var(--ig-black) !important; font-weight: 700 !important; }
+
+/* IGSIGN stage status chips */
+.ig-status-pending  { background: rgba(123,120,127,0.1); color: #4a4848; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 600; }
+.ig-status-active   { background: rgba(69,172,52,0.12); color: #2d7a22; border: 1px solid rgba(69,172,52,0.3); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 600; }
+.ig-status-complete { background: rgba(22,43,60,0.08); color: #162B3C; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 600; }
+
+/* Accessibility focus ring */
+*:focus-visible { outline: 2px solid var(--ig-black) !important; outline-offset: 2px !important; }
+button:focus-visible, a:focus-visible { box-shadow: 0 0 0 3px rgba(69,172,52,0.5) !important; outline: none !important; }
+
+/* Dividers */
+hr, .divider { border-color: var(--ig-border) !important; }
+
+/* Innovation Green accent rule for section headings */
+.igsign-section-head { border-left: 4px solid #45AC34; padding-left: 12px; }
+
+/* Signing form */
+.igsign-form-header {
+  background-color: #162B3C;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 3px solid #45AC34;
+}
+.igsign-form-footer {
+  text-align: center;
+  padding: 16px;
+  font-size: 11px;
+  color: #7B787F;
+  border-top: 1px solid #e8ebed;
+  margin-top: 32px;
+}
