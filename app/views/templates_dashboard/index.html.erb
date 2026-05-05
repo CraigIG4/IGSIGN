@@ -1,6 +1,42 @@
 <% has_archived = can?(:manage, :countless) || current_account.templates.where.not(archived_at: nil).exists? %>
 <% show_dropzone = params[:q].blank? && @pagy.pages == 1 && ((@template_folders.size < 10 && @templates.size.zero?) || (@template_folders.size < 7 && @templates.size < 4) || (@template_folders.size < 4 && @templates.size < 7)) %>
 <% if Docuseal.demo? %><%= render 'shared/demo_alert' %><% end %>
+<%# IGSIGN Dashboard Stats Header %>
+<% _tmpl_count = @pagy.count || @templates.size %>
+<% _sub_count  = begin; current_account.submissions.not_archived.count; rescue; 0; end %>
+<% _done_count = begin; current_account.submissions.not_archived.completed.count; rescue; 0; end %>
+<% _pend_count = begin; current_account.submissions.not_archived.pending.count; rescue; 0; end %>
+
+<div style="background:#162B3C;border-radius:12px;padding:24px 28px;margin-bottom:24px;position:relative;overflow:hidden;">
+  <div style="position:absolute;inset:0;background-image:url('/brand/igsign-background-pattern.svg');background-size:cover;background-position:center right;opacity:0.15;pointer-events:none;"></div>
+  <div style="position:relative;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+    <div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:3.5px;text-transform:uppercase;margin-bottom:6px;">Document Templates</div>
+      <div style="font-size:20px;font-weight:800;color:#fff;letter-spacing:-0.3px;"><%= t('document_templates_html') %></div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:12px 20px;text-align:center;min-width:80px;">
+        <div style="font-size:22px;font-weight:800;color:#fff;line-height:1;"><%= _tmpl_count %></div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.45);margin-top:4px;letter-spacing:0.5px;text-transform:uppercase;">Templates</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:12px 20px;text-align:center;min-width:80px;">
+        <div style="font-size:22px;font-weight:800;color:#fff;line-height:1;"><%= _sub_count %></div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.45);margin-top:4px;letter-spacing:0.5px;text-transform:uppercase;">Submissions</div>
+      </div>
+      <div style="background:rgba(69,172,52,0.12);border:1px solid rgba(69,172,52,0.25);border-radius:8px;padding:12px 20px;text-align:center;min-width:80px;">
+        <div style="font-size:22px;font-weight:800;color:#45AC34;line-height:1;"><%= _done_count %></div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.45);margin-top:4px;letter-spacing:0.5px;text-transform:uppercase;">Completed</div>
+      </div>
+      <% if _pend_count > 0 %>
+      <div style="background:rgba(255,193,7,0.10);border:1px solid rgba(255,193,7,0.22);border-radius:8px;padding:12px 20px;text-align:center;min-width:80px;">
+        <div style="font-size:22px;font-weight:800;color:#ffc107;line-height:1;"><%= _pend_count %></div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.45);margin-top:4px;letter-spacing:0.5px;text-transform:uppercase;">Pending</div>
+      </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
 <dashboard-dropzone>
   <%= form_for '', url: '', id: form_id = SecureRandom.uuid, method: :post, class: 'hidden', data: { target: 'dashboard-dropzone.form' }, html: { enctype: 'multipart/form-data' } do %>
     <input name="form_id" value="<%= form_id %>">
@@ -63,19 +99,20 @@
           <div class="hidden md:block">
             <app-tour id="app_tour" data-show-tour="<%= params[:tour] == 'true' || user_config.value %>" data-type="dashboard" data-next-page-path="<%= @templates.first && can?(:edit, @templates.first) ? edit_template_path(@templates.first, params.permit(:tour)) : settings_account_path %>" data-i18n="<%= t('app_tour').to_json %>"></app-tour>
             <% if user_config.new_record? && !params.key?(:tour) %>
-              <div id="app_tour_manager" class="h-36 rounded-2xl pt-3 px-7 w-full border border-dashed border-base-300">
-                <div class="text-xl text-center font-semibold text-base-content">
-                  <%= t('welcome_to_docuseal') %>
+              <div id="app_tour_manager" style="background:#fff;border:1.5px dashed #d4e8d0;border-radius:12px;padding:16px 20px;" class="w-full">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                  <span style="width:7px;height:7px;border-radius:50%;background:#45AC34;display:inline-block;flex-shrink:0;"></span>
+                  <span style="font-size:14px;font-weight:700;color:#162B3C;">Welcome to IGSIGN</span>
                 </div>
-                <div class="my-2 text-center text-xs text-base-content/70">
+                <div style="font-size:12px;color:#7B787F;margin-bottom:14px;line-height:1.5;">
                   <%= t('start_a_quick_tour_to_learn_how_to_create_an_send_your_first_document') %>
                 </div>
-                <div class="flex gap-2 mt-3 w-full">
+                <div class="flex gap-2 w-full">
                   <remove-on-event data-on="submit" data-selector-id="app_tour_manager" class="block w-full">
                     <%= button_to button_title(title: t('skip'), icon_disabled: svg_icon('loader', class: 'w-4 h-4 animate-spin')), user_configs_path, params: { user_config: { key: UserConfig::SHOW_APP_TOUR, value: false } }, class: 'btn btn-sm btn-outline w-full', form_class: 'flex-1', method: :post %>
                   </remove-on-event>
                   <app-tour-start class="block w-full">
-                    <%= button_to t('start_tour'), user_configs_path, params: { user_config: { key: UserConfig::SHOW_APP_TOUR, value: true } }, class: 'btn btn-sm btn-warning w-full', form_class: 'flex-1', method: :post %>
+                    <%= button_to t('start_tour'), user_configs_path, params: { user_config: { key: UserConfig::SHOW_APP_TOUR, value: true } }, class: 'btn btn-sm w-full', style: 'background:#162B3C;color:#fff;border-color:#162B3C;', form_class: 'flex-1', method: :post %>
                   </app-tour-start>
                 </div>
               </div>

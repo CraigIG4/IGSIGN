@@ -18,6 +18,9 @@
 html, body {
   font-family: 'DM Sans','Avenir',Arial,sans-serif !important;
   background-color: var(--ig-bg) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='92'%3E%3Cpolygon points='40,4 74,23 74,61 40,80 6,61 6,23' fill='none' stroke='%23162B3C' stroke-width='1.5' stroke-opacity='0.035'/%3E%3Ctext x='40' y='48' text-anchor='middle' dominant-baseline='middle' fill='%23162B3C' fill-opacity='0.035' font-family='Arial,sans-serif' font-size='14' font-weight='700' letter-spacing='1'%3EIG%3C/text%3E%3C/svg%3E") !important;
+  background-repeat: repeat !important;
+  background-size: 80px 92px !important;
   color: var(--ig-black) !important;
 }
 h1,h2,h3,h4,h5,h6 {
@@ -29,20 +32,6 @@ h1,h2,h3,h4,h5,h6 {
 *, button, input, select, textarea, th, td, label, a, span, p, div {
   font-family: 'DM Sans','Avenir',Arial,sans-serif !important;
 }
-
-/* Watermark */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-  opacity: 0.028;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='92'%3E%3Cpolygon points='40,4 74,23 74,61 40,80 6,61 6,23' fill='none' stroke='%23162B3C' stroke-width='2'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 80px 92px;
-}
-
 
 /* Buttons */
 .btn-primary, .base-button, .btn-neutral {
@@ -211,12 +200,6 @@ hr, .divider { border-color: var(--ig-border) !important; }
   color: #7B787F;
   border-top: 1px solid #e8ebed;
   margin-top: 32px;
-}
-/* ---- Watermark override: IG text inside each hexagon ---- */
-body::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='92'%3E%3Cpolygon points='40,4 74,23 74,61 40,80 6,61 6,23' fill='none' stroke='%23162B3C' stroke-width='1.5'/%3E%3Ctext x='40' y='48' text-anchor='middle' dominant-baseline='middle' fill='%23162B3C' font-family='Arial,sans-serif' font-size='14' font-weight='700' letter-spacing='1'%3EIG%3C/text%3E%3C/svg%3E") !important;
-  background-size: 80px 92px !important;
-  opacity: 0.028 !important;
 }
 /* ---- Z-index guard: modals, drawers and dropdowns must stack above everything ---- */
 turbo-frame#modal,
