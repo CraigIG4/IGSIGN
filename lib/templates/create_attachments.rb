@@ -122,7 +122,70 @@ module Templates
         return [handle_pdf_or_image(template, file, file.read, params, extract_fields:), []]
       end
 
+      # Word / Excel / ODT / RTF → convert to PDF via LibreOffice then ingest as PDF
+      if DOCUMENT_CONTENT_TYPES.include?(file.content_type)
+        return [handle_document_file(template, file, params, extract_fields:), []]
+      end
+
       raise InvalidFileType, "#{file.content_type}/#{dynamic}"
+    end
+
+    # Convert an Office document to PDF using LibreOffice headless, then treat as PDF.
+    def handle_document_file(template, file, params, extract_fields: false)
+      pdf_data    = convert_document_to_pdf(file)
+      pdf_name    = "#{File.basename(file.original_filename, '.*')}.pdf"
+
+      pdf_tempfile = Tempfile.new(['igsign_doc', '.pdf'])
+      pdf_tempfile.binmode
+      pdf_tempfile.write(pdf_data)
+      pdf_tempfile.rewind
+
+      pdf_file = ActionDispatch::Http::UploadedFile.new(
+        filename: pdf_name,
+        type:     PDF_CONTENT_TYPE,
+        tempfile: pdf_tempfile
+      )
+
+      handle_pdf_or_image(template, pdf_file, pdf_data, params, extract_fields:)
+    ensure
+      pdf_tempfile&.close
+      pdf_tempfile&.unlink
+    end
+
+    # Use LibreOffice headless to convert .docx/.doc/.xls/.odt/.rtf to PDF.
+    # Raises InvalidFileType if conversion fails or LibreOffice is not installed.
+    def convert_document_to_pdf(file)
+      require 'open3'
+
+      soffice = find_soffice!
+      output_dir = Dir.mktmpdir('igsign_doc_')
+
+      _stdout, stderr, status = Open3.capture3(
+        soffice, '--headless', '--convert-to', 'pdf', '--outdir', output_dir,
+        file.tempfile.path
+      )
+
+      unless status.success?
+        raise InvalidFileType, "Document conversion failed: #{stderr.strip}"
+      end
+
+      pdf_files = Dir.glob(File.join(output_dir, '*.pdf'))
+      raise InvalidFileType, 'Document conversion produced no PDF output' if pdf_files.empty?
+
+      File.binread(pdf_files.first)
+    rescue Errno::ENOENT => e
+      raise InvalidFileType, "LibreOffice not available for document conversion: #{e.message}"
+    ensure
+      FileUtils.rm_rf(output_dir) if defined?(output_dir) && File.directory?(output_dir.to_s)
+    end
+
+    def find_soffice!
+      %w[soffice libreoffice /usr/bin/soffice /usr/bin/libreoffice].each do |cmd|
+        path = `which #{cmd} 2>/dev/null`.strip
+        return path unless path.empty?
+      end
+      raise InvalidFileType,
+            'LibreOffice is not installed. Install libreoffice-headless to enable Word/Excel upload.'
     end
   end
 end
