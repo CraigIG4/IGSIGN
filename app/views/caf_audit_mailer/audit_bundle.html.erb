@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signed Agreement — IGSIGN</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f7fa;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f7fa;padding:32px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(22,43,60,0.1);">
+
+        <%# ── Header ── %>
+        <tr>
+          <td style="background:linear-gradient(135deg,#162B3C 0%,#1e3a4f 100%);padding:32px 40px;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td>
+                  <div style="font-size:11px;color:rgba(255,255,255,0.45);letter-spacing:4px;text-transform:uppercase;margin-bottom:6px;">IGSIGN · DOCUMENT COMPLETE</div>
+                  <div style="font-size:22px;font-weight:800;color:#fff;">Signed Agreement Enclosed</div>
+                  <div style="width:32px;height:3px;background:#45AC34;border-radius:2px;margin-top:10px;"></div>
+                </td>
+                <td align="right" style="vertical-align:middle;">
+                  <div style="width:48px;height:48px;background:#45AC34;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <%# ── Body ── %>
+        <tr>
+          <td style="padding:36px 40px;">
+            <p style="font-size:15px;color:#162B3C;margin:0 0 20px;">Dear <%= @to_name %>,</p>
+            <p style="font-size:14px;color:#4a5568;line-height:1.7;margin:0 0 20px;">
+              The agreement below has been <strong style="color:#162B3C;">fully executed</strong> by all parties.
+              Please find the signed document attached for your records.
+            </p>
+
+            <%# Contract summary card %>
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:28px;">
+              <tr>
+                <td style="padding:20px 24px;">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="padding:6px 0;border-bottom:1px solid #edf0f3;">
+                        <span style="font-size:11px;color:#7B787F;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">Agreement Type</span>
+                        <span style="font-size:13px;color:#162B3C;font-weight:700;float:right;"><%= @contract_type %></span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding:6px 0;border-bottom:1px solid #edf0f3;">
+                        <span style="font-size:11px;color:#7B787F;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">Contracting Party</span>
+                        <span style="font-size:13px;color:#162B3C;font-weight:700;float:right;"><%= @caf.contracting_party %></span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding:6px 0;border-bottom:1px solid #edf0f3;">
+                        <span style="font-size:11px;color:#7B787F;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">IG Entity</span>
+                        <span style="font-size:13px;color:#162B3C;font-weight:700;float:right;"><%= @entity_name %></span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding:6px 0;">
+                        <span style="font-size:11px;color:#7B787F;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">Date Completed</span>
+                        <span style="font-size:13px;color:#45AC34;font-weight:700;float:right;"><%= @signed_date %></span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <p style="font-size:14px;color:#4a5568;line-height:1.7;margin:0 0 16px;">
+              This agreement was executed electronically in compliance with the
+              <strong style="color:#162B3C;">Electronic Communications and Transactions Act (ECT Act 25 of 2002)</strong>.
+              The signing certificate attached contains a full audit trail including timestamps,
+              IP addresses, and signatory verification details.
+            </p>
+            <p style="font-size:14px;color:#4a5568;line-height:1.7;margin:0 0 28px;">
+              Please retain this email and all attachments for your records.
+              If you have any questions, contact <a href="mailto:legal@ignitiongroup.co.za" style="color:#45AC34;text-decoration:none;">legal@ignitiongroup.co.za</a>.
+            </p>
+
+            <%# ECT badge %>
+            <table cellpadding="0" cellspacing="0" style="background:#f0faf0;border:1px solid rgba(69,172,52,0.25);border-radius:8px;margin-bottom:8px;">
+              <tr>
+                <td style="padding:12px 18px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#45AC34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <span style="font-size:12px;color:#2d7a20;font-weight:600;vertical-align:middle;">ECT Act compliant · Legally binding electronic signature</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <%# ── Footer ── %>
+        <tr>
+          <td style="background:#f8fafc;border-top:1px solid #edf0f3;padding:20px 40px;text-align:center;">
+            <p style="font-size:11px;color:#9aa3ae;margin:0;">
+              This document was processed by <strong style="color:#162B3C;">IGSIGN</strong> — Ignition Group's internal contract management platform.
+              &nbsp;·&nbsp; <a href="https://sign.ignitiongroup.co.za" style="color:#45AC34;text-decoration:none;">sign.ignitiongroup.co.za</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
