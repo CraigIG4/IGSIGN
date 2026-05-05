@@ -1,12 +1,64 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title></title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <style></style>
-  </head>
-  <body dir="<%= TextUtils.rtl?(yield) ? 'rtl' : 'auto' %>">
-    <%= yield %>
-    <%= render partial: 'shared/mailer_attribution' %>
-  </body>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IGSIGN</title>
+  <style>
+    body { margin:0; padding:0; background-color:#f5f7f9; font-family:Arial,'DM Sans',sans-serif; }
+    .email-wrap { max-width:600px; margin:0 auto; padding:32px 16px; }
+    .email-card { background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 2px 12px rgba(22,43,60,0.08); }
+    .email-header { background:#162B3C; padding:24px 36px; position:relative; }
+    .email-header-accent { height:3px; background:linear-gradient(90deg,#45AC34,rgba(69,172,52,0.3)); }
+    .email-body { padding:36px 36px 28px; color:#162B3C; font-size:15px; line-height:1.65; }
+    .email-body p { margin:0 0 16px; }
+    .email-body a { color:#45AC34; }
+    .email-cta { display:block; margin:24px 0; text-align:center; }
+    .email-cta a {
+      background:#162B3C; color:#ffffff !important;
+      text-decoration:none; font-weight:700; font-size:15px;
+      padding:14px 36px; border-radius:8px; display:inline-block;
+      letter-spacing:0.3px;
+    }
+    .email-footer { padding:20px 36px; background:#f9fbfc; border-top:1px solid #edf0f3; font-size:11px; color:#9aa3ae; line-height:1.6; }
+    .email-footer a { color:#45AC34; text-decoration:none; }
+  </style>
+</head>
+<body dir="<%= TextUtils.rtl?(yield) ? 'rtl' : 'auto' %>">
+  <div class="email-wrap">
+    <div class="email-card">
+
+      <!-- Header -->
+      <div class="email-header-accent"></div>
+      <div class="email-header">
+        <img src="<%= ENV.fetch('APP_URL', 'https://expert-eureka-xrwx547g5444c977j-3000.app.github.dev') %>/brand/igsign-wordmark-white.svg"
+             alt="IGSIGN" height="28" style="display:block; height:28px; width:auto;">
+        <div style="font-size:10px; color:rgba(255,255,255,0.4); letter-spacing:3px; text-transform:uppercase; margin-top:6px;">
+          Internal E-Signing Portal
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="email-body">
+        <%= yield %>
+      </div>
+
+      <!-- Footer -->
+      <div class="email-footer">
+        <%= render partial: 'shared/email_attribution' %>
+      </div>
+
+    </div>
+
+    <!-- Below-card branding -->
+    <div style="text-align:center; margin-top:20px; padding:0 16px;">
+      <img src="<%= ENV.fetch('APP_URL', 'https://expert-eureka-xrwx547g5444c977j-3000.app.github.dev') %>/brand/ig-logo-full.png"
+           alt="Ignition Group" height="22" style="height:22px; width:auto; opacity:0.55; display:inline-block;">
+      <div style="font-size:10px; color:#b0bac4; margin-top:8px; letter-spacing:0.3px;">
+        ECT Act 25 of 2002 &middot; Ignition Group Internal &middot;
+        <a href="mailto:legal@ignitiongroup.co.za" style="color:#b0bac4;">legal@ignitiongroup.co.za</a>
+      </div>
+    </div>
+  </div>
+</body>
 </html>

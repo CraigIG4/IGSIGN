@@ -1,24 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="220" height="52" viewBox="0 0 560 340" role="img" aria-label="IGSIGN">
-<defs>
-  <style>
-    .wt { fill: none; stroke: #FFFFFF; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; }
-    .gr { fill: none; stroke: #45AC34; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; }
-  </style>
-  <filter id="sh"><feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000" flood-opacity="0.18"/></filter>
-</defs>
-<!-- Icon mark: IGSIGN hexagon + IG letterforms -->
-<g transform="translate(-16, 8) scale(0.92)" filter="url(#sh)">
-  <path class="wt" d="M160 48 L284 120 L284 264 L160 336 L36 264 L36 120 Z"/>
-  <circle fill="#45AC34" cx="86" cy="132" r="13"/>
-  <rect fill="#ffffff" x="70" y="158" width="34" height="112" rx="6"/>
-  <path fill="#ffffff" d="M135 162 C154 143 195 142 224 161 L198 188 C179 177 157 178 143 192 C126 210 130 240 150 255 C166 267 190 266 204 254 L204 230 L166 230 L182 204 L238 204 L238 267 C218 289 186 301 153 294 C111 285 82 248 88 207 C91 188 106 174 135 162Z"/>
-  <path class="gr" d="M226 265 L258 235"/>
-  <path class="gr" d="M226 265 L214 250"/>
-</g>
-<!-- Separator rule -->
-<line x1="272" y1="62" x2="272" y2="278" stroke="#7B787F" stroke-width="2" opacity="0.6"/>
-<!-- IGSIGN wordmark -->
-<text x="295" y="215" fill="#ffffff"
-      font-family="Avenir, 'DM Sans', Arial, sans-serif"
-      font-weight="800" font-size="118" letter-spacing="8">IGSIGN</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 116" role="img" aria-label="IGSIGN">
+  <defs>
+    <style>
+      .ig-wt { fill:none; stroke:#FFFFFF; stroke-width:5.5; stroke-linecap:round; stroke-linejoin:round; }
+      .ig-gr { fill:none; stroke:#45AC34; stroke-width:5.5; stroke-linecap:round; stroke-linejoin:round; }
+    </style>
+  </defs>
+
+  <!-- Hexagon icon scaled to ~100px height -->
+  <g transform="translate(4,4) scale(0.318)">
+    <path class="ig-wt" d="M160 48 L284 120 L284 264 L160 336 L36 264 L36 120 Z"/>
+    <circle fill="#45AC34" cx="86" cy="132" r="13"/>
+    <rect fill="#ffffff" x="70" y="158" width="34" height="112" rx="6"/>
+    <path fill="#ffffff" d="M135 162 C154 143 195 142 224 161 L198 188 C179 177 157 178 143 192 C126 210 130 240 150 255 C166 267 190 266 204 254 L204 230 L166 230 L182 204 L238 204 L238 267 C218 289 186 301 153 294 C111 285 82 248 88 207 C91 188 106 174 135 162Z"/>
+    <path class="ig-gr" d="M226 265 L258 235"/>
+    <path class="ig-gr" d="M226 265 L214 250"/>
+  </g>
+
+  <!-- Separator -->
+  <line x1="114" y1="14" x2="114" y2="102" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+
+  <!-- IGSIGN wordmark -->
+  <text x="128" y="84"
+        font-family="Avenir,'DM Sans',Arial,sans-serif"
+        font-weight="800"
+        font-size="72"
+        fill="#FFFFFF"
+        letter-spacing="3">IGSIGN</text>
+  <!-- Green dot above I -->
+  <circle cx="141" cy="10" r="7" fill="#45AC34"/>
+  <!-- Green tick - positioned after text ends ~x=128+262=390, tick at ~x=406 -->
+  <path d="M 406 50 L 420 74 L 450 18"
+        fill="none" stroke="#45AC34" stroke-width="6"
+        stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
