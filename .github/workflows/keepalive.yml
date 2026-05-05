@@ -2,24 +2,35 @@ name: IGSIGN Keep-Alive
 
 on:
   schedule:
-    # Run every 25 minutes — keeps Codespace under the 30-min sleep threshold
+    # Every 25 minutes — keeps Codespace under the 30-min idle threshold
     - cron: '*/25 * * * *'
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:
 
 jobs:
   keepalive:
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
+    env:
+      GH_TOKEN: ${{ secrets.IGSIGN_CS_TOKEN }}
+      CODESPACE: expert-eureka-xrwx547g5444c977j
+
     steps:
       - name: Wake IGSIGN Codespace
-        env:
-          GH_TOKEN: ${{ secrets.IGSIGN_CS_TOKEN }}
         run: |
-          # Start the Codespace if sleeping (idempotent — safe if already running)
-          gh codespace start -c expert-eureka-xrwx547g5444c977j 2>&1 || true
-          echo "Codespace state:"
-          gh api /user/codespaces/expert-eureka-xrwx547g5444c977j \
-            --jq '{state, idle_timeout_minutes, last_used_at}' \
-            -H "Authorization: token $GH_TOKEN" 2>&1 || true
-          echo "Keep-alive ping sent at $(date -u)"
+          # Check current state
+          STATE=$(gh api /user/codespaces/$CODESPACE --jq '.state' 2>&1)
+          echo "Current state: $STATE"
+
+          # Start if not running
+          if [ "$STATE" != "Available" ]; then
+            echo "Starting Codespace..."
+            gh api --method POST /user/codespaces/$CODESPACE/start 2>&1 || true
+            sleep 10
+            NEW_STATE=$(gh api /user/codespaces/$CODESPACE --jq '.state' 2>&1)
+            echo "New state: $NEW_STATE"
+          else
+            echo "Codespace already running — keep-alive ping sent"
+          fi
+
+          echo "Done at $(date -u)"
