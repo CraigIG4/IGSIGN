@@ -1,0 +1,25 @@
+name: IGSIGN Keep-Alive
+
+on:
+  schedule:
+    # Run every 25 minutes — keeps Codespace under the 30-min sleep threshold
+    - cron: '*/25 * * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Wake IGSIGN Codespace
+        env:
+          GH_TOKEN: ${{ secrets.IGSIGN_CS_TOKEN }}
+        run: |
+          # Start the Codespace if sleeping (idempotent — safe if already running)
+          gh codespace start -c expert-eureka-xrwx547g5444c977j 2>&1 || true
+          echo "Codespace state:"
+          gh api /user/codespaces/expert-eureka-xrwx547g5444c977j \
+            --jq '{state, idle_timeout_minutes, last_used_at}' \
+            -H "Authorization: token $GH_TOKEN" 2>&1 || true
+          echo "Keep-alive ping sent at $(date -u)"
