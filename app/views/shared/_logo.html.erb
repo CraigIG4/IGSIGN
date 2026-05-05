@@ -2,18 +2,18 @@
   dark    = local_assigns.fetch(:dark, false)
   tagline = local_assigns.fetch(:tagline, false)
   h       = local_assigns.fetch(:height, '38').to_s.gsub(/[^0-9]/, '').presence || '38'
-
-  # Dark bg → white text wordmark (with hexagon icon in nav version)
-  # Light bg → dark text wordmark
-  src     = dark ? '/brand/igsign-nav-dark.svg' : '/brand/igsign-wordmark.svg'
-  tag_col = dark ? 'rgba(255,255,255,0.45)' : '#9aa3ae'
+  # Both variants use the hexagon + wordmark layout for visual consistency.
+  # dark: true  -> white text/icon  (nav-dark.svg)
+  # dark: false -> navy text/icon   (nav-light.svg)
+  src     = dark ? '/brand/igsign-nav-dark.svg' : '/brand/igsign-nav-light.svg'
+  tag_col = dark ? 'rgba(255,255,255,0.4)' : '#9aa3ae'
 %>
 <div style="display:inline-block; line-height:1;">
   <img src="<%= src %>" alt="IGSIGN"
        style="height:<%= h %>px; width:auto; display:block; flex-shrink:0;">
   <% if tagline %>
     <div style="font-size:9px; letter-spacing:3.5px; text-transform:uppercase;
-                color:<%= tag_col %>; margin-top:6px;
+                color:<%= tag_col %>; margin-top:5px;
                 font-family:'DM Sans',Avenir,Arial,sans-serif; font-weight:500;">
       Powered by Possibility
     </div>

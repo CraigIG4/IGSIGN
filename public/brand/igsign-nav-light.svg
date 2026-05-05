@@ -1,35 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 112" role="img" aria-label="IGSIGN">
-  <!-- Hexagon: white outline on dark backgrounds -->
+  <!-- Hexagon icon: dark navy fill, white IG text — same as dark version but svg is used on light bg -->
   <polygon points="56,6 99,31 99,81 56,106 13,81 13,31"
-           fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2"/>
+           fill="#162B3C"/>
 
-  <!-- IG text inside hexagon: Avenir 800 white -->
+  <!-- IG text inside hexagon: Avenir 800 white, text-anchor middle -->
   <text x="56" y="56"
         text-anchor="middle" dominant-baseline="central"
         font-family="Avenir,'DM Sans',Arial,sans-serif"
         font-weight="800" font-size="40" fill="#FFFFFF" letter-spacing="2">IG</text>
 
-  <!-- Green dot above I -->
+  <!-- Green dot above I (I left edge ~56-20=36, I center ~43) -->
   <circle cx="43" cy="26" r="4.5" fill="#45AC34"/>
 
-  <!-- Green tick after G -->
+  <!-- Green tick after G (G right edge ~56+20=76, tick at ~82) -->
   <path d="M 80 44 L 88 58 L 102 26"
         fill="none" stroke="#45AC34" stroke-width="3.5"
         stroke-linecap="round" stroke-linejoin="round"/>
 
   <!-- Separator -->
   <line x1="115" y1="16" x2="115" y2="96"
-        stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+        stroke="rgba(22,43,60,0.15)" stroke-width="1"/>
 
-  <!-- IGSIGN wordmark white -->
+  <!-- IGSIGN wordmark in dark navy -->
   <text x="128" y="78"
         font-family="Avenir,'DM Sans',Arial,sans-serif"
-        font-weight="800" font-size="64" fill="#FFFFFF" letter-spacing="3">IGSIGN</text>
+        font-weight="800" font-size="64" fill="#162B3C" letter-spacing="3">IGSIGN</text>
 
-  <!-- Green dot above I in IGSIGN -->
+  <!-- Green dot above I in IGSIGN (I center ~140) -->
   <circle cx="140" cy="10" r="6" fill="#45AC34"/>
 
-  <!-- Green tick after IGSIGN -->
+  <!-- Green tick after IGSIGN (text ends ~128+225=353, tick at ~366) -->
   <path d="M 366 46 L 378 68 L 404 16"
         fill="none" stroke="#45AC34" stroke-width="5"
         stroke-linecap="round" stroke-linejoin="round"/>
