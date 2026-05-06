@@ -58,6 +58,21 @@ Rails.application.routes.draw do
   resources :encrypted_user_configs, only: %i[destroy]
   resources :timestamp_server, only: %i[create] unless Docuseal.multitenant?
   resources :dashboard, only: %i[index]
+
+  resources :companies, only: %i[index new create show edit update]
+
+  resources :agreements, only: %i[index new create show] do
+    member do
+      get  :upload
+      post :upload, action: :process_upload
+      get  :review
+      post :send_agreement
+    end
+    collection do
+      get :search_companies
+    end
+  end
+
   resources :cafs, only: %i[index new create show edit update destroy] do
     member do
       post :submit

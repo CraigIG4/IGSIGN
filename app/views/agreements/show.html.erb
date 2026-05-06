@@ -1,0 +1,115 @@
+<% content_for :title, "#{@agreement.agreement_type_label} — #{@agreement.contracting_party}" %>
+
+<div class="max-w-3xl mx-auto px-4 py-8">
+
+  <%# ── Header ──────────────────────────────────────────────────────────────── %>
+  <div class="flex items-start justify-between mb-6">
+    <div>
+      <%= link_to agreements_path, class: 'text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 mb-2' do %>
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
+        All Agreements
+      <% end %>
+      <h1 class="text-2xl font-bold text-gray-900">
+        <%= @agreement.contracting_party.presence || 'Counterparty TBC' %>
+      </h1>
+      <div class="flex items-center gap-2 mt-1">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold text-white"
+              style="background-color:#1a2332;">
+          <%= @agreement.agreement_type_label %>
+        </span>
+        <span class="text-gray-300">·</span>
+        <span class="text-sm text-gray-500"><%= @agreement.entity_name %></span>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="badge <%= @agreement.status_badge_class %> badge-lg"><%= @agreement.status_label %></span>
+    </div>
+  </div>
+
+  <%# ── Stage progress ──────────────────────────────────────────────────────── %>
+  <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4">
+    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Progress</p>
+    <div class="flex items-center">
+      <% stages_config = [
+        { key: 'draft',             label: 'Draft'           },
+        { key: 'pending_ig',        label: 'IG Approval'     },
+        { key: 'ig_complete',       label: 'IG Approved'     },
+        { key: 'sent_counterparty', label: 'With Counterparty' },
+        { key: 'complete',          label: 'Complete'        }
+      ] %>
+      <% status_order = CafWorkflow::STATUSES - ['cancelled'] %>
+      <% current_idx  = status_order.index(@agreement.status) || 0 %>
+      <% stages_config.each_with_index do |s, i| %>
+        <% s_idx = status_order.index(s[:key]) || i %>
+        <% is_done   = s_idx < current_idx %>
+        <% is_active = s_idx == current_idx %>
+        <div class="flex flex-col items-center">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all
+               <%= is_done ? 'text-white' : is_active ? 'text-white ring-2 ring-offset-2 ring-blue-500' : 'bg-gray-100 text-gray-400' %>"
+               style="<%= is_done ? 'background-color:#45AC34;' : is_active ? 'background-color:#1a2332;' : '' %>">
+            <% if is_done %>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
+            <% else %>
+              <%= i + 1 %>
+            <% end %>
+          </div>
+          <p class="text-xs mt-1.5 whitespace-nowrap
+               <%= is_active ? 'font-semibold text-gray-900' : 'text-gray-400' %>">
+            <%= s[:label] %>
+          </p>
+        </div>
+        <% if i < stages_config.length - 1 %>
+          <div class="flex-1 h-0.5 mb-5 mx-1 <%= s_idx < current_idx ? 'bg-green-400' : 'bg-gray-200' %>"></div>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Signatories ─────────────────────────────────────────────────────────── %>
+  <% if @signatories.any? %>
+    <div class="rounded-xl border border-gray-200 bg-white mb-4 overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-100" style="background-color:#f8fafc;">
+        <p class="text-sm font-semibold text-gray-700">Internal Signatories</p>
+      </div>
+      <div class="divide-y divide-gray-100">
+        <% @signatories.each_with_index do |s, idx| %>
+          <div class="flex items-center gap-3 px-5 py-3">
+            <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                 style="background-color:#1a2332;">
+              <%= idx + 1 %>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-medium text-gray-900"><%= s['name'].presence || s['role'] %></p>
+              <p class="text-xs text-gray-400"><%= s['role'] %></p>
+            </div>
+            <span class="text-xs text-gray-400 italic">Pending</span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ── Agreement Details ────────────────────────────────────────────────────── %>
+  <div class="rounded-xl border border-gray-200 bg-white mb-4 overflow-hidden">
+    <div class="px-5 py-3 border-b border-gray-100" style="background-color:#f8fafc;">
+      <p class="text-sm font-semibold text-gray-700">Details</p>
+    </div>
+    <div class="px-5 py-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+      <div>
+        <p class="text-xs text-gray-400 mb-0.5">Requestor</p>
+        <p class="font-medium text-gray-900"><%= @agreement.requestor_name %></p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-400 mb-0.5">Created</p>
+        <p class="font-medium text-gray-900"><%= @agreement.created_at.strftime('%d %b %Y') %></p>
+      </div>
+      <% if @agreement.mandate_description.present? %>
+        <div class="col-span-2">
+          <p class="text-xs text-gray-400 mb-0.5">Mandate</p>
+          <p class="text-gray-700"><%= @agreement.mandate_description %></p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+</div>

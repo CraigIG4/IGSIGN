@@ -1,0 +1,197 @@
+<% content_for :title, 'Review & Send' %>
+
+<div class="max-w-2xl mx-auto px-4 py-8">
+
+  <%# Step indicator %>
+  <div class="flex items-center mb-8">
+    <% [['1','Agreement Details'],['2','Upload Document'],['3','Review & Send']].each_with_index do |(n,label),i| %>
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0
+             <%= @step.to_i >= n.to_i ? 'text-white' : 'text-gray-400 border-2 border-gray-200 bg-white' %>"
+             style="<%= @step.to_i >= n.to_i ? 'background-color:#1a2332;' : '' %>">
+          <%= n %>
+        </div>
+        <span class="text-sm whitespace-nowrap
+             <%= @step.to_i == n.to_i ? 'font-semibold text-gray-900' : 'text-gray-400' %>">
+          <%= label %>
+        </span>
+      </div>
+      <% if i < 2 %><div class="flex-1 h-px bg-gray-200 mx-3 min-w-[24px]"></div><% end %>
+    <% end %>
+  </div>
+
+  <h1 class="text-xl font-bold text-gray-900 mb-1">Review &amp; Send</h1>
+  <p class="text-sm text-gray-500 mb-6">Review the signing package before sending for internal approval.</p>
+
+  <%# ── Card 1: Agreement Summary ─────────────────────────────────────────── %>
+  <div class="rounded-xl border border-gray-200 bg-white mb-4 overflow-hidden">
+    <div class="px-5 py-3 border-b border-gray-100 flex items-center gap-2" style="background-color:#f8fafc;">
+      <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z"/>
+      </svg>
+      <span class="text-sm font-semibold text-gray-700">Agreement Summary</span>
+    </div>
+    <div class="px-5 py-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+      <div>
+        <p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Type</p>
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold text-white"
+              style="background-color:#1a2332;">
+          <%= @agreement.agreement_type_label %>
+        </span>
+      </div>
+      <div>
+        <p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">IG Entity</p>
+        <p class="font-medium text-gray-900"><%= @agreement.entity_name %></p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Counterparty</p>
+        <p class="font-medium text-gray-900"><%= @agreement.contracting_party.presence || '—' %></p>
+        <% if @agreement.counterparty_email.present? %>
+          <p class="text-xs text-gray-400"><%= @agreement.counterparty_email %></p>
+        <% end %>
+      </div>
+      <div>
+        <p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Requestor</p>
+        <p class="font-medium text-gray-900"><%= @agreement.requestor_name %></p>
+      </div>
+      <% if @agreement.mandate_description.present? %>
+        <div class="col-span-2">
+          <p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Mandate</p>
+          <p class="text-gray-700"><%= @agreement.mandate_description %></p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Card 2: Signing Package ────────────────────────────────────────────── %>
+  <div class="rounded-xl border border-gray-200 bg-white mb-4 overflow-hidden">
+    <div class="px-5 py-3 border-b border-gray-100 flex items-center gap-2" style="background-color:#f8fafc;">
+      <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M19 11H5m14 0a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2m14 0V9a2 2 0 0 0-2-2M5 11V9a2 2 0 0 1 2-2m0 0V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2M7 7h10"/>
+      </svg>
+      <span class="text-sm font-semibold text-gray-700">Signing Package</span>
+    </div>
+    <div class="px-5 py-4 space-y-3">
+      <%# Document 1: auto-generated CAF %>
+      <div class="flex items-start gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
+        <span class="text-lg leading-none mt-0.5">📋</span>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-gray-900"><%= @agreement.caf_label %></p>
+          <p class="text-xs text-gray-500 mt-0.5">Auto-generated from agreement details</p>
+        </div>
+        <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+          Internal only
+        </span>
+      </div>
+
+      <%# Document 2: uploaded agreement %>
+      <% if @template_doc %>
+        <div class="flex items-start gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+          <span class="text-lg leading-none mt-0.5">📄</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-gray-900 truncate"><%= @template_doc.name %></p>
+            <p class="text-xs text-gray-500 mt-0.5">Sent to counterparty after internal approval</p>
+          </div>
+          <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            Shared with counterparty
+          </span>
+        </div>
+      <% else %>
+        <div class="flex items-center gap-2 p-3 rounded-lg bg-yellow-50 border border-yellow-200 text-sm text-yellow-800">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          </svg>
+          No document uploaded yet.
+          <%= link_to 'Upload one →', upload_agreement_path(@agreement), class: 'font-medium underline' %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Card 3: Signing Chain ──────────────────────────────────────────────── %>
+  <div class="rounded-xl border border-gray-200 bg-white mb-6 overflow-hidden">
+    <div class="px-5 py-3 border-b border-gray-100 flex items-center gap-2" style="background-color:#f8fafc;">
+      <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      <span class="text-sm font-semibold text-gray-700">Signing Chain</span>
+    </div>
+    <div class="px-5 py-4">
+
+      <%# Stage 1: Internal %>
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+        Stage 1 — Internal Approval (ordered, CAF + Agreement)
+      </p>
+      <div class="space-y-2 mb-5">
+        <% @signatories.each_with_index do |s, idx| %>
+          <div class="flex items-center gap-3">
+            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                 style="background-color:#<%= %w[1a2332 2e3d54 3b5068 4a6580 5a7590][idx % 5] %>;">
+              <%= idx + 1 %>
+            </div>
+            <div class="flex-1 min-w-0">
+              <% if s['placeholder'] %>
+                <p class="text-sm font-medium text-amber-700"><%= s['role'] %> <span class="text-xs text-amber-500">(assign before sending)</span></p>
+              <% else %>
+                <p class="text-sm font-medium text-gray-900"><%= s['name'] %></p>
+                <p class="text-xs text-gray-400"><%= s['role'] %><%= " · #{s['email']}" if s['email'].present? %></p>
+              <% end %>
+            </div>
+          </div>
+          <% if idx < @signatories.length - 1 %>
+            <div class="ml-3 pl-4 border-l border-gray-200 h-3"></div>
+          <% end %>
+        <% end %>
+      </div>
+
+      <%# Divider %>
+      <div class="flex items-center gap-2 mb-4">
+        <div class="flex-1 h-px bg-gray-200"></div>
+        <span class="text-xs text-gray-400 bg-white px-2">then</span>
+        <div class="flex-1 h-px bg-gray-200"></div>
+      </div>
+
+      <%# Stage 2: Counterparty %>
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+        Stage 2 — Counterparty Signing (CAF stripped — agreement only)
+      </p>
+      <div class="flex items-center gap-3">
+        <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 border-2 border-gray-300 text-gray-500">
+          CP
+        </div>
+        <div>
+          <p class="text-sm font-medium text-gray-900">
+            <%= @agreement.counterparty_name.presence || @agreement.contracting_party.presence || 'Counterparty' %>
+          </p>
+          <p class="text-xs text-gray-400"><%= @agreement.counterparty_email.presence || 'Email to be confirmed' %></p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <%# ECT Act notice %>
+  <p class="text-xs text-gray-400 text-center mb-6">
+    This agreement will be executed in accordance with the Electronic Communications and Transactions Act 25 of 2002 (SES-grade). All signatures constitute valid electronic signatures.
+  </p>
+
+  <%# Actions %>
+  <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+    <%= link_to upload_agreement_path(@agreement), class: 'text-sm text-gray-500 hover:text-gray-700' do %>
+      ← Back to Upload
+    <% end %>
+
+    <div class="flex items-center gap-3">
+      <% if @agreement.signatories&.any? { |s| s['placeholder'] } %>
+        <p class="text-xs text-amber-600">Some signatories need to be assigned before sending.</p>
+      <% end %>
+      <%= form_with url: send_agreement_agreement_path(@agreement), method: :post do |f| %>
+        <%= f.submit 'Send for Internal Approval →',
+              class: 'px-6 py-2.5 rounded-lg text-sm font-semibold text-white cursor-pointer transition-colors hover:opacity-90',
+              style: 'background-color:#45AC34;' %>
+      <% end %>
+    </div>
+  </div>
+
+</div>

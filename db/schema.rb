@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_05_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_05_000011) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gin"
   enable_extension "pg_catalog.plpgsql"
@@ -156,8 +156,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_05_000001) do
 
   create_table "caf_workflows", force: :cascade do |t|
     t.bigint "account_id", null: false
+    t.string "agreement_type"
     t.bigint "caf_submission_id"
     t.string "caf_type", null: false
+    t.bigint "company_id"
     t.bigint "contract_submission_id"
     t.string "contracting_party"
     t.string "counterparty_email"
@@ -173,13 +175,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_05_000001) do
     t.string "requestor_name"
     t.jsonb "signatories", default: []
     t.string "status", default: "draft", null: false
+    t.bigint "template_id"
     t.datetime "updated_at", null: false
     t.index ["account_id", "created_at"], name: "index_caf_workflows_on_account_id_and_created_at"
     t.index ["account_id", "status"], name: "index_caf_workflows_on_account_id_and_status"
     t.index ["account_id"], name: "index_caf_workflows_on_account_id"
     t.index ["caf_submission_id"], name: "index_caf_workflows_on_caf_submission_id"
+    t.index ["company_id"], name: "index_caf_workflows_on_company_id"
     t.index ["contract_submission_id"], name: "index_caf_workflows_on_contract_submission_id"
     t.index ["created_by_user_id"], name: "index_caf_workflows_on_created_by_user_id"
+    t.index ["template_id"], name: "index_caf_workflows_on_template_id"
+  end
+
+  create_table "companies", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.text "address"
+    t.integer "agreements_count", default: 0, null: false
+    t.string "country", default: "ZA", null: false
+    t.datetime "created_at", null: false
+    t.string "domain"
+    t.string "name", null: false
+    t.string "primary_contact_email"
+    t.string "primary_contact_name"
+    t.string "registration_number"
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "domain"], name: "index_companies_on_account_id_and_domain"
+    t.index ["account_id", "name"], name: "index_companies_on_account_id_and_name"
+    t.index ["account_id"], name: "index_companies_on_account_id"
   end
 
   create_table "completed_documents", force: :cascade do |t|
@@ -650,9 +672,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_05_000001) do
   add_foreign_key "caf_stage_submitters", "submitters"
   add_foreign_key "caf_stages", "submissions"
   add_foreign_key "caf_workflows", "accounts"
+  add_foreign_key "caf_workflows", "companies"
   add_foreign_key "caf_workflows", "submissions", column: "caf_submission_id"
   add_foreign_key "caf_workflows", "submissions", column: "contract_submission_id"
+  add_foreign_key "caf_workflows", "templates"
   add_foreign_key "caf_workflows", "users", column: "created_by_user_id"
+  add_foreign_key "companies", "accounts"
   add_foreign_key "document_generation_events", "submitters"
   add_foreign_key "document_metadata", "accounts"
   add_foreign_key "dynamic_document_versions", "dynamic_documents"

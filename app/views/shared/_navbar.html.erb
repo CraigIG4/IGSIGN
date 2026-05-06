@@ -1,27 +1,51 @@
 <%= render 'shared/navbar_warning' %>
-<%# IGSIGN: Full-width Arctic Black premium navbar %>
+<%# IGSIGN Navbar — IG Navy, Agreements / Templates / Contacts / Settings %>
 <nav class="w-full mb-6 border-b" style="background-color:#162B3C; border-color:#0d1f2d;">
-  <div class="max-w-7xl mx-auto px-4 md:px-6 py-0 flex items-center justify-between" style="height:60px;">
+  <div class="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between" style="height:60px;">
 
-    <%# Left: logo + wordmark %>
-    <a href="<%= root_path %>" class="flex items-center space-x-0 group" style="text-decoration:none;">
-      <%= render 'shared/logo', dark: true, height: '38' %>
+    <%# Logo %>
+    <a href="<%= root_path %>" class="flex items-center gap-2.5 shrink-0" style="text-decoration:none;">
+      <%= render 'shared/logo', dark: true, height: '36' %>
     </a>
 
-    <%# Right: nav actions %>
+    <%# Primary nav — desktop %>
     <% if signed_in? %>
-      <div class="flex items-center space-x-4">
-        <%# Nav links — hidden on mobile %>
-        <div class="hidden md:flex items-center space-x-5">
-          <%= render 'shared/navbar_buttons' %>
-          <%= link_to 'CAFs', cafs_path,
-                class: 'text-sm font-medium transition-colors duration-150',
-                style: 'color: rgba(255,255,255,0.75)' %>
-          <%= link_to t('settings'), settings_profile_index_path,
-                class: 'text-sm font-medium transition-colors duration-150',
-                style: 'color: rgba(255,255,255,0.75)',
-                id: 'account_settings_button' %>
-        </div>
+      <div class="hidden md:flex items-center gap-1 mx-6 flex-1">
+        <% [
+          { label: 'Agreements', path: (agreements_path rescue '#'),  match: '/agreements' },
+          { label: 'Templates',  path: (templates_path  rescue '#'),  match: '/templates'  },
+          { label: 'Contacts',   path: (companies_path  rescue '#'),  match: '/companies'  },
+        ].each do |link| %>
+          <% active = request.path.start_with?(link[:match]) %>
+          <%= link_to link[:path],
+                class: "px-3 py-1.5 rounded-md text-sm font-medium transition-colors
+                  #{active ? 'bg-white/10 text-white' : 'text-white/75 hover:text-white hover:bg-white/[0.07]'}" do %>
+            <%= link[:label] %>
+          <% end %>
+        <% end %>
+      </div>
+
+      <%# Right section %>
+      <div class="flex items-center gap-2">
+        <%# + New Agreement button %>
+        <%= link_to (new_agreement_path rescue '#'),
+              class: 'hidden md:flex items-center gap-1.5 text-xs font-semibold text-white border border-white/20 rounded-md px-3 py-1.5 hover:bg-white/10 transition-colors' do %>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+          </svg>
+          New
+        <% end %>
+
+        <%# Settings icon %>
+        <% settings_url = (settings_profile_index_path rescue '#') %>
+        <%= link_to settings_url, title: t('settings'),
+              class: 'flex items-center justify-center w-8 h-8 rounded-md text-white/60 hover:text-white hover:bg-white/10 transition-colors',
+              id: 'account_settings_button' do %>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        <% end %>
 
         <%# User avatar dropdown %>
         <div class="dropdown dropdown-end">
@@ -34,7 +58,7 @@
               class="z-50 dropdown-content p-2 mt-2 shadow-xl menu bg-base-100 rounded-xl min-w-[180px]"
               style="border:1px solid #e8ebed;">
             <li>
-              <%= link_to settings_profile_index_path, class: 'flex items-center gap-2 text-sm' do %>
+              <%= link_to (settings_profile_index_path rescue '#'), class: 'flex items-center gap-2 text-sm' do %>
                 <%= svg_icon('adjustments', class: 'w-4 h-4 flex-shrink-0') %>
                 <%= t('profile') %>
               <% end %>
@@ -50,7 +74,7 @@
             <% end %>
             <% if can?(:read, EncryptedConfig.new(key: EncryptedConfig::ESIGN_CERTS_KEY, account: current_account)) %>
               <li>
-                <%= link_to settings_esign_path, class: 'flex items-center gap-2 text-sm' do %>
+                <%= link_to (settings_esign_path rescue '#'), class: 'flex items-center gap-2 text-sm' do %>
                   <%= svg_icon('zoom_check', class: 'w-4 h-4 flex-shrink-0') %>
                   <%= t('verify_pdf') %>
                 <% end %>
@@ -77,7 +101,7 @@
           </ul>
         </div>
 
-        <%# Mobile hamburger placeholder — space for future mobile nav %>
+        <%# Mobile hamburger %>
         <button class="md:hidden flex flex-col gap-1 p-1" style="color:#ffffff;" aria-label="Menu">
           <span class="block w-5 h-0.5 bg-white"></span>
           <span class="block w-5 h-0.5 bg-white"></span>
@@ -86,11 +110,9 @@
       </div>
 
     <% else %>
-      <%# Unauthenticated: sign-in only — no sign-up noise %>
       <% if request.path != new_user_session_path && request.path != setup_index_path %>
         <%= link_to new_user_session_path({ lang: params[:lang] }.compact_blank),
-              class: 'flex items-center gap-1.5 text-sm font-semibold transition-colors duration-150',
-              style: 'color:#ffffff;' do %>
+              class: 'flex items-center gap-1.5 text-sm font-semibold text-white' do %>
           <%= svg_icon('login', class: 'w-5 h-5') %>
           <span><%= t('sign_in') %></span>
         <% end %>
