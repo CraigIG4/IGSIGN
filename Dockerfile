@@ -41,7 +41,7 @@ COPY ./app/views ./app/views
 
 RUN echo "gem 'shakapacker'" > Gemfile && ./bin/shakapacker
 
-FROM ruby:3.4.7-alpine AS ig_app
+FROM ruby:3.4.7-slim AS ig_app
 
 ENV RAILS_ENV=production
 ENV BUNDLE_WITHOUT="development:test"
@@ -49,25 +49,15 @@ ENV OPENSSL_CONF=/etc/openssl_legacy.cnf
 
 WORKDIR /app
 
-RUN apk add --no-cache libpq vips redis vips-heif onnxruntime
+RUN apt-get update -qq && apt-get install -y --no-install-recommends     libpq5 libvips42 libheif1 fontconfig curl     && rm -rf /var/lib/apt/lists/*
 
-RUN addgroup -g 2000 docuseal && adduser -u 2000 -G docuseal -s /bin/sh -D -h /home/docuseal docuseal
+RUN groupadd -g 2000 docuseal && useradd -u 2000 -g docuseal -s /bin/sh -m -d /home/docuseal docuseal
 
-RUN echo $'.include = /etc/ssl/openssl.cnf\n\
-\n\
-[provider_sect]\n\
-default = default_sect\n\
-legacy = legacy_sect\n\
-\n\
-[default_sect]\n\
-activate = 1\n\
-\n\
-[legacy_sect]\n\
-activate = 1' >> /etc/openssl_legacy.cnf
+RUN echo '.include = /etc/ssl/openssl.cnf\n\n[provider_sect]\ndefault = default_sect\nlegacy = legacy_sect\n\n[default_sect]\nactivate = 1\n\n[legacy_sect]\nactivate = 1' >> /etc/openssl_legacy.cnf
 
 COPY --chown=docuseal:docuseal ./Gemfile ./Gemfile.lock ./
 
-RUN apk add --no-cache build-base git libpq-dev yaml-dev && bundle install && apk del --no-cache build-base git libpq-dev yaml-dev && rm -rf ~/.bundle /usr/local/bundle/cache && ruby -e "puts Dir['/usr/local/bundle/**/{spec,rdoc,resources/shared,resources/collation,resources/locales,resources/unicode_data/properties}'] + Dir['/usr/local/bundle/gems/*/{test,tests,examples,sample,misc,doc,docs}'] + Dir['/usr/local/bundle/gems/*/ext/**/*.{c,h,o,S}']" | xargs rm -rf && ln -sf /usr/lib/libonnxruntime.so.1 $(ruby -e "print Dir[Gem::Specification.find_by_name('onnxruntime').gem_dir + '/vendor/*.so'].first")
+RUN apt-get update -qq && apt-get install -y --no-install-recommends     build-essential git libpq-dev libyaml-dev gfortran libopenblas-dev cmake     && bundle install     && apt-get purge -y build-essential git libpq-dev libyaml-dev gfortran libopenblas-dev cmake     && apt-get autoremove -y     && rm -rf /var/lib/apt/lists/* ~/.bundle /usr/local/bundle/cache     && ruby -e "puts Dir['/usr/local/bundle/**/{spec,rdoc,resources/shared,resources/collation,resources/locales,resources/unicode_data/properties}'] + Dir['/usr/local/bundle/gems/*/{test,tests,examples,sample,misc,doc,docs}'] + Dir['/usr/local/bundle/gems/*/ext/**/*.{c,h,o,S}']" | xargs rm -rf
 
 COPY --chown=docuseal:docuseal ./bin ./bin
 COPY --chown=docuseal:docuseal ./app ./app
@@ -86,10 +76,7 @@ COPY --from=ig_download /pdfium-linux/licenses/pdfium.txt /usr/lib/libpdfium-LIC
 COPY --chown=docuseal:docuseal --from=ig_download /model.onnx /app/tmp/model.onnx
 COPY --chown=docuseal:docuseal --from=ig_webpack /app/public/packs ./public/packs
 
-RUN mkdir -p /app/public/fonts && ln -s /fonts/DancingScript-Regular.otf /app/public/fonts/ && \
-    mkdir -p /usr/share/fonts/noto && ln -s /fonts/GoNotoKurrent-Regular.ttf /usr/share/fonts/noto/ && ln -s /fonts/GoNotoKurrent-Bold.ttf /usr/share/fonts/noto/ && fc-cache -f && \
-    bundle exec bootsnap precompile -j 1 --gemfile app/ lib/ && \
-    chown -R docuseal:docuseal /app/tmp/cache
+RUN mkdir -p /app/public/fonts && ln -s /fonts/DancingScript-Regular.otf /app/public/fonts/ &&     mkdir -p /usr/share/fonts/noto && ln -s /fonts/GoNotoKurrent-Regular.ttf /usr/share/fonts/noto/ && ln -s /fonts/GoNotoKurrent-Bold.ttf /usr/share/fonts/noto/ && fc-cache -f &&     bundle exec bootsnap precompile -j 1 --gemfile app/ lib/ &&     chown -R docuseal:docuseal /app/tmp/cache
 
 WORKDIR /data/docuseal
 ENV HOME=/home/docuseal
