@@ -14,6 +14,8 @@ services:
         value: "true"
       - key: SECRET_KEY_BASE
         generateValue: true
+      - key: REDIS_URL
+        value: redis://localhost:6379/0
       - key: DATABASE_URL
         fromDatabase:
           name: igsign-db
