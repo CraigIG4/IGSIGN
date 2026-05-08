@@ -23,7 +23,6 @@ gem 'hexapdf'
 gem 'image_processing'
 gem 'jwt'
 gem 'lograge'
-gem 'mysql2', require: false
 gem 'numo-narray'
 gem 'oj'
 gem 'onnxruntime'

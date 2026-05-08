@@ -349,7 +349,6 @@ GEM
     multi_json (1.21.0)
     multipart-post (2.4.1)
     mutex_m (0.3.0)
-    mysql2 (0.5.7)
       bigdecimal
     net-http-persistent (4.0.8)
       connection_pool (>= 2.2.4, < 4)
@@ -692,7 +691,6 @@ DEPENDENCIES
   jwt
   letter_opener_web
   lograge
-  mysql2
   numo-narray
   oj
   onnxruntime
