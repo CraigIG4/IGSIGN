@@ -12,6 +12,10 @@ services:
         value: "true"
       - key: RAILS_LOG_TO_STDOUT
         value: "true"
+      - key: PORT
+        value: "10000"
+      - key: WEB_CONCURRENCY
+        value: "0"
       - key: SECRET_KEY_BASE
         generateValue: true
       - key: REDIS_URL
