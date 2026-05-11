@@ -29,6 +29,8 @@ class ProcessSubmitterCompletionJob
     end
 
     enqueue_completed_webhooks(submitter, is_all_completed:)
+
+    CafWebhookHandler.new(submitter.submission).call
   end
 
   def create_completed_submitter!(submitter)
