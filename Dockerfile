@@ -63,6 +63,7 @@ COPY --chown=docuseal:docuseal ./bin ./bin
 COPY --chown=docuseal:docuseal ./app ./app
 COPY --chown=docuseal:docuseal ./config ./config
 COPY --chown=docuseal:docuseal ./db/migrate ./db/migrate
+COPY --chown=docuseal:docuseal ./db/seeds.rb ./db/seeds.rb
 COPY --chown=docuseal:docuseal ./log ./log
 COPY --chown=docuseal:docuseal ./lib ./lib
 COPY --chown=docuseal:docuseal ./public ./public
@@ -84,4 +85,4 @@ ENV WORKDIR=/data/docuseal
 ENV VIPS_MAX_COORD=17000
 
 EXPOSE 3000
-CMD ["sh", "-c", "cd /app && bundle exec rails db:migrate && exec bundle exec puma -C /app/config/puma.rb --dir /app"]
+CMD ["sh", "-c", "cd /app && bundle exec rails db:migrate && bundle exec rails runner 'load Rails.root.join(\"db/seeds.rb\")' && exec bundle exec puma -C /app/config/puma.rb --dir /app"]
