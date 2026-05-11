@@ -39,3 +39,16 @@ if user.new_record?
 else
   puts "Admin user already exists: #{user.email}"
 end
+
+# ---------------------------------------------------------------------------
+# IG Entities and People
+# ---------------------------------------------------------------------------
+# IgSignatories::ENTITIES and IgSignatories::PEOPLE are Ruby constants defined
+# in lib/ig_signatories.rb — they require no database seed.
+#
+# Deactivation is managed via config/ig_signatory_overrides.yml:
+#   bundle exec rake "igsign:people:deactivate[email@ignitiongroup.co.za]"
+#
+# For v2, these will be migrated to managed DB models (IgPerson, IgEntity).
+# See docs/todo/v2-people-management.md
+puts 'IG entities/people: managed as Ruby constants (no DB seed required)'

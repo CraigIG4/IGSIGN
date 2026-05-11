@@ -156,11 +156,11 @@ class CafWorkflow < ApplicationRecord
     self.signatories = chain.map.with_index do |entry, idx|
       {
         'position' => idx,
-        'role' => entry[:role],
-        'name' => entry[:name],
-        'email' => entry[:email],
-        'placeholder' => entry[:placeholder] || false,
-        'key' => entry[:key].to_s
+        'role'     => entry[:title],    # chain_for returns :title, not :role
+        'name'     => entry[:name],
+        'email'    => entry[:email],
+        'placeholder' => false,         # IG signatories are always named people
+        'key'      => entry[:key].to_s
       }
     end
   end

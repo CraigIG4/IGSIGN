@@ -104,7 +104,7 @@
   var E=<%= raw IgSignatories.entities_for_js.to_json %>;
   var C={};
   <% IgSignatories::ENTITIES.each do |key, _| %><% %w[nda short_form long_form].each do |ct| %>C['<%= key %>_<%= ct %>']=<%= raw IgSignatories.chain_for(ct, key)[:stage1].to_json %>;<% end %><% end %>
-  var M={nda:'nda',msa:'long_form',sla:'long_form',vendor_agreement:'long_form',other:'long_form',addendum:'short_form',employment_contract:'short_form',policy_acknowledgement:'short_form'};
+  var M={nda:'nda',msa:'long_form',sla:'long_form',vendor:'long_form',other:'long_form',addendum:'short_form',employment:'short_form',policy:'nda'};
   var SEARCH='<%= search_companies_agreements_path(format: :json) %>';
   var typeSel=document.getElementById('ag_type'),entSel=document.getElementById('ag_entity'),panel=document.getElementById('entity_panel');
   function updatePanel(){

@@ -1,24 +1,31 @@
 # frozen_string_literal: true
 
+require 'yaml'
+
 # IGSIGN -- IG entity registry and signatory chains
 # Registration numbers confirmed by Craig Daroche 2026-05-06
 # Verify against CIPC extracts before live signature use
+#
+# To deactivate a person (e.g. they've left IG), run:
+#   bundle exec rake 'igsign:people:deactivate[email@ignitiongroup.co.za]'
+# Changes take effect on next application restart.
+# Commit config/ig_signatory_overrides.yml for the change to survive redeploys.
 
 module IgSignatories
   REGISTERED_ADDRESS = "Quadrant 4, Centenary Building, 30 Meridian Drive\nUmhlanga, KwaZulu-Natal, South Africa"
 
   PEOPLE = {
-    sean_bergsma: { name: 'Sean Bergsma', title: 'Group CEO', email: 'sean.bergsma@ignitiongroup.co.za' },
-    donovan_bergsma: { name: 'Donovan Bergsma', title: 'Group COO', email: 'donovan.bergsma@ignitiongroup.co.za' },
-    william_talbot: { name: 'William Talbot', title: 'BU Head - Technology', email: 'william.talbot@ignitiongroup.co.za' },
-    craig_daroche: { name: 'Craig Daroche', title: 'BU Head - Commercial', email: 'craig.daroche@ignitiongroup.co.za' },
-    richard_swart: { name: 'Richard Swart', title: 'BU Head - Operations', email: 'richard.swart@ignitiongroup.co.za' },
-    laren_farquharson: { name: 'Laren Farquharson', title: 'Group Finance Director', email: 'laren.farquharson@ignitiongroup.co.za' },
-    gavin_lucas: { name: 'Gavin Lucas', title: 'BU Head - Digital', email: 'gavin.lucas@ignitiongroup.co.za' },
-    megan_venter: { name: 'Megan Venter', title: 'BU Head - Financial Services', email: 'megan.venter@ignitiongroup.co.za' },
-    brett_impson: { name: 'Brett Impson', title: 'BU Head - Marketplace', email: 'brett.impson@ignitiongroup.co.za' },
-    ashley_fourie: { name: 'Ashley Fourie', title: 'BU Head - Connectivity', email: 'ashley.fourie@ignitiongroup.co.za' },
-    grant_harris: { name: 'Grant Harris', title: 'BU Head - Spot', email: 'grant.harris@ignitiongroup.co.za' }
+    sean_bergsma:      { name: 'Sean Bergsma',      title: 'Group CEO',                    email: 'sean.bergsma@ignitiongroup.co.za',      active: true },
+    donovan_bergsma:   { name: 'Donovan Bergsma',   title: 'Group COO',                    email: 'donovan.bergsma@ignitiongroup.co.za',   active: true },
+    william_talbot:    { name: 'William Talbot',    title: 'BU Head - Technology',         email: 'william.talbot@ignitiongroup.co.za',    active: true },
+    craig_daroche:     { name: 'Craig Daroche',     title: 'BU Head - Commercial',         email: 'craig.daroche@ignitiongroup.co.za',     active: true },
+    richard_swart:     { name: 'Richard Swart',     title: 'BU Head - Operations',         email: 'richard.swart@ignitiongroup.co.za',     active: true },
+    laren_farquharson: { name: 'Laren Farquharson', title: 'Group Finance Director',       email: 'laren.farquharson@ignitiongroup.co.za', active: true },
+    gavin_lucas:       { name: 'Gavin Lucas',       title: 'BU Head - Digital',            email: 'gavin.lucas@ignitiongroup.co.za',       active: true },
+    megan_venter:      { name: 'Megan Venter',      title: 'BU Head - Financial Services', email: 'megan.venter@ignitiongroup.co.za',      active: true },
+    brett_impson:      { name: 'Brett Impson',      title: 'BU Head - Marketplace',        email: 'brett.impson@ignitiongroup.co.za',      active: true },
+    ashley_fourie:     { name: 'Ashley Fourie',     title: 'BU Head - Connectivity',       email: 'ashley.fourie@ignitiongroup.co.za',     active: true },
+    grant_harris:      { name: 'Grant Harris',      title: 'BU Head - Spot',               email: 'grant.harris@ignitiongroup.co.za',      active: true }
   }.freeze
 
   ENTITIES = {
@@ -154,25 +161,33 @@ module IgSignatories
     }
   }.freeze
 
+  # Returns { stage1: [ { key:, name:, title:, email: }, ... ], stage2: [] }
+  # Inactive people (via PEOPLE[:active] or ig_signatory_overrides.yml) are excluded.
+  # If a BU head is inactive, the next BU head in the entity's list is promoted.
   def self.chain_for(caf_type, entity_key)
     entity = ENTITIES[entity_key.to_sym]
     return { stage1: [], stage2: [] } unless entity
 
+    active_overrides = overrides
+
     case caf_type.to_s
     when 'nda'
-      bu_signers = Array(entity[:bu_heads]).first(1)
+      # First active BU head, then finance, then CEO (final_signatory_other)
+      bu_signers = Array(entity[:bu_heads]).select { |k| person_active?(k, active_overrides) }.first(1)
       final = entity[:final_signatory_other]
     when 'short_form'
-      bu_signers = Array(entity[:bu_heads]).first(1)
+      # First active BU head, then finance, then COO (final_signatory_operational)
+      bu_signers = Array(entity[:bu_heads]).select { |k| person_active?(k, active_overrides) }.first(1)
       final = entity[:final_signatory_operational]
     else
-      bu_signers = Array(entity[:bu_heads])
+      # long_form: all active BU heads, then finance, then CEO
+      bu_signers = Array(entity[:bu_heads]).select { |k| person_active?(k, active_overrides) }
       final = entity[:final_signatory_other]
     end
 
     chain = (bu_signers + [entity[:bu_finance], final]).compact.uniq.filter_map do |k|
       p = PEOPLE[k]
-      next unless p
+      next unless p && person_active?(k, active_overrides)
 
       { key: k, name: p[:name], title: p[:title], email: p[:email] }
     end
@@ -184,8 +199,32 @@ module IgSignatories
     ENTITIES[entity_key.to_sym]
   end
 
+  # Convenience — returns just the display name for an entity key.
+  def self.entity_name(entity_key)
+    ENTITIES.dig(entity_key.to_sym, :name)
+  end
+
   def self.person(person_key)
     PEOPLE[person_key.to_sym]
+  end
+
+  # Reads config/ig_signatory_overrides.yml to allow runtime deactivation
+  # without editing this constant. See rake task: igsign:people:deactivate[email]
+  def self.overrides
+    file = defined?(Rails) ? Rails.root.join('config', 'ig_signatory_overrides.yml') : Pathname.new(__dir__).join('..', 'config', 'ig_signatory_overrides.yml')
+    return {} unless File.exist?(file)
+
+    YAML.safe_load(File.read(file)) || {}
+  rescue StandardError
+    {}
+  end
+
+  def self.person_active?(person_key, active_overrides = overrides)
+    # Override file takes precedence; falls back to the :active field in PEOPLE
+    override = active_overrides.dig(person_key.to_s, 'active')
+    return override unless override.nil?
+
+    PEOPLE.dig(person_key, :active) != false
   end
 
   def self.entities_for_js

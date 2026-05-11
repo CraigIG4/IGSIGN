@@ -1,0 +1,13 @@
+# IGSIGN — IG Signatory Overrides
+# Overrides active status for people in IgSignatories::PEOPLE.
+# Takes precedence over the :active field in the constant.
+# Changes take effect on next application restart.
+#
+# To deactivate someone:
+#   bundle exec rake 'igsign:people:deactivate[email@ignitiongroup.co.za]'
+#
+# Then commit this file so the change survives redeploys.
+#
+# Example entry:
+#   william_talbot:
+#     active: false
