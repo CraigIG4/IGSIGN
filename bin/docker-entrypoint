@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+
+echo "[entrypoint] running db:migrate..."
+bundle exec rails db:migrate
+echo "[entrypoint] migrations done, starting puma"
+
+exec bundle exec puma -C /app/config/puma.rb --dir /app

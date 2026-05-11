@@ -84,4 +84,4 @@ ENV WORKDIR=/data/docuseal
 ENV VIPS_MAX_COORD=17000
 
 EXPOSE 3000
-CMD ["/app/bin/bundle", "exec", "puma", "-C", "/app/config/puma.rb", "--dir", "/app"]
+CMD ["/app/bin/docker-entrypoint"]
