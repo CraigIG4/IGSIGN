@@ -128,7 +128,7 @@ class ApplicationController < ActionController::Base
   end
 
   def set_csp
-    request.content_security_policy = current_content_security_policy.tap do |policy|
+    request.content_security_policy = ActionDispatch::ContentSecurityPolicy.new.tap do |policy|
       policy.default_src :self
       policy.script_src :self
       policy.style_src :self, :unsafe_inline
@@ -138,9 +138,11 @@ class ApplicationController < ActionController::Base
       policy.media_src :self
       policy.frame_src :self
       policy.worker_src :self, :blob
-      policy.connect_src :self
-
-      policy.directives['connect-src'] << 'ws:' if Rails.env.development?
+      if Rails.env.development?
+        policy.connect_src :self, 'ws:'
+      else
+        policy.connect_src :self
+      end
     end
   end
 end

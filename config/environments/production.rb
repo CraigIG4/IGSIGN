@@ -23,7 +23,7 @@ Rails.application.configure do
   config.eager_load = true
 
   # Full error reports are disabled and caching is turned on.
-  config.consider_all_requests_local       = true  # TEMP: show errors for debugging
+  config.consider_all_requests_local       = false
   config.action_controller.perform_caching = true
 
   config.active_job.queue_adapter = :sidekiq

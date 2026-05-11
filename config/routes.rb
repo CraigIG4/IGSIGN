@@ -12,7 +12,6 @@ Rails.application.routes.draw do
   root 'dashboard#index'
 
   get 'up' => 'rails/health#show'
-  get 'debug_render' => 'debug#render_test' if Rails.env.production?
   get 'manifest' => 'pwa#manifest'
 
   devise_for :users, path: '/', only: %i[sessions passwords],
