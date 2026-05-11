@@ -32,7 +32,7 @@
       <%# Right section %>
       <div style="display:flex; align-items:center; gap:8px;">
         <%# + New Agreement %>
-        <a href="<%= new_agreement_path rescue '#' %>"
+        <a href="<%= new_agreement_path %>"
            style="display:none; align-items:center; gap:6px; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:600; color:#ffffff; border:1px solid rgba(255,255,255,0.25); text-decoration:none; transition:background 0.15s;"
            class="md:!flex"
            onmouseover="this.style.background='rgba(255,255,255,0.1)';"
@@ -44,7 +44,7 @@
         </a>
 
         <%# Settings %>
-        <a href="<%= settings_profile_index_path rescue '#' %>"
+        <a href="<%= settings_profile_index_path %>"
            title="Settings"
            id="account_settings_button"
            style="display:flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:6px; color:rgba(255,255,255,0.7); text-decoration:none; transition:background 0.15s;"
@@ -66,7 +66,7 @@
               class="dropdown-content z-50 p-2 mt-2 shadow-xl menu bg-base-100 rounded-xl"
               style="min-width:190px; border:1px solid #e8ebed;">
             <li>
-              <%= link_to (settings_profile_index_path rescue '#'), class: 'flex items-center gap-2 text-sm' do %>
+              <%= link_to settings_profile_index_path, class: 'flex items-center gap-2 text-sm' do %>
                 <%= svg_icon('adjustments', class: 'w-4 h-4 flex-shrink-0') %><%= t('profile') %>
               <% end %>
             </li>
@@ -80,7 +80,7 @@
             <% end %>
             <% if can?(:read, EncryptedConfig.new(key: EncryptedConfig::ESIGN_CERTS_KEY, account: current_account)) %>
               <li>
-                <%= link_to (settings_esign_path rescue '#'), class: 'flex items-center gap-2 text-sm' do %>
+                <%= link_to settings_esign_path, class: 'flex items-center gap-2 text-sm' do %>
                   <%= svg_icon('zoom_check', class: 'w-4 h-4 flex-shrink-0') %><%= t('verify_pdf') %>
                 <% end %>
               </li>
@@ -113,7 +113,7 @@
       </div>
 
     <% else %>
-      <% if request.path != new_user_session_path && request.path != setup_index_path rescue false %>
+      <% if request.path != new_user_session_path && request.path != setup_index_path %>
         <%= link_to new_user_session_path({ lang: params[:lang] }.compact_blank),
               class: 'flex items-center gap-1.5 text-sm font-semibold',
               style: 'color:#ffffff; text-decoration:none;' do %>

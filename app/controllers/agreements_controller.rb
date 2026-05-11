@@ -39,24 +39,8 @@ class AgreementsController < ApplicationController
     @agreement.created_by_user = current_user
     @agreement.status      = 'draft'
 
-    # Inline company creation when user types a new name
-    if params[:new_company_name].present?
-      co = current_account.companies.find_or_initialize_by(name: params[:new_company_name].strip)
-      co.assign_attributes(
-        primary_contact_name:  params[:new_company_contact_name].to_s.strip,
-        primary_contact_email: params[:new_company_contact_email].to_s.strip,
-        domain:                params[:new_company_domain].to_s.strip
-      )
-      co.save
-      @agreement.company = co
-    end
-
-    # Auto-fill counterparty fields from company record
-    if (co = @agreement.company)
-      @agreement.contracting_party  = co.name if @agreement.contracting_party.blank?
-      @agreement.counterparty_name  = co.primary_contact_name  if @agreement.counterparty_name.blank?
-      @agreement.counterparty_email = co.primary_contact_email if @agreement.counterparty_email.blank?
-    end
+    build_inline_company(@agreement, params)
+    autofill_from_company!(@agreement)
 
     @agreement.auto_assign_signatories!
 
@@ -75,6 +59,7 @@ class AgreementsController < ApplicationController
     @step = 2
   end
 
+  # rubocop:disable Metrics/MethodLength
   def process_upload
     file = params[:file]
     if file.blank?
@@ -97,13 +82,14 @@ class AgreementsController < ApplicationController
       Templates::CreateAttachments.call(template, { files: [file] }, extract_fields: true)
       @agreement.update!(template_id: template.id)
       redirect_to review_agreement_path(@agreement)
-    rescue => e
+    rescue StandardError => e
       template.destroy
       Rails.logger.error "[IGSIGN] Upload failed agreement=#{@agreement.id}: #{e.message}"
       redirect_to upload_agreement_path(@agreement),
                   alert: "Upload failed: #{e.message.to_s.truncate(200)}"
     end
   end
+  # rubocop:enable Metrics/MethodLength
 
   # ── Step 3 — Review ────────────────────────────────────────────────────────
 
@@ -174,5 +160,32 @@ class AgreementsController < ApplicationController
       :company_id, :requestor_name, :requestor_email,
       :high_level_summary, :mandate_description
     )
+  end
+
+  # Creates or finds a company record from inline form fields and assigns it
+  # to the agreement when the user types a new company name rather than
+  # selecting an existing one.
+  def build_inline_company(agreement, form_params)
+    return unless form_params[:new_company_name].present?
+
+    co = current_account.companies.find_or_initialize_by(name: form_params[:new_company_name].strip)
+    co.assign_attributes(
+      primary_contact_name:  form_params[:new_company_contact_name].to_s.strip,
+      primary_contact_email: form_params[:new_company_contact_email].to_s.strip,
+      domain:                form_params[:new_company_domain].to_s.strip
+    )
+    co.save
+    agreement.company = co
+  end
+
+  # Fills blank counterparty fields on the agreement from the associated
+  # company record so the user doesn't have to re-enter known contact details.
+  def autofill_from_company!(agreement)
+    co = agreement.company
+    return unless co
+
+    agreement.contracting_party  = co.name if agreement.contracting_party.blank?
+    agreement.counterparty_name  = co.primary_contact_name  if agreement.counterparty_name.blank?
+    agreement.counterparty_email = co.primary_contact_email if agreement.counterparty_email.blank?
   end
 end

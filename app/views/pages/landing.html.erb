@@ -12,7 +12,7 @@
         ECT Act&ndash;compliant signatures, and full document audit trails &mdash; built for
         the way Ignition Group actually works.
       </p>
-      <% if !signed_in? %>
+      <% unless signed_in? %>
         <div class="mt-10">
           <%= link_to new_user_session_path, class: 'inline-flex items-center gap-2 px-7 py-3 rounded font-semibold text-sm transition-all duration-150 hover:opacity-90',
                 style: 'background-color:#45AC34; color:#ffffff; letter-spacing:0.04em; text-decoration:none;' do %>

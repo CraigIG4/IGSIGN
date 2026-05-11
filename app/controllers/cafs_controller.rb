@@ -10,7 +10,7 @@ class CafsController < ApplicationController
     @stats = {
       total:    @cafs.count,
       pending:  @cafs.pending.count,
-      complete: @cafs.complete.count,
+      complete: @cafs.complete.count
     }
   end
 
@@ -32,31 +32,10 @@ class CafsController < ApplicationController
     # Auto-assign signatories from entity + type logic
     @caf.auto_assign_signatories!
 
-    # Override BU Head placeholder if provided
-    if params[:caf_workflow][:bu_head_name].present?
-      sigs = @caf.signatories.map do |s|
-        if s['placeholder'] == true || s['key'] == 'bu_head'
-          s.merge(
-            'name'        => params[:caf_workflow][:bu_head_name],
-            'email'       => params[:caf_workflow][:bu_head_email],
-            'placeholder' => false
-          )
-        else
-          s
-        end
-      end
-      @caf.signatories = sigs
-    end
+    assign_bu_head!(@caf.signatories, params[:caf_workflow])
 
-    # Override any additional custom signatories passed from the form
-    if params[:caf_workflow][:custom_signatories].present?
-      begin
-        custom = JSON.parse(params[:caf_workflow][:custom_signatories])
-        @caf.signatories = custom if custom.is_a?(Array)
-      rescue JSON::ParserError
-        nil
-      end
-    end
+    custom = parse_custom_signatories(params[:caf_workflow][:custom_signatories])
+    @caf.signatories = custom if custom
 
     if @caf.save
       redirect_to caf_path(@caf), notice: 'CAF created. Review signatories and submit for approval.'
@@ -119,5 +98,41 @@ class CafsController < ApplicationController
       :high_level_summary, :mandate_description,
       :contract_document
     )
+  end
+
+  # Replaces the BU head placeholder signatory in-place when the form supplies
+  # an explicit bu_head_name override.
+  def assign_bu_head!(sigs, caf_params)
+    return unless caf_params[:bu_head_name].present?
+
+    @caf.signatories = sigs.map do |s|
+      if s['placeholder'] == true || s['key'] == 'bu_head'
+        s.merge(
+          'name'        => caf_params[:bu_head_name],
+          'email'       => caf_params[:bu_head_email],
+          'placeholder' => false
+        )
+      else
+        s
+      end
+    end
+  end
+
+  # Parses and validates the custom_signatories JSON string from the form.
+  # Returns an Array on success, nil if the input is absent, invalid JSON, or
+  # not an Array. Errors are logged rather than silently swallowed.
+  def parse_custom_signatories(raw)
+    return nil unless raw.present?
+
+    parsed = JSON.parse(raw)
+    unless parsed.is_a?(Array)
+      Rails.logger.warn "[IGSIGN] custom_signatories is not an Array, ignoring"
+      return nil
+    end
+
+    parsed
+  rescue JSON::ParserError => e
+    Rails.logger.warn "[IGSIGN] custom_signatories parse error: #{e.message}"
+    nil
   end
 end
