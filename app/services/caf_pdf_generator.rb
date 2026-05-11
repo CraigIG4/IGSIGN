@@ -5,7 +5,7 @@ class CafPdfGenerator
   TEMPLATES = {
     'long_form' => Rails.root.join('app/views/cafs/long_form.html.erb'),
     'short_form' => Rails.root.join('app/views/cafs/short_form.html.erb'),
-    'nda' => Rails.root.join('app/views/cafs/long_form.html.erb')
+    'nda' => Rails.root.join('app/views/cafs/nda.html.erb')
   }.freeze
 
   def initialize(agreement)
@@ -37,7 +37,8 @@ class CafPdfGenerator
       entity_name: entity[:name] || @agreement.entity.to_s.humanize,
       entity_registration: entity[:registration] || 'To be verified',
       entity_address: entity[:address] || IgSignatories::REGISTERED_ADDRESS,
-      counterparty_name: (@agreement.contracting_party.presence || @agreement.company&.name).to_s,
+      counterparty_company: (@agreement.contracting_party.presence || @agreement.company&.name).to_s,
+      counterparty_contact_name: @agreement.counterparty_name.to_s,
       counterparty_email: @agreement.counterparty_email.to_s,
       mandate_description: @agreement.mandate_description.to_s,
       requestor_name: @agreement.requestor_name.presence || 'To be completed',

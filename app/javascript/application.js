@@ -5,6 +5,7 @@ import { createApp, reactive } from 'vue'
 import TemplateBuilder from './template_builder/builder'
 import ImportList from './template_builder/import_list'
 
+import MobileMenu from './elements/mobile_menu'
 import ToggleVisible from './elements/toggle_visible'
 import ToggleCookies from './elements/toggle_cookies'
 import DisableHidden from './elements/disable_hidden'
@@ -97,6 +98,7 @@ document.addEventListener('turbo:submit-end', async (event) => {
 
 const safeRegisterElement = (name, element, options = {}) => !window.customElements.get(name) && window.customElements.define(name, element, options)
 
+safeRegisterElement('mobile-menu', MobileMenu)
 safeRegisterElement('toggle-visible', ToggleVisible)
 safeRegisterElement('disable-hidden', DisableHidden)
 safeRegisterElement('turbo-modal', TurboModal)

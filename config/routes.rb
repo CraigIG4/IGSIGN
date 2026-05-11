@@ -12,6 +12,12 @@ Rails.application.routes.draw do
   root 'dashboard#index'
 
   get 'up' => 'rails/health#show'
+
+  # IGSIGN internal webhook — receives submitter-completion events from DocuSeal's
+  # own job pipeline. Protected by X-Internal-Webhook-Secret header.
+  namespace :internal do
+    resources :caf_webhooks, only: %i[create]
+  end
   get 'manifest' => 'pwa#manifest'
 
   devise_for :users, path: '/', only: %i[sessions passwords],

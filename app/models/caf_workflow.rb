@@ -152,7 +152,7 @@ class CafWorkflow < ApplicationRecord
   end
 
   def auto_assign_signatories!
-    chain = IgSignatories.chain_for(derived_caf_type, entity)
+    chain = IgSignatories.chain_for(derived_caf_type, entity)[:stage1]
     self.signatories = chain.map.with_index do |entry, idx|
       {
         'position' => idx,

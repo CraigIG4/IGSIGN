@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;font-size:9pt;color:#1a1a1a;}
+.page{width:210mm;min-height:297mm;padding:14mm;}
+.hdr{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #162B3C;padding-bottom:8px;margin-bottom:10px;}
+.ht{font-size:14pt;font-weight:bold;color:#162B3C;}.hs{font-size:8pt;color:#555;margin-top:2px;}
+.lb{background:#162B3C;color:white;font-size:12pt;font-weight:bold;padding:5px 12px;border-radius:4px;}
+.badge{display:inline-block;background:#0f4c81;color:white;font-size:7.5pt;font-weight:bold;padding:2px 10px;border-radius:20px;margin-bottom:8px;}
+.ig{display:grid;grid-template-columns:1fr 1fr;border:1px solid #c0c0c0;border-radius:4px;overflow:hidden;margin-bottom:8px;}
+.ic{padding:5px 8px;border-right:1px solid #e0e0e0;border-bottom:1px solid #e0e0e0;}
+.ic:nth-child(even){border-right:none;}.ic:nth-last-child(-n+2){border-bottom:none;}
+.il{font-size:7pt;font-weight:bold;color:#162B3C;text-transform:uppercase;}.iv{font-size:9pt;margin-top:2px;}
+.ic.full{grid-column:1/-1;border-right:none;}
+.sh{background:#162B3C;color:white;font-size:8.5pt;font-weight:bold;padding:4px 8px;margin-top:7px;}
+table{width:100%;border-collapse:collapse;font-size:8.5pt;}
+th{background:#e8edf2;color:#162B3C;font-size:7.5pt;font-weight:bold;padding:4px 7px;text-align:left;border:1px solid #c0c0c0;text-transform:uppercase;}
+td{padding:5px 7px;border:1px solid #d0d0d0;vertical-align:top;}
+.sn{font-weight:bold;font-size:8.5pt;}.st{font-size:7.5pt;color:#555;}
+.sno{font-size:7pt;color:#444;font-style:italic;line-height:1.35;}
+.sb{height:30px;border-bottom:1px solid #888;}
+.mb{border:1px solid #c0c0c0;padding:8px;min-height:55px;font-size:9pt;line-height:1.5;white-space:pre-line;}
+.notice{background:#eef4fb;border:1px solid #bdd4ec;border-radius:4px;padding:6px 10px;font-size:7.5pt;color:#1a3a5c;margin-top:8px;}
+.ftr{border-top:1px solid #c0c0c0;margin-top:8px;padding-top:4px;font-size:7pt;color:#888;display:flex;justify-content:space-between;}
+</style></head><body><div class="page">
+<div class="hdr"><div><div class="ht">NON-DISCLOSURE AGREEMENT APPROVAL FORM</div><div class="hs">Ignition Group &mdash; Internal Use Only | Confidential</div></div><div class="lb">IGSIGN</div></div>
+<div class="badge">NDA APPROVAL FORM</div>
+<div class="ig">
+  <div class="ic"><div class="il">Agreement Type</div><div class="iv">Non-Disclosure Agreement (NDA)</div></div>
+  <div class="ic"><div class="il">Date of Preparation</div><div class="iv"><%= @caf[:date_prepared] %></div></div>
+  <div class="ic"><div class="il">Ignition Company</div><div class="iv"><%= @caf[:entity_name] %></div></div>
+  <div class="ic"><div class="il">Registration Number</div><div class="iv"><%= @caf[:entity_registration] %></div></div>
+  <div class="ic full"><div class="il">Registered Address</div><div class="iv" style="white-space:pre-line"><%= @caf[:entity_address] %></div></div>
+  <div class="ic"><div class="il">Contracting Party (Company)</div><div class="iv"><%= @caf[:counterparty_company].presence || '&mdash;' %></div></div>
+  <div class="ic"><div class="il">Counterparty Authorised Signatory</div><div class="iv"><%= @caf[:counterparty_contact_name].presence || '&mdash;' %></div></div>
+  <div class="ic full"><div class="il">Counterparty Authorised Signatory Email</div><div class="iv"><%= @caf[:counterparty_email].presence || '&mdash;' %></div></div>
+  <div class="ic"><div class="il">Requestor</div><div class="iv"><%= @caf[:requestor_name] %></div></div>
+  <div class="ic"><div class="il">Requestor Email</div><div class="iv"><%= @caf[:requestor_email] %></div></div>
+</div>
+
+<div class="sh">PURPOSE &amp; SCOPE OF DISCLOSURE</div>
+<div class="mb"><%= @caf[:mandate_description].presence || 'To be completed by the requestor — describe what information will be shared and why.' %></div>
+
+<div class="notice">NDA Approval Form — this form authorises the disclosure of confidential information between Ignition Group and the counterparty named above, subject to the terms of the executed NDA. Mutual or one-way NDA as applicable. Approved under the Electronic Communications and Transactions Act 25 of 2002.</div>
+
+<div class="sh">LEGAL ASSESSMENT</div>
+<table><tr><th style="width:30%">Item</th><th>Detail</th></tr>
+<tr><td>Disclosure Type</td><td>&#9633;&nbsp;Mutual &nbsp;&nbsp;&nbsp; &#9633;&nbsp;One-Way (IG to Counterparty) &nbsp;&nbsp;&nbsp; &#9633;&nbsp;One-Way (Counterparty to IG)</td></tr>
+<tr><td>Confidentiality Period</td><td></td></tr>
+<tr><td>Residual Clauses / Carve-outs</td><td></td></tr>
+<tr><td>POPI / GDPR Implications</td><td></td></tr>
+</table>
+
+<div class="sh">APPROVALS</div>
+<table><tr><th style="width:24%">Division / Role</th><th style="width:20%">Signatory</th><th style="width:30%">Note</th><th>Signature</th><th>Date</th></tr>
+<tr><td><span class="sn">Requestor</span><br><span class="st"><%= @caf[:requestor_email] %></span></td><td><span class="sn"><%= @caf[:requestor_name] %></span></td><td class="sno">I confirm the purpose of this NDA is legitimate and the counterparty has a valid business reason for the disclosure.</td><td><div class="sb"></div></td><td><div class="sb"></div></td></tr>
+<% @caf[:bu_heads].each do |person| %>
+<tr><td><span class="sn">Ignition Group</span><br><span class="st">Business Unit Head</span></td><td><span class="sn"><%= person[:name] %></span><br><span class="st"><%= person[:title] %></span></td><td class="sno">I approve disclosure of confidential information for the stated business purpose.</td><td><div class="sb"></div></td><td><div class="sb"></div></td></tr>
+<% end %>
+<tr><td><span class="sn">Ignition Group</span><br><span class="st">Group Chief Legal Officer</span></td><td><span class="sn">Craig G. Lawrence</span><br><span class="st">Chief Legal Officer</span></td><td class="sno">I confirm the NDA terms are acceptable and the disclosure is compliant with applicable law.</td><td><div class="sb"></div></td><td><div class="sb"></div></td></tr>
+<tr><td><span class="sn">Ignition Group</span><br><span class="st">Group CEO</span></td><td><span class="sn">Sean Bergsma</span><br><span class="st">Chief Executive Officer</span></td><td class="sno">Approval noted as per signature to the Agreement.</td><td><div class="sb"></div></td><td><div class="sb"></div></td></tr>
+</table>
+<div class="ftr"><span>IGSIGN &mdash; Ignition Group | Internal &amp; Confidential | Not for external distribution</span><span>Generated: <%= @caf[:date_prepared] %> | Agreement #<%= @caf[:agreement_id] %></span></div>
+</div></body></html>

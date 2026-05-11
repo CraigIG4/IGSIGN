@@ -34,8 +34,9 @@ td{padding:4px 7px;border:1px solid #d0d0d0;vertical-align:top;}
   <div class="ic"><div class="il">Ignition Company</div><div class="iv"><%= @caf[:entity_name] %></div></div>
   <div class="ic"><div class="il">Registration Number</div><div class="iv"><%= @caf[:entity_registration] %></div></div>
   <div class="ic full"><div class="il">Registered Address</div><div class="iv" style="white-space:pre-line"><%= @caf[:entity_address] %></div></div>
-  <div class="ic"><div class="il">Contracting Party (Counterparty)</div><div class="iv"><%= @caf[:counterparty_name].presence || '&mdash;' %></div></div>
-  <div class="ic"><div class="il">Counterparty Authorised Signatory Email</div><div class="iv"><%= @caf[:counterparty_email].presence || '&mdash;' %></div></div>
+  <div class="ic"><div class="il">Contracting Party (Company)</div><div class="iv"><%= @caf[:counterparty_company].presence || '&mdash;' %></div></div>
+  <div class="ic"><div class="il">Authorised Signatory</div><div class="iv"><%= @caf[:counterparty_contact_name].presence || '&mdash;' %></div></div>
+  <div class="ic full"><div class="il">Counterparty Authorised Signatory Email</div><div class="iv"><%= @caf[:counterparty_email].presence || '&mdash;' %></div></div>
   <div class="ic"><div class="il">Requestor</div><div class="iv"><%= @caf[:requestor_name] %></div></div>
   <div class="ic"><div class="il">Requestor Email</div><div class="iv"><%= @caf[:requestor_email] %></div></div>
 </div>
