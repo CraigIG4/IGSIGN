@@ -84,4 +84,4 @@ ENV WORKDIR=/data/docuseal
 ENV VIPS_MAX_COORD=17000
 
 EXPOSE 3000
-CMD ["sh", "-c", "bundle exec rails db:migrate && exec bundle exec puma -C /app/config/puma.rb --dir /app"]
+CMD ["sh", "-c", "cd /app && bundle exec rails db:migrate && exec bundle exec puma -C /app/config/puma.rb --dir /app"]
