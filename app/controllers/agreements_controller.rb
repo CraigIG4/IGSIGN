@@ -2,6 +2,7 @@
 
 # IGSIGN — Agreement Wizard: Details → Upload → Review → Send
 class AgreementsController < ApplicationController
+  skip_authorization_check
   before_action :authenticate_user!
   before_action :set_agreement, only: %i[show upload process_upload review send_agreement]
 
@@ -32,7 +33,7 @@ class AgreementsController < ApplicationController
 
   def new
     @agreement = CafWorkflow.new(
-      requestor_name: current_user.name,
+      requestor_name: current_user.full_name,
       requestor_email: current_user.email
     )
     @companies = current_account.companies.alphabetical

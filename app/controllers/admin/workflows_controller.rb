@@ -5,6 +5,7 @@
 # The user-facing agreement creation flow lives in AgreementsController (/agreements).
 module Admin
   class WorkflowsController < ApplicationController
+    skip_authorization_check
     before_action :authenticate_user!
     before_action :require_admin!
     before_action :set_caf, only: %i[show edit update destroy submit]
