@@ -10,7 +10,7 @@ RSpec.describe 'Dashboard Page' do
 
   context 'when are no templates' do
     it 'shows empty state' do
-      visit root_path
+      visit templates_path
 
       expect(page).to have_link('Create', href: new_template_path)
     end
@@ -22,7 +22,7 @@ RSpec.describe 'Dashboard Page' do
     let!(:other_template) { create(:template, account: create(:user).account) }
 
     before do
-      visit root_path
+      visit templates_path
     end
 
     it 'shows the list of templates' do
@@ -56,7 +56,7 @@ RSpec.describe 'Dashboard Page' do
 
       SearchEntries.reindex_all
 
-      visit root_path(q: submitter.email)
+      visit templates_path(q: submitter.email)
 
       expect(page).to have_content('Templates not Found')
       expect(page).to have_content('Submissions')
