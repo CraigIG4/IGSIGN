@@ -133,6 +133,25 @@ a:not(.btn):not([class*="menu"]) {
 }
 a:not(.btn):hover { color: #45AC34 !important; }
 
+/* Topnav — dark navy bar requires white links.
+ * The global rule above sets all links to var(--ig-black) !important, which
+ * is invisible on #162B3C.  These rules come after and have equal-or-higher
+ * specificity, so they win for anything inside .ig-topnav.
+ * The dropdown-content restore is needed because the user-avatar dropdown
+ * renders on a white bg inside the same <nav> element. */
+.ig-topnav a:not(.btn) {
+  color: rgba(255,255,255,0.85) !important;
+}
+.ig-topnav a:not(.btn):hover {
+  color: #ffffff !important;
+}
+.ig-topnav .dropdown-content a:not(.btn) {
+  color: var(--ig-black) !important;
+}
+.ig-topnav .dropdown-content a:not(.btn):hover {
+  color: #45AC34 !important;
+}
+
 /* Settings nav */
 #account_settings_menu li a {
   border-radius: var(--ig-radius) !important;
