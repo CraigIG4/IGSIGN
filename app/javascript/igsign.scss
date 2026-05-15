@@ -139,16 +139,19 @@ a:not(.btn):hover { color: #45AC34 !important; }
  * specificity, so they win for anything inside .ig-topnav.
  * The dropdown-content restore is needed because the user-avatar dropdown
  * renders on a white bg inside the same <nav> element. */
-.ig-topnav a:not(.btn) {
+/* Use html + body prefix to guarantee higher specificity (0,2,2) than the
+ * global dark rule (0,2,1) regardless of build/import order. */
+html body .ig-topnav a:not(.btn) {
   color: rgba(255,255,255,0.85) !important;
 }
-.ig-topnav a:not(.btn):hover {
+html body .ig-topnav a:not(.btn):hover {
   color: #ffffff !important;
 }
-.ig-topnav .dropdown-content a:not(.btn) {
+/* Restore dark colour for dropdown menus that render on a white bg inside the nav */
+html body .ig-topnav .dropdown-content a:not(.btn) {
   color: var(--ig-black) !important;
 }
-.ig-topnav .dropdown-content a:not(.btn):hover {
+html body .ig-topnav .dropdown-content a:not(.btn):hover {
   color: #45AC34 !important;
 }
 

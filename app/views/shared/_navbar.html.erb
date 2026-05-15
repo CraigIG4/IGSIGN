@@ -21,10 +21,10 @@
           <% active = current_path.start_with?(path) %>
           <a href="<%= path %>"
              style="display:inline-flex; align-items:center; padding:6px 12px 5px; font-size:14px; font-weight:500; text-decoration:none; transition:color 0.15s;
-                    color: <%= active ? '#ffffff' : 'rgba(255,255,255,0.85)' %>;
+                    color: <%= active ? '#ffffff' : 'rgba(255,255,255,0.85)' %> !important;
                     border-bottom: 2px solid <%= active ? '#45AC34' : 'transparent' %>;"
-             onmouseover="this.style.color='#fff';"
-             onmouseout="this.style.color=this.dataset.active==='true' ? '#fff' : 'rgba(255,255,255,0.85)';"
+             onmouseover="this.style.setProperty('color','#fff','important');"
+             onmouseout="this.style.setProperty('color',this.dataset.active==='true'?'#fff':'rgba(255,255,255,0.85)','important');"
              data-active="<%= active %>">
             <%= label %>
           </a>
@@ -35,7 +35,7 @@
       <div style="display:flex; align-items:center; gap:8px;">
         <%# + New Agreement %>
         <a href="<%= new_agreement_path %>"
-           style="display:none; align-items:center; gap:6px; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:600; color:#ffffff; border:1px solid rgba(255,255,255,0.25); text-decoration:none; transition:background 0.15s;"
+           style="display:none; align-items:center; gap:6px; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:600; color:#ffffff !important; border:1px solid rgba(255,255,255,0.25); text-decoration:none; transition:background 0.15s;"
            class="md:!flex"
            onmouseover="this.style.background='rgba(255,255,255,0.1)';"
            onmouseout="this.style.background='transparent';">
@@ -50,9 +50,9 @@
            title="Settings"
            aria-label="Settings"
            id="account_settings_button"
-           style="display:flex; align-items:center; gap:5px; padding:6px 10px; border-radius:6px; color:rgba(255,255,255,0.85); text-decoration:none; transition:background 0.15s; font-size:14px; font-weight:500;"
-           onmouseover="this.style.background='rgba(255,255,255,0.1)'; this.style.color='#fff';"
-           onmouseout="this.style.background='transparent'; this.style.color='rgba(255,255,255,0.85)';">
+           style="display:flex; align-items:center; gap:5px; padding:6px 10px; border-radius:6px; color:rgba(255,255,255,0.85) !important; text-decoration:none; transition:background 0.15s; font-size:14px; font-weight:500;"
+           onmouseover="this.style.background='rgba(255,255,255,0.1)'; this.style.setProperty('color','#fff','important');"
+           onmouseout="this.style.background='transparent'; this.style.setProperty('color','rgba(255,255,255,0.85)','important');">
           <svg xmlns="http://www.w3.org/2000/svg" style="width:17px;height:17px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
             <circle cx="12" cy="12" r="3"/>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -144,7 +144,7 @@
         <% active = current_path.start_with?(path) %>
         <a href="<%= path %>"
            style="display:block; padding:10px 12px; border-radius:6px; font-size:14px; font-weight:500; text-decoration:none; margin-bottom:2px;
-                  color: <%= active ? '#ffffff' : 'rgba(255,255,255,0.85)' %>;
+                  color: <%= active ? '#ffffff' : 'rgba(255,255,255,0.85)' %> !important;
                   border-left: 3px solid <%= active ? '#45AC34' : 'transparent' %>;
                   background: <%= active ? 'rgba(255,255,255,0.08)' : 'transparent' %>;">
           <%= label %>
@@ -154,7 +154,7 @@
         <%= link_to '+ New Agreement', new_agreement_path,
             style: 'font-size:13px; font-weight:600; color:#45AC34; text-decoration:none;' %>
         <%= link_to 'Settings', settings_profile_index_path,
-            style: 'font-size:13px; color:rgba(255,255,255,0.85); text-decoration:none;' %>
+            style: 'font-size:13px; color:rgba(255,255,255,0.85) !important; text-decoration:none;' %>
       </div>
     </div>
   <% end %>
