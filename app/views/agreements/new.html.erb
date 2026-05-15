@@ -47,54 +47,73 @@
         </div>
       </div>
 
-      <%# Counterparty Company selector — sits above the name/email fields so
-          the recent-signers panel can auto-fill them on click. %>
+      <%# Counterparty Company — search known companies or enter manually.
+          Manual entry populates contracting_party + counterparty_email directly
+          without requiring a company record. Both paths submit fine. %>
       <div style="border-radius:10px;border:1px solid #e5e7eb;background:#f9fafb;padding:1rem;">
         <p style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Counterparty Company</p>
-        <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:flex-start;">
-          <div>
-            <div style="position:relative;margin-bottom:8px;">
-              <input type="text" id="co_search" placeholder="Search existing companies..." autocomplete="off" style="width:100%;border-radius:8px;border:1px solid #d1d5db;background:white;padding:9px 12px 9px 32px;font-size:13px;box-sizing:border-box;">
-              <svg style="position:absolute;left:10px;top:10px;width:14px;height:14px;color:#9ca3af;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            </div>
-            <div id="co_results" style="display:none;margin-bottom:8px;max-height:160px;overflow-y:auto;border-radius:8px;border:1px solid #e5e7eb;background:white;"></div>
-            <div id="co_sel" style="display:none;border-radius:8px;border:1px solid #bfdbfe;background:#eff6ff;padding:10px 12px;margin-bottom:4px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                <div><p id="co_sel_name" style="font-size:13px;font-weight:600;color:#111827;"></p><p id="co_sel_domain" style="font-size:11px;color:#6b7280;margin-top:1px;"></p></div>
-                <button type="button" id="co_clear" style="color:#9ca3af;background:none;border:none;cursor:pointer;font-size:20px;line-height:1;padding:0;">&times;</button>
+
+        <%# ── Search block (default visible) ────────────────────────────────── %>
+        <div id="co_search_block">
+          <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:flex-start;">
+            <div>
+              <div style="position:relative;margin-bottom:8px;">
+                <input type="text" id="co_search" placeholder="Search existing companies..." autocomplete="off" style="width:100%;border-radius:8px;border:1px solid #d1d5db;background:white;padding:9px 12px 9px 32px;font-size:13px;box-sizing:border-box;">
+                <svg style="position:absolute;left:10px;top:10px;width:14px;height:14px;color:#9ca3af;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
               </div>
+              <div id="co_results" style="display:none;margin-bottom:8px;max-height:160px;overflow-y:auto;border-radius:8px;border:1px solid #e5e7eb;background:white;"></div>
+              <div id="co_sel" style="display:none;border-radius:8px;border:1px solid #bfdbfe;background:#eff6ff;padding:10px 12px;margin-bottom:4px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                  <div><p id="co_sel_name" style="font-size:13px;font-weight:600;color:#111827;"></p><p id="co_sel_domain" style="font-size:11px;color:#6b7280;margin-top:1px;"></p></div>
+                  <button type="button" id="co_clear" style="color:#9ca3af;background:none;border:none;cursor:pointer;font-size:20px;line-height:1;padding:0;">&times;</button>
+                </div>
+              </div>
+              <%= f.hidden_field :company_id, id:'co_id' %>
             </div>
-            <%= f.hidden_field :company_id, id:'co_id' %>
+            <button type="button" id="co_new_btn" style="border-radius:8px;border:1px dashed #d1d5db;padding:9px 14px;font-size:12px;font-weight:500;color:#6b7280;background:none;cursor:pointer;white-space:nowrap;">+ Add new company</button>
           </div>
-          <button type="button" id="co_new_btn" style="border-radius:8px;border:1px dashed #d1d5db;padding:9px 14px;font-size:12px;font-weight:500;color:#6b7280;background:none;cursor:pointer;white-space:nowrap;">+ Add new company</button>
-        </div>
-        <div id="co_new_form" style="display:none;margin-top:10px;border-top:1px solid #e5e7eb;padding-top:10px;">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <input type="text" name="new_company_name" autocomplete="organization" placeholder="Company name *" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
-            <input type="text" name="new_company_registration_number" autocomplete="off" placeholder="Reg number" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
-            <input type="text" name="new_company_contact_name" id="nc_name" autocomplete="name" placeholder="Contact name" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
-            <input type="email" name="new_company_contact_email" id="nc_email" autocomplete="email" placeholder="Contact email" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
-            <input type="text" name="new_company_domain" autocomplete="off" placeholder="Domain (e.g. acme.co.za)" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
+          <div id="co_new_form" style="display:none;margin-top:10px;border-top:1px solid #e5e7eb;padding-top:10px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <input type="text" name="new_company_name" autocomplete="organization" placeholder="Company name *" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
+              <input type="text" name="new_company_registration_number" autocomplete="off" placeholder="Reg number" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
+              <input type="text" name="new_company_contact_name" id="nc_name" autocomplete="name" placeholder="Contact name" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
+              <input type="email" name="new_company_contact_email" id="nc_email" autocomplete="email" placeholder="Contact email" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
+              <input type="text" name="new_company_domain" autocomplete="off" placeholder="Domain (e.g. acme.co.za)" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
+            </div>
+            <p style="margin-top:6px;font-size:11px;color:#9ca3af;">Saved to your counterparty directory.</p>
           </div>
-          <p style="margin-top:6px;font-size:11px;color:#9ca3af;">Saved to your counterparty directory.</p>
+          <%# Recent signers panel — populated via AJAX when a company is selected %>
+          <div id="rs_panel" style="display:none;margin-top:12px;border-top:1px solid #e5e7eb;padding-top:12px;">
+            <p id="rs_heading" style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;"></p>
+            <div id="rs_list" style="display:flex;flex-direction:column;gap:6px;"></div>
+          </div>
         </div>
 
-        <%# Recent signers panel — populated via AJAX when a company is selected %>
-        <div id="rs_panel" style="display:none;margin-top:12px;border-top:1px solid #e5e7eb;padding-top:12px;">
-          <p id="rs_heading" style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;"></p>
-          <div id="rs_list" style="display:flex;flex-direction:column;gap:6px;"></div>
+        <%# ── Toggle: switch between search and manual entry ─────────────────── %>
+        <div style="margin-top:10px;border-top:1px solid #e5e7eb;padding-top:8px;">
+          <button type="button" id="co_manual_btn" style="font-size:12px;color:#3b82f6;background:none;border:none;cursor:pointer;padding:0;font-weight:500;">Or enter manually</button>
+          <button type="button" id="co_search_btn" style="display:none;font-size:12px;color:#3b82f6;background:none;border:none;cursor:pointer;padding:0;font-weight:500;">← Search companies instead</button>
+        </div>
+
+        <%# ── Manual entry block (default hidden) ────────────────────────────── %>
+        <div id="co_manual_block" style="display:none;margin-top:10px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <%= f.text_field :contracting_party, id: 'co_man_name', autocomplete: 'organization',
+                placeholder: 'Company / entity name',
+                style: 'border-radius:8px;border:1px solid #d1d5db;background:white;padding:9px 12px;font-size:13px;box-sizing:border-box;width:100%;' %>
+            <%= f.email_field :counterparty_email, id: 'ag_ct_email', autocomplete: 'email',
+                placeholder: 'contact@company.co.za',
+                style: 'border-radius:8px;border:1px solid #d1d5db;background:white;padding:9px 12px;font-size:13px;box-sizing:border-box;width:100%;' %>
+          </div>
+          <p style="margin-top:5px;font-size:11px;color:#9ca3af;">No company record required — details go directly onto the agreement.</p>
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-        <div>
-          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Counterparty Contact Name</label>
-          <%= f.text_field :counterparty_name, id: 'ag_ct_name', autocomplete: 'off', style: 'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:14px;box-sizing:border-box;', placeholder: 'John Smith' %>
-        </div>
-        <div>
-          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Counterparty Contact Email</label>
-          <%= f.email_field :counterparty_email, id: 'ag_ct_email', autocomplete: 'email', style: 'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:14px;box-sizing:border-box;', placeholder: 'john@company.co.za' %>
-        </div>
+      <div>
+        <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Counterparty Contact Name</label>
+        <%= f.text_field :counterparty_name, id: 'ag_ct_name', autocomplete: 'off',
+            style: 'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:14px;box-sizing:border-box;',
+            placeholder: 'John Smith' %>
       </div>
       <div>
         <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Mandate &amp; Purpose</label>
@@ -133,7 +152,7 @@
     </div>
     <div style="margin-top:2rem;display:flex;align-items:center;justify-content:space-between;padding-top:1.5rem;border-top:1px solid #e5e7eb;">
       <%= link_to agreements_path, style: 'font-size:14px;color:#6b7280;text-decoration:none;' do %>&larr; Cancel<% end %>
-      <%= f.submit 'Continue to Upload &rarr;', style: 'padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;color:white;background-color:#162B3C;cursor:pointer;border:none;' %>
+      <%= f.submit 'Continue to Upload →', style: 'padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;color:white;background-color:#162B3C;cursor:pointer;border:none;' %>
     </div>
   <% end %>
 </div>
@@ -220,6 +239,16 @@
     si.value='';
     if(cn&&!cn.value&&c.contact_name)cn.value=c.contact_name;
     if(ce&&!ce.value&&c.contact_email)ce.value=c.contact_email;
+    // Auto-fill manual block (values still submit even when the block is hidden)
+    var cmn=document.getElementById('co_man_name');
+    if(cmn)cmn.value=c.name||'';
+    // Ensure we're in search mode — collapse manual block if it was open
+    var coMB=document.getElementById('co_manual_block'),coSB=document.getElementById('co_search_block');
+    var combtn=document.getElementById('co_manual_btn'),cosbtn=document.getElementById('co_search_btn');
+    if(coMB)coMB.style.display='none';
+    if(coSB)coSB.style.display='';
+    if(combtn)combtn.style.display='';
+    if(cosbtn)cosbtn.style.display='none';
     fetchRecentSignatories(c.id,c.name);
   }
 
@@ -298,9 +327,30 @@
     sb.style.display='none';
     rsPanel.style.display='none';
     rsSelectedId=null;
+    var cmn=document.getElementById('co_man_name');if(cmn)cmn.value='';
+    if(ce)ce.value='';
   });
   var nb=document.getElementById('co_new_btn'),nf=document.getElementById('co_new_form');
   nb&&nb.addEventListener('click',function(){var h=nf.style.display!=='block';nf.style.display=h?'block':'none';nb.textContent=h?'- Hide form':'+ Add new company';});
+
+  /* ── Manual entry / search mode toggle ─────────────────────────────────── */
+  var coMB=document.getElementById('co_manual_block'),coSB=document.getElementById('co_search_block');
+  var comb=document.getElementById('co_manual_btn'),cosb=document.getElementById('co_search_btn');
+  comb&&comb.addEventListener('click',function(){
+    coSB.style.display='none';coMB.style.display='';
+    comb.style.display='none';cosb.style.display='';
+    // Clear company_id — manual entry should not bind to a company record
+    if(ci)ci.value='';
+    if(sb)sb.style.display='none';
+    if(rsPanel)rsPanel.style.display='none';
+  });
+  cosb&&cosb.addEventListener('click',function(){
+    coSB.style.display='';coMB.style.display='none';
+    comb.style.display='';cosb.style.display='none';
+    // Clear manual inputs so stale values are not submitted
+    var cmn=document.getElementById('co_man_name');if(cmn)cmn.value='';
+    if(ce)ce.value='';
+  });
   var ncn=document.getElementById('nc_name'),nce=document.getElementById('nc_email');
   ncn&&ncn.addEventListener('input',function(){if(cn&&!cn.value)cn.value=ncn.value;});
   nce&&nce.addEventListener('input',function(){if(ce&&!ce.value)ce.value=nce.value;});
