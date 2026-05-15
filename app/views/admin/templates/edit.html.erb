@@ -1,0 +1,16 @@
+<%# ── Admin: Edit Template Metadata ── %>
+
+<div style="max-width:760px;">
+  <div style="margin-bottom:24px;">
+    <div style="font-size:11px;color:#7B787F;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;">
+      <%= link_to 'Template Library', admin_templates_path, style: 'color:#7B787F;text-decoration:none;' %>
+      &rsaquo; <%= @metadata.new_record? ? 'Tag Template' : 'Edit Metadata' %>
+    </div>
+    <h1 style="font-size:22px;font-weight:800;color:#162B3C;letter-spacing:-0.03em;margin:0;">
+      <%= @metadata.new_record? ? 'Tag: ' : 'Metadata: ' %><span style="color:#45AC34;"><%= @template.name %></span>
+    </h1>
+    <div style="width:32px;height:3px;background:#45AC34;border-radius:2px;margin-top:8px;"></div>
+  </div>
+
+  <%= render 'metadata_form', template: @template, metadata: @metadata %>
+</div>

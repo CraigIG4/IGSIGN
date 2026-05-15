@@ -47,6 +47,16 @@ class AgreementsController < ApplicationController
       requestor_name: current_user.full_name,
       requestor_email: current_user.email
     )
+
+    # Pre-select agreement type from template metadata when coming from the library
+    if params[:template_id].present?
+      @preselected_template_id = params[:template_id].to_i
+      tmpl_meta = IgsignTemplateMetadata.joins(:template)
+                    .where(templates: { account_id: current_account.id })
+                    .find_by(template_id: @preselected_template_id)
+      @agreement.agreement_type = tmpl_meta.kind if tmpl_meta
+    end
+
     @companies = current_account.companies.alphabetical
     @step = 1
   end
@@ -56,6 +66,12 @@ class AgreementsController < ApplicationController
     @agreement.account = current_account
     @agreement.created_by_user = current_user
     @agreement.status = 'draft'
+
+    # Associate template if pre-selected from the library (validated to account scope)
+    if params[:template_id].present?
+      tmpl = current_account.templates.find_by(id: params[:template_id])
+      @agreement.template_id = tmpl.id if tmpl
+    end
 
     build_inline_company(@agreement, params)
     autofill_from_company!(@agreement)

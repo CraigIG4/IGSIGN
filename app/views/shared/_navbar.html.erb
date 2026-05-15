@@ -15,7 +15,7 @@
         <%# Build nav links; Operations + Templates admin-only. TODO Sprint 3: open Templates to all users. %>
         <% nav_links = [['Agreements', '/agreements']] %>
         <% nav_links << ['Operations',        '/admin/workflows']          if current_user.role == User::ADMIN_ROLE %>
-        <% nav_links << ['Templates',         '/templates']                if current_user.role == User::ADMIN_ROLE %>
+        <% nav_links << ['Templates',         current_user.role == User::ADMIN_ROLE ? '/admin/templates' : '/templates'] %>
         <% nav_links << ['Approval Matrices', '/admin/approval_matrices']  if current_user.role == User::ADMIN_ROLE %>
         <% nav_links << ['Contacts',          '/companies'] %>
         <% nav_links.each do |label, path| %>
@@ -138,9 +138,9 @@
       <% current_path = request.path %>
       <%# Mirror desktop nav logic: Operations + Templates admin-only %>
       <% mobile_links = [['Agreements', agreements_path]] %>
-      <% mobile_links << ['Operations',        admin_workflows_path]         if current_user.role == User::ADMIN_ROLE %>
-      <% mobile_links << ['Templates',         templates_path]               if current_user.role == User::ADMIN_ROLE %>
-      <% mobile_links << ['Approval Matrices', admin_approval_matrices_path] if current_user.role == User::ADMIN_ROLE %>
+      <% mobile_links << ['Operations',        admin_workflows_path]                                                    if current_user.role == User::ADMIN_ROLE %>
+      <% mobile_links << ['Templates',         current_user.role == User::ADMIN_ROLE ? admin_templates_path : templates_path] %>
+      <% mobile_links << ['Approval Matrices', admin_approval_matrices_path]                                            if current_user.role == User::ADMIN_ROLE %>
       <% mobile_links << ['Contacts',          companies_path] %>
       <% mobile_links.each do |label, path| %>
         <% active = current_path.start_with?(path) %>

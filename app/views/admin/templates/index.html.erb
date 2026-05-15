@@ -1,0 +1,136 @@
+<%# ── Admin: IGSIGN Template Library ── %>
+
+<%# Hero header %>
+<div style="background:linear-gradient(135deg,#162B3C 0%,#1e3a4f 100%);border-radius:14px;padding:28px 32px;margin-bottom:28px;position:relative;overflow:hidden;">
+  <div style="position:absolute;inset:0;background-image:url('/brand/igsign-background-pattern.svg');background-size:cover;opacity:0.15;pointer-events:none;border-radius:14px;"></div>
+  <div style="position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:20px;">
+    <div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.45);letter-spacing:4px;text-transform:uppercase;margin-bottom:8px;">IGSIGN · LEGAL OPS</div>
+      <div style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.3px;">Template Library</div>
+      <div style="width:36px;height:3px;background:#45AC34;border-radius:2px;margin-top:10px;"></div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.55);margin-top:8px;">Manage IGSIGN metadata for DocuSeal templates. Kind, owner, version, and status.</div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
+      <%# Stat chips %>
+      <% [['Total', @stats[:total], '#fff'], ['Active', @stats[:active], '#45AC34'], ['Draft', @stats[:draft], '#ffc107'], ['Deprecated', @stats[:deprecated], '#7B787F']].each do |label, count, colour| %>
+        <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:10px 16px;text-align:center;min-width:70px;">
+          <div style="font-size:20px;font-weight:800;color:<%= colour %>;line-height:1;"><%= count %></div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.45);margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;"><%= label %></div>
+        </div>
+      <% end %>
+      <%= link_to new_template_path,
+            style: 'background:#45AC34;color:#fff;border-radius:8px;padding:12px 20px;font-weight:700;font-size:14px;text-decoration:none;display:flex;align-items:center;gap:8px;white-space:nowrap;align-self:flex-start;' do %>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        New Template
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<%# Flash %>
+<% if notice.present? %><div class="alert alert-success mb-4"><%= notice %></div><% end %>
+<% if alert.present?  %><div class="alert alert-error  mb-4"><%= alert  %></div><% end %>
+
+<%# Table %>
+<div style="background:#fff;border-radius:14px;border:1px solid #edf0f3;overflow:hidden;box-shadow:0 2px 8px rgba(22,43,60,0.06);">
+  <% if @templates.empty? %>
+    <div style="padding:60px;text-align:center;">
+      <p style="font-size:16px;font-weight:700;color:#162B3C;">No templates yet</p>
+      <p style="font-size:14px;color:#7B787F;margin-top:4px;">Upload a PDF to get started.</p>
+      <%= link_to '+ New Template', new_template_path, class: 'btn btn-primary mt-4' %>
+    </div>
+  <% else %>
+    <table class="table w-full" style="border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th>Template</th>
+          <th>Kind</th>
+          <th>Owner</th>
+          <th style="text-align:center;">Version</th>
+          <th>Status</th>
+          <th>Last edited</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @templates.each do |tmpl| %>
+          <% meta = tmpl.igsign_metadata %>
+          <tr style="border-bottom:1px solid #edf0f3;<%= 'opacity:0.5;' if meta&.deprecated? %>">
+            <td style="padding:12px 16px;">
+              <div style="font-weight:600;color:#162B3C;font-size:14px;"><%= tmpl.name %></div>
+              <div style="font-size:11px;color:#7B787F;margin-top:2px;">by <%= tmpl.author.full_name %></div>
+            </td>
+            <td style="padding:12px 16px;">
+              <% if meta %>
+                <span class="badge badge-primary"><%= meta.kind_label %></span>
+              <% else %>
+                <span style="font-size:12px;color:#bbb;font-style:italic;">untagged</span>
+              <% end %>
+            </td>
+            <td style="padding:12px 16px;font-size:13px;color:#162B3C;">
+              <%= meta&.owner&.full_name || '—' %>
+            </td>
+            <td style="padding:12px 16px;text-align:center;">
+              <% if meta %>
+                <span class="badge badge-neutral">v<%= meta.version %></span>
+              <% else %>
+                <span style="color:#bbb;">—</span>
+              <% end %>
+            </td>
+            <td style="padding:12px 16px;">
+              <% if meta.nil? %>
+                <span class="ig-status-pending">No metadata</span>
+              <% elsif meta.active? %>
+                <span class="ig-status-active">Active</span>
+              <% elsif meta.deprecated? %>
+                <span class="ig-status-pending">Deprecated</span>
+              <% else %>
+                <span class="ig-status-pending">Draft</span>
+              <% end %>
+            </td>
+            <td style="padding:12px 16px;font-size:12px;color:#7B787F;">
+              <%= tmpl.updated_at.strftime('%d %b %Y') %>
+            </td>
+            <td style="padding:12px 16px;text-align:right;white-space:nowrap;">
+              <%# DocuSeal editor — field positioning %>
+              <%= link_to 'Edit Fields', edit_template_path(tmpl),
+                    class: 'btn btn-sm btn-outline',
+                    style: 'margin-right:4px;font-size:11px;',
+                    data: { turbo: false } %>
+              <%# IGSIGN metadata %>
+              <%= link_to meta ? 'Metadata' : '+ Tag',
+                    edit_admin_template_path(tmpl),
+                    class: 'btn btn-sm',
+                    style: 'background:#162B3C;color:#fff;border:none;margin-right:4px;font-size:11px;' %>
+              <%# Status transitions %>
+              <% if meta&.active? %>
+                <%= button_to 'Deprecate',
+                      deprecate_admin_template_path(tmpl),
+                      method: :patch,
+                      class: 'btn btn-sm',
+                      style: 'background:#7B787F;color:#fff;border:none;font-size:11px;',
+                      data: { confirm: "Deprecate \"#{tmpl.name}\"? Senders will no longer see it in the library." } %>
+              <% elsif meta && !meta.active? %>
+                <%= button_to 'Activate',
+                      activate_admin_template_path(tmpl),
+                      method: :patch,
+                      class: 'btn btn-sm',
+                      style: 'background:#45AC34;color:#fff;border:none;font-size:11px;' %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>
+
+<% if @stats[:no_meta] > 0 %>
+  <div class="card mt-4" style="padding:16px 20px;border-left:4px solid #ffc107;">
+    <p style="font-size:13px;color:#162B3C;">
+      <strong><%= @stats[:no_meta] %> template<%= 's' if @stats[:no_meta] != 1 %></strong>
+      have no IGSIGN metadata and won't appear in the sender library.
+      Click <strong>+ Tag</strong> to assign a kind and mark them Active.
+    </p>
+  </div>
+<% end %>

@@ -1,0 +1,98 @@
+<%#
+  Shared form for admin template metadata edit.
+  Locals: template (Template), metadata (IgsignTemplateMetadata)
+  Handles both unsaved (new_record?) and existing metadata.
+%>
+<% legal_users = current_account.users.order(:first_name, :last_name) %>
+
+<%= form_with model: metadata,
+              url: metadata.new_record? ? admin_templates_path : admin_template_path(template),
+              method: metadata.new_record? ? :post : :patch,
+              scope: :igsign_template_metadata,
+              local: true do |f| %>
+
+  <% if metadata.errors.any? %>
+    <div class="alert alert-error mb-4">
+      <ul style="margin:0;padding-left:16px;">
+        <% metadata.errors.full_messages.each do |msg| %>
+          <li style="font-size:13px;"><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%# Hidden template_id for create path %>
+  <%= hidden_field_tag :template_id, template.id if metadata.new_record? %>
+
+  <div class="card mb-6" style="padding:24px;">
+    <h3 class="igsign-section-head" style="font-size:14px;margin-bottom:16px;">Template details</h3>
+
+    <%# Read-only template name %>
+    <div style="margin-bottom:16px;">
+      <p style="font-size:13px;font-weight:600;margin-bottom:4px;">DocuSeal template</p>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#f8fafb;border:1px solid #e2e8f0;border-radius:8px;">
+        <span style="font-size:14px;font-weight:600;color:#162B3C;flex:1;"><%= template.name %></span>
+        <%= link_to 'Edit fields →', edit_template_path(template),
+              style: 'font-size:12px;color:#45AC34;text-decoration:none;white-space:nowrap;font-weight:600;',
+              data: { turbo: false } %>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <%= f.label :kind, 'Agreement kind', style: 'display:block;font-size:13px;font-weight:600;margin-bottom:4px;' %>
+        <%= f.select :kind,
+              IgsignTemplateMetadata::KINDS.map { |k| [IgsignTemplateMetadata::KIND_LABELS[k], k] },
+              {},
+              class: 'select select-bordered w-full',
+              style: 'font-size:13px;' %>
+      </div>
+
+      <div>
+        <%= f.label :owner_id, 'Owner (Legal team member)', style: 'display:block;font-size:13px;font-weight:600;margin-bottom:4px;' %>
+        <%= f.select :owner_id,
+              legal_users.map { |u| [u.full_name, u.id] },
+              { include_blank: '— Unassigned —' },
+              class: 'select select-bordered w-full',
+              style: 'font-size:13px;' %>
+      </div>
+
+      <div>
+        <%= f.label :status, 'Status', style: 'display:block;font-size:13px;font-weight:600;margin-bottom:4px;' %>
+        <%= f.select :status,
+              IgsignTemplateMetadata::STATUSES.map { |s| [IgsignTemplateMetadata::STATUS_LABELS[s], s] },
+              {},
+              class: 'select select-bordered w-full',
+              style: 'font-size:13px;' %>
+        <p style="font-size:11px;color:#7B787F;margin-top:4px;">Only <strong>Active</strong> templates appear in the sender library.</p>
+      </div>
+
+      <% unless metadata.new_record? %>
+        <div>
+          <p style="font-size:13px;font-weight:600;margin-bottom:4px;">Version</p>
+          <div style="padding:9px 12px;background:#f8fafb;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;font-weight:700;color:#162B3C;">
+            v<%= metadata.version %>
+            <span style="font-size:11px;color:#7B787F;font-weight:400;margin-left:6px;">auto-increments on save when Active</span>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div style="margin-top:16px;">
+      <%= f.label :notes, 'Internal notes (Legal team only)', style: 'display:block;font-size:13px;font-weight:600;margin-bottom:4px;' %>
+      <%= f.text_area :notes,
+            rows: 3,
+            placeholder: 'e.g. Approved by board 2025-01. Supersedes v3.',
+            class: 'textarea textarea-bordered w-full',
+            style: 'font-size:13px;' %>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px;align-items:center;">
+    <%= f.submit metadata.new_record? ? 'Save metadata' : 'Update metadata',
+          class: 'btn btn-primary',
+          style: 'min-width:160px;' %>
+    <%= link_to 'Cancel', admin_templates_path,
+          style: 'font-size:14px;color:#7B787F;text-decoration:none;' %>
+  </div>
+<% end %>

@@ -106,6 +106,14 @@ Rails.application.routes.draw do
         patch :deactivate
       end
     end
+
+    # IGSIGN template metadata management (admin only)
+    resources :templates, only: %i[index new create edit update] do
+      member do
+        patch :activate
+        patch :deprecate
+      end
+    end
   end
 
   # Legacy /cafs redirects — keeps bookmarks and old links working.
@@ -145,7 +153,8 @@ Rails.application.routes.draw do
   resources :templates_archived, only: %i[index], path: 'templates/archived'
   resources :folders, only: %i[show edit update destroy], controller: 'template_folders'
   resources :template_sharings_testing, only: %i[create]
-  resources :templates, only: %i[index], controller: 'templates_dashboard'
+  # IGSIGN template library for senders (overrides DocuSeal's templates_dashboard index)
+  resources :templates, only: %i[index], controller: 'templates_library'
   resources :submissions_filters, only: %i[show], param: 'name'
   resources :templates, only: %i[new create edit update show destroy] do
     resources :clone, only: %i[new create], controller: 'templates_clone'

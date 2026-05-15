@@ -12,6 +12,17 @@
   <h1 style="font-size:1.5rem;font-weight:700;color:#111827;margin-bottom:4px;">New Agreement</h1>
   <p style="font-size:14px;color:#6b7280;margin-bottom:1.5rem;">Signatories are assigned automatically based on entity and agreement type.</p>
   <%= form_with scope: :agreement, url: agreements_path, method: :post, html: { id: 'agwiz' } do |f| %>
+    <%# Pass template_id through the form if pre-selected from the library %>
+    <% if @preselected_template_id.present? %>
+      <%= hidden_field_tag :template_id, @preselected_template_id %>
+      <% tmpl = current_account.templates.find_by(id: @preselected_template_id) %>
+      <% if tmpl %>
+        <div style="margin-bottom:1rem;padding:12px 16px;border-radius:8px;background:rgba(69,172,52,0.08);border:1px solid rgba(69,172,52,0.3);display:flex;align-items:center;gap:10px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#45AC34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span style="font-size:13px;color:#162B3C;">Using template: <strong><%= tmpl.name %></strong></span>
+        </div>
+      <% end %>
+    <% end %>
     <% if @agreement.errors.any? %>
       <div style="margin-bottom:1rem;padding:1rem;border-radius:8px;background:#fef2f2;border:1px solid #fecaca;font-size:14px;color:#b91c1c;">
         <% @agreement.errors.full_messages.each do |msg| %><p>&bull; <%= msg %></p><% end %>
