@@ -82,6 +82,7 @@ Rails.application.routes.draw do
       get  :review
       post :send_agreement
       get  :caf_preview
+      get  :signing_journey
     end
     collection do
       get :search_companies

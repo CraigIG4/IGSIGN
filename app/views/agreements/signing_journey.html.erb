@@ -1,0 +1,8 @@
+<turbo-frame id="signing-journey-<%= @agreement.id %>">
+  <%= render 'signing_journey',
+             agreement:            @agreement,
+             signatories:          @signatories,
+             mode:                 :live,
+             submitter_statuses:   @submitter_statuses,
+             counterparty_signatory: @counterparty_signatory %>
+</turbo-frame>

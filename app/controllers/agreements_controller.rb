@@ -4,7 +4,7 @@
 class AgreementsController < ApplicationController
   skip_authorization_check
   before_action :authenticate_user!
-  before_action :set_agreement, only: %i[show upload process_upload position save_fields review send_agreement caf_preview]
+  before_action :set_agreement, only: %i[show upload process_upload position save_fields review send_agreement caf_preview signing_journey]
 
   # ── Index ──────────────────────────────────────────────────────────────────
 
@@ -26,7 +26,18 @@ class AgreementsController < ApplicationController
   # ── Show ───────────────────────────────────────────────────────────────────
 
   def show
-    @signatories = @agreement.signatories || []
+    @signatories            = @agreement.signatories || []
+    @submitter_statuses     = build_submitter_statuses(@agreement)
+    @counterparty_signatory = load_counterparty_signatory
+  end
+
+  # ── Signing Journey fragment (Turbo Frame polling endpoint) ────────────
+
+  def signing_journey
+    @signatories            = @agreement.signatories || []
+    @submitter_statuses     = build_submitter_statuses(@agreement)
+    @counterparty_signatory = load_counterparty_signatory
+    render layout: false
   end
 
   # ── Step 1 — Details ───────────────────────────────────────────────────────
@@ -150,11 +161,7 @@ class AgreementsController < ApplicationController
     @signatories = @agreement.signatories || []
     @template_doc = @agreement.template
 
-    # Load memorised signatory for authority badge.
-    if @agreement.company && @agreement.counterparty_email.present?
-      @counterparty_signatory = @agreement.company.company_signatories
-                                          .find_by(email: @agreement.counterparty_email.strip.downcase)
-    end
+    @counterparty_signatory = load_counterparty_signatory
   end
 
   # ── Send ───────────────────────────────────────────────────────────────────
@@ -345,6 +352,26 @@ class AgreementsController < ApplicationController
                          .map { |f| f['submitter_uuid'] }.to_set
 
     subs.filter_map { |sub| sub['name'] unless signed_uuids.include?(sub['uuid']) }
+  end
+
+  # Returns a hash of email.downcase => Submitter for the CAF submission's
+  # submitters, used to derive per-signatory signing status.
+  def build_submitter_statuses(agreement)
+    return {} unless agreement.caf_submission
+
+    agreement.caf_submission.submitters
+             .index_by { |s| s.email.to_s.strip.downcase }
+  rescue StandardError
+    {}
+  end
+
+  # Loads the memorised CompanySignatory for the agreement's counterparty
+  # email (if a company is linked). Reused across show, signing_journey, review.
+  def load_counterparty_signatory
+    return unless @agreement.company && @agreement.counterparty_email.present?
+
+    @agreement.company.company_signatories
+              .find_by(email: @agreement.counterparty_email.strip.downcase)
   end
 
   # Fills blank counterparty fields on the agreement from the associated

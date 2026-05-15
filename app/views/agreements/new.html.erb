@@ -137,6 +137,48 @@
     </div>
   <% end %>
 </div>
+
+<%# ── Signing Journey Preview (appears when entity + type are selected) ── %>
+<div id="sj-preview" style="display:none;" class="max-w-5xl mx-auto px-4 pb-8">
+  <style>
+  .ig-sj-chain{display:flex;flex-direction:column;align-items:center;list-style:none;padding:0;margin:0;}
+  @media(min-width:640px){.ig-sj-chain{flex-direction:row;align-items:flex-start;flex-wrap:nowrap;}}
+  .ig-sj-node{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+  .ig-sj-conn{display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .ig-sj-conn-v{width:2px;height:2rem;background:#e5e7eb;position:relative;}
+  .ig-sj-conn-v::after{content:'';position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid #d1d5db;}
+  .ig-sj-conn-h{display:none;width:2.5rem;height:2px;background:#e5e7eb;position:relative;}
+  .ig-sj-conn-h::after{content:'';position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:7px solid #d1d5db;}
+  @media(min-width:640px){.ig-sj-conn-v{display:none;}.ig-sj-conn-h{display:block;}}
+  .ig-sj-break{display:flex;align-items:center;gap:.5rem;padding:.75rem 0;width:100%;}
+  @media(min-width:640px){.ig-sj-break{flex-direction:column;width:auto;height:auto;padding:0 .75rem;align-self:stretch;}}
+  .ig-sj-break-line{flex:1;height:1px;background:#e5e7eb;}
+  @media(min-width:640px){.ig-sj-break-line{flex:1;width:1px;height:auto;}}
+  .ig-sj-break-lbl{font-size:.625rem;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;}
+  .ig-sj-twrap{position:relative;display:flex;flex-direction:column;align-items:center;}
+  .ig-sj-twrap:focus{outline:none;}
+  .ig-sj-avatar-wrap{position:relative;display:flex;align-items:center;justify-content:center;}
+  .ig-sj-avatar{width:3rem;height:3rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.875rem;position:relative;z-index:1;transition:transform .15s;}
+  .ig-sj-twrap:hover .ig-sj-avatar,.ig-sj-twrap:focus .ig-sj-avatar{transform:scale(1.08);}
+  .ig-sj-tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#111827;color:white;font-size:11px;line-height:1.45;padding:5px 10px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,.3);}
+  .ig-sj-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:4px solid #111827;}
+  .ig-sj-twrap:hover .ig-sj-tip,.ig-sj-twrap:focus .ig-sj-tip{opacity:1;}
+  </style>
+  <div class="rounded-xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-3 border-b border-gray-100 flex items-center gap-2" style="background-color:#f8fafc;">
+      <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      <span class="text-sm font-semibold text-gray-700">Signing journey</span>
+    </div>
+    <div class="px-5 py-5 overflow-x-auto" id="sj-chain-container"></div>
+    <div class="px-5 pb-4">
+      <p class="text-xs text-gray-400 text-center">Estimated completion: 3–5 business days based on past agreements</p>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   var E=<%= raw IgSignatories.entities_for_js.to_json %>;
@@ -145,6 +187,7 @@
   var M={nda:'nda',msa:'long_form',sla:'long_form',vendor:'long_form',other:'long_form',addendum:'short_form',employment:'short_form',policy:'nda'};
   var SEARCH='<%= search_companies_agreements_path(format: :json) %>';
   var SIGNATORIES_URL='<%= recent_signatories_agreements_path(format: :json) %>';
+  var sjChain=[];
   var typeSel=document.getElementById('ag_type'),entSel=document.getElementById('ag_entity'),panel=document.getElementById('entity_panel');
   function updatePanel(){
     var ek=entSel&&entSel.value;if(!ek){panel.style.display='none';return;}
@@ -158,6 +201,7 @@
     document.getElementById('ep_chain').innerHTML=chain.length?chain.map(function(p,i){return'<span style="display:flex;align-items:center;gap:6px;margin-bottom:1px;"><span style="width:18px;height:18px;border-radius:50%;background:#162B3C;color:white;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">'+(i+1)+'</span><strong>'+p.name+'</strong>&nbsp;<span style="color:#6b7280;">'+p.title+'</span></span>';}).join(''):'<span style="color:#9ca3af">Select agreement type to see chain</span>';
     panel.style.display='block';
     document.getElementById('ep_copy').onclick=function(){if(navigator.clipboard){navigator.clipboard.writeText(e.name+'\nReg: '+e.registration+'\n'+e.address).then(function(){var ok=document.getElementById('ep_ok');ok.style.display='inline';setTimeout(function(){ok.style.display='none';},2000);});}};
+    sjChain=chain;renderSigningJourney(chain,(cn&&cn.value)||'',(ce&&ce.value)||'');
   }
   entSel&&entSel.addEventListener('change',updatePanel);
   typeSel&&typeSel.addEventListener('change',updatePanel);
@@ -245,6 +289,7 @@
     /* Fill counterparty fields (only if empty, or this is an explicit click) */
     if(cn&&(!cn.value||!isAuto))cn.value=sig.name;
     if(ce&&(!ce.value||!isAuto))ce.value=sig.email;
+    renderSigningJourney(sjChain,(cn&&cn.value)||'',(ce&&ce.value)||'');
   }
 
   var clr=document.getElementById('co_clear');
@@ -260,6 +305,62 @@
   ncn&&ncn.addEventListener('input',function(){if(cn&&!cn.value)cn.value=ncn.value;});
   nce&&nce.addEventListener('input',function(){if(ce&&!ce.value)ce.value=nce.value;});
   document.addEventListener('click',function(e){if(rb&&si&&!si.contains(e.target)&&!rb.contains(e.target))rb.style.display='none';});
+
+  /* ── Counterparty name/email live update ─────────────────────────────── */
+  cn&&cn.addEventListener('input',function(){renderSigningJourney(sjChain,cn.value,(ce&&ce.value)||'');});
+  ce&&ce.addEventListener('input',function(){renderSigningJourney(sjChain,(cn&&cn.value)||'',ce.value);});
+
+  /* ── Signing Journey renderer (preview mode, all nodes pending) ──────── */
+  function renderSigningJourney(chain,ctName,ctEmail){
+    var prev=document.getElementById('sj-preview'),c=document.getElementById('sj-chain-container');
+    if(!prev||!c)return;
+    if(!chain||!chain.length){prev.style.display='none';return;}
+    var html='<ol class="ig-sj-chain" role="list" aria-label="Signing journey">';
+    chain.forEach(function(p,i){
+      html+=igSjNodeHtml(i,p);
+      if(i<chain.length-1)html+=igSjConnHtml();
+    });
+    html+='<li class="ig-sj-break" aria-hidden="true"><div class="ig-sj-break-line"></div><span class="ig-sj-break-lbl">Stage 2</span><div class="ig-sj-break-line"></div></li>';
+    html+=igSjConnHtml();
+    html+=igSjCpNodeHtml(ctName,ctEmail);
+    html+='</ol>';
+    c.innerHTML=html;
+    prev.style.display='';
+  }
+  function igSjNodeHtml(idx,p){
+    var raw=p.name||'';
+    var ini=(raw.split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase())||String(idx+1);
+    var dn=raw.split(' ').slice(0,2).join(' ').substring(0,14);
+    var dr=(p.title||'').split(' ').slice(0,3).join(' ').substring(0,22);
+    return '<li class="ig-sj-node" role="listitem" style="min-width:5rem;">'+
+      '<div class="ig-sj-twrap" tabindex="0" aria-label="'+escHtml(raw)+', '+escHtml(p.title||'')+', Pending">'+
+        '<div class="ig-sj-avatar-wrap">'+
+          '<div class="ig-sj-avatar" style="background-color:#f3f4f6;color:#9ca3af;border:2px solid #e5e7eb;" aria-hidden="true">'+escHtml(ini)+'</div>'+
+        '</div>'+
+        '<div class="ig-sj-tip" role="tooltip"><strong>'+escHtml(raw)+'</strong><br>'+escHtml(p.title||'')+'<br>Ignition Group'+(p.email?'<br><span style="color:#9ca3af;">'+escHtml(p.email)+'</span>':'')+'</div>'+
+      '</div>'+
+      '<p class="mt-2 text-xs font-semibold text-gray-700 text-center" style="max-width:5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escHtml(dn)+'</p>'+
+      '<p class="text-xs text-gray-400 text-center leading-tight" style="max-width:5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;">'+escHtml(dr)+'</p>'+
+    '</li>';
+  }
+  function igSjCpNodeHtml(ctName,ctEmail){
+    var lbl=(ctName&&ctName.trim())||'Counterparty';
+    var ini=lbl==='Counterparty'?'CP':lbl.split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase()||'CP';
+    var dn=lbl.split(' ').slice(0,2).join(' ').substring(0,14);
+    return '<li class="ig-sj-node" role="listitem" style="min-width:5rem;">'+
+      '<div class="ig-sj-twrap" tabindex="0" aria-label="'+escHtml(lbl)+', Counterparty Signatory, Pending">'+
+        '<div class="ig-sj-avatar-wrap">'+
+          '<div class="ig-sj-avatar" style="background:white;color:#6b7280;border:2px dashed #d1d5db;" aria-hidden="true">'+escHtml(ini)+'</div>'+
+        '</div>'+
+        '<div class="ig-sj-tip" role="tooltip"><strong>'+escHtml(lbl)+'</strong><br>Counterparty Signatory'+(ctEmail&&ctEmail.trim()?'<br><span style="color:#9ca3af;">'+escHtml(ctEmail)+'</span>':'')+'</div>'+
+      '</div>'+
+      '<p class="mt-2 text-xs font-semibold text-gray-700 text-center" style="max-width:5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escHtml(dn)+'</p>'+
+      '<p class="text-xs text-gray-400 text-center leading-tight" style="max-width:5rem;font-size:10px;">Counterparty</p>'+
+    '</li>';
+  }
+  function igSjConnHtml(){
+    return '<li class="ig-sj-conn" aria-hidden="true" style="padding-bottom:2.5rem;"><div class="ig-sj-conn-v"></div><div class="ig-sj-conn-h"></div></li>';
+  }
 
   function escHtml(s){
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');

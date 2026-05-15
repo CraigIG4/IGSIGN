@@ -1,0 +1,235 @@
+<%
+  # ── Locals ──────────────────────────────────────────────────────────────
+  #   agreement            CafWorkflow record
+  #   signatories          Array of {position, role, name, email, placeholder}
+  #   mode                 :preview or :live
+  #   submitter_statuses   Hash of email.downcase => Submitter (live mode)
+  #   counterparty_signatory CompanySignatory (optional, for tooltip)
+  sub_statuses = local_assigns.fetch(:submitter_statuses, {})
+  cp_sig       = local_assigns.fetch(:counterparty_signatory, nil)
+
+  # ── Status derivation ───────────────────────────────────────────────────
+  ig_all_done = agreement.status.in?(%w[ig_complete sent_counterparty complete])
+
+  # Index of first signer who hasn't yet completed (and hasn't declined)
+  first_unsigned_idx = if mode == :live && agreement.pending_ig?
+    signatories.each_with_index.find { |sig, _idx|
+      sub = sub_statuses[sig['email'].to_s.strip.downcase]
+      sub&.completed_at.blank? && sub&.declined_at.blank?
+    }&.last
+  end
+
+  sig_nodes = signatories.each_with_index.map do |sig, idx|
+    email = sig['email'].to_s.strip.downcase
+    sub   = sub_statuses[email]
+
+    state = if mode != :live
+      :pending
+    elsif ig_all_done || sub&.completed_at.present?
+      :signed
+    elsif sub&.declined_at.present?
+      :declined
+    elsif idx == first_unsigned_idx
+      :waiting
+    else
+      :pending
+    end
+
+    ts = if mode == :live
+      if sub&.completed_at.present?
+        "Signed #{time_ago_in_words(sub.completed_at)} ago"
+      elsif sub&.declined_at.present?
+        "Declined #{time_ago_in_words(sub.declined_at)} ago"
+      elsif state == :waiting
+        "Waiting for review"
+      end
+    end
+
+    { sig: sig, idx: idx, state: state, ts: ts }
+  end
+
+  # ── Counterparty status ──────────────────────────────────────────────────
+  cp_state = if mode != :live
+    :pending
+  elsif agreement.complete?
+    :signed
+  elsif agreement.sent_counterparty?
+    :waiting
+  elsif agreement.cancelled?
+    :declined
+  else
+    :pending
+  end
+
+  cp_name  = agreement.counterparty_name.presence ||
+             agreement.contracting_party.presence || 'Counterparty'
+  cp_email = agreement.counterparty_email.presence
+  cp_ts = if mode == :live
+    case cp_state
+    when :signed  then 'Signed'
+    when :waiting then 'Waiting for signature'
+    end
+  end
+
+  # ── Inline helpers ───────────────────────────────────────────────────────
+  avatar_bg = ->(state) {
+    case state
+    when :signed   then 'background-color:#45AC34;color:white;'
+    when :waiting  then 'background-color:#162B3C;color:white;'
+    when :declined then 'background-color:#ef4444;color:white;'
+    else                'background-color:#f3f4f6;color:#9ca3af;border:2px solid #e5e7eb;'
+    end
+  }
+  state_label = ->(state) {
+    { signed: 'Signed', waiting: 'Waiting for signature',
+      declined: 'Declined', pending: 'Pending' }[state] || state.to_s.humanize
+  }
+  initials_of = ->(name) {
+    name.to_s.split.first(2).map { |w| w[0]&.upcase }.compact.join
+  }
+  short_role = ->(role) {
+    role.to_s.split.first(3).join(' ').truncate(22, omission: '…')
+  }
+%>
+<style>
+.ig-sj-chain{display:flex;flex-direction:column;align-items:center;list-style:none;padding:0;margin:0;}
+@media(min-width:640px){.ig-sj-chain{flex-direction:row;align-items:flex-start;flex-wrap:nowrap;}}
+.ig-sj-node{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+.ig-sj-conn{display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ig-sj-conn-v{width:2px;height:2rem;background:#e5e7eb;position:relative;}
+.ig-sj-conn-v::after{content:'';position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid #d1d5db;}
+.ig-sj-conn-h{display:none;width:2.5rem;height:2px;background:#e5e7eb;position:relative;}
+.ig-sj-conn-h::after{content:'';position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:7px solid #d1d5db;}
+@media(min-width:640px){.ig-sj-conn-v{display:none;}.ig-sj-conn-h{display:block;}}
+.ig-sj-break{display:flex;align-items:center;gap:.5rem;padding:.75rem 0;width:100%;}
+@media(min-width:640px){.ig-sj-break{flex-direction:column;width:auto;height:auto;padding:0 .75rem;align-self:stretch;}}
+.ig-sj-break-line{flex:1;height:1px;background:#e5e7eb;}
+@media(min-width:640px){.ig-sj-break-line{flex:1;width:1px;height:auto;}}
+.ig-sj-break-lbl{font-size:.625rem;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;}
+.ig-sj-twrap{position:relative;display:flex;flex-direction:column;align-items:center;}
+.ig-sj-twrap:focus{outline:none;}
+.ig-sj-avatar-wrap{position:relative;display:flex;align-items:center;justify-content:center;}
+.ig-sj-avatar{width:3rem;height:3rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.875rem;position:relative;z-index:1;transition:transform .15s;}
+.ig-sj-twrap:hover .ig-sj-avatar,.ig-sj-twrap:focus .ig-sj-avatar{transform:scale(1.08);}
+@keyframes ig-sj-ping{0%{transform:scale(1);opacity:.65;}100%{transform:scale(1.7);opacity:0;}}
+.ig-sj-pulse{position:absolute;inset:-4px;border-radius:50%;background:#fde68a;animation:ig-sj-ping 1.5s ease-out infinite;pointer-events:none;z-index:0;}
+.ig-sj-tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#111827;color:white;font-size:11px;line-height:1.45;padding:5px 10px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,.3);}
+.ig-sj-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:4px solid #111827;}
+.ig-sj-twrap:hover .ig-sj-tip,.ig-sj-twrap:focus .ig-sj-tip{opacity:1;}
+</style>
+
+<%# ── Aria live region (screen readers announced on polling updates) ── %>
+<div aria-live="polite" aria-atomic="false" class="sr-only" id="ig-sj-live-<%= agreement.id %>"></div>
+
+<ol class="ig-sj-chain" role="list" aria-label="Signing journey for <%= agreement.contracting_party.presence || 'this agreement' %>">
+
+  <%# ── Stage 1: IG signatories ──────────────────────────────────────── %>
+  <% sig_nodes.each do |node| %>
+    <% sig = node[:sig]; state = node[:state]; ts = node[:ts]; idx = node[:idx] %>
+    <%
+      initials = initials_of.(sig['name']).presence || (idx + 1).to_s
+      display_name = sig['name'].to_s.split.first(2).join(' ').truncate(14, omission: '…')
+      display_role = short_role.(sig['role'])
+    %>
+
+    <li class="ig-sj-node" role="listitem" style="min-width:5rem;">
+      <div class="ig-sj-twrap" tabindex="0"
+           aria-label="<%= "#{sig['name']}, #{sig['role']}, #{state_label.(state)}" %>">
+        <div class="ig-sj-avatar-wrap">
+          <% if state == :waiting %>
+            <div class="ig-sj-pulse" aria-hidden="true"></div>
+          <% end %>
+          <div class="ig-sj-avatar" style="<%= avatar_bg.(state) %>" aria-hidden="true">
+            <% if state == :signed %>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
+            <% elsif state == :declined %>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+            <% else %>
+              <%= initials %>
+            <% end %>
+          </div>
+        </div>
+        <div class="ig-sj-tip" role="tooltip">
+          <strong><%= sig['name'] %></strong><br>
+          <%= sig['role'] %><br>
+          Ignition Group<% if sig['email'].present? %><br><span style="color:#9ca3af;"><%= sig['email'] %></span><% end %>
+        </div>
+      </div>
+      <p class="mt-2 text-xs font-semibold text-gray-700 text-center" style="max-width:5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%= display_name %></p>
+      <p class="text-xs text-gray-400 text-center leading-tight" style="max-width:5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;"><%= display_role %></p>
+      <% if ts.present? %>
+        <p class="text-center leading-tight mt-0.5" style="font-size:10px;color:<%= state == :waiting ? '#d97706' : '#9ca3af' %>;">
+          <%= ts %>
+        </p>
+      <% end %>
+    </li>
+
+    <%# Connector between IG nodes %>
+    <% unless idx == sig_nodes.length - 1 %>
+      <li class="ig-sj-conn" aria-hidden="true" style="padding-bottom:2.5rem;">
+        <div class="ig-sj-conn-v"></div>
+        <div class="ig-sj-conn-h"></div>
+      </li>
+    <% end %>
+  <% end %>
+
+  <%# ── Stage break ────────────────────────────────────────────────────── %>
+  <li class="ig-sj-break" aria-hidden="true">
+    <div class="ig-sj-break-line"></div>
+    <span class="ig-sj-break-lbl">Stage&nbsp;2</span>
+    <div class="ig-sj-break-line"></div>
+  </li>
+
+  <%# ── Counterparty ───────────────────────────────────────────────────── %>
+  <%
+    cp_initials = initials_of.(cp_name).presence || 'CP'
+    cp_display  = cp_name.split.first(2).join(' ').truncate(14, omission: '…')
+  %>
+  <li class="ig-sj-node" role="listitem" style="min-width:5rem;">
+    <div class="ig-sj-twrap" tabindex="0"
+         aria-label="<%= "#{cp_name}, Counterparty Signatory, #{state_label.(cp_state)}" %>">
+      <div class="ig-sj-avatar-wrap">
+        <% if cp_state == :waiting %>
+          <div class="ig-sj-pulse" aria-hidden="true"></div>
+        <% end %>
+        <% if cp_state == :pending %>
+          <%# Dashed border for counterparty pending (not yet involved) %>
+          <div class="ig-sj-avatar" style="background:white;color:#6b7280;border:2px dashed #d1d5db;" aria-hidden="true">
+            <%= cp_initials %>
+          </div>
+        <% else %>
+          <div class="ig-sj-avatar" style="<%= avatar_bg.(cp_state) %>" aria-hidden="true">
+            <% if cp_state == :signed %>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
+            <% elsif cp_state == :declined %>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+            <% else %>
+              <%= cp_initials %>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+      <div class="ig-sj-tip" role="tooltip">
+        <strong><%= cp_name %></strong><br>
+        Counterparty Signatory<br>
+        <% if cp_email.present? %><span style="color:#9ca3af;"><%= cp_email %></span><% end %>
+        <% if cp_sig&.authority_on_file? %><br><span style="color:#86efac;">✓ Authority on file</span><% end %>
+      </div>
+    </div>
+    <p class="mt-2 text-xs font-semibold text-gray-700 text-center" style="max-width:5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%= cp_display %></p>
+    <p class="text-xs text-gray-400 text-center leading-tight" style="max-width:5rem;font-size:10px;">Counterparty</p>
+    <% if cp_ts.present? %>
+      <p class="text-center leading-tight mt-0.5" style="font-size:10px;color:<%= cp_state == :waiting ? '#d97706' : '#9ca3af' %>;">
+        <%= cp_ts %>
+      </p>
+    <% end %>
+  </li>
+
+</ol>
+
+<%# ── Caption (preview mode) ─────────────────────────────────────────── %>
+<% if mode == :preview %>
+  <p class="text-xs text-gray-400 text-center mt-4">
+    Estimated completion: 3–5 business days based on past agreements
+  </p>
+<% end %>
