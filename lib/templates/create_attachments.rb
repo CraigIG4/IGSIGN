@@ -152,18 +152,31 @@ module Templates
 
     # Use LibreOffice headless to convert .docx/.doc/.xls/.odt/.rtf to PDF.
     # Raises InvalidFileType if conversion fails or LibreOffice is not installed.
+    #
+    # Each conversion gets an isolated LibreOffice user profile via
+    # --env:UserInstallation so that concurrent conversions and post-crash
+    # lock files in the shared ~/.config/libreoffice directory cannot block
+    # subsequent calls.  The per-conversion /tmp/soffice_* directories are
+    # small and ephemeral — the OS reclaims them on the next /tmp sweep.
     def convert_document_to_pdf(file)
       require 'open3'
 
-      soffice = find_soffice!
+      soffice    = find_soffice!
       output_dir = Dir.mktmpdir('igsign_doc_')
+      user_profile = "file:///tmp/soffice_#{SecureRandom.hex(8)}/"
 
-      _stdout, stderr, status = Open3.capture3(
-        soffice, '--headless', '--convert-to', 'pdf', '--outdir', output_dir,
+      stdout, stderr, status = Open3.capture3(
+        soffice,
+        "--env:UserInstallation=#{user_profile}",
+        '--headless', '--convert-to', 'pdf', '--outdir', output_dir,
         file.tempfile.path
       )
 
-      raise InvalidFileType, "Document conversion failed: #{stderr.strip}" unless status.success?
+      unless status.success?
+        Rails.logger.error "[IGSIGN] LibreOffice stderr: #{stderr}" if stderr.present?
+        Rails.logger.error "[IGSIGN] LibreOffice stdout: #{stdout}" if stdout.present?
+        raise InvalidFileType, "Document conversion failed: #{stderr.strip}"
+      end
 
       pdf_files = Dir.glob(File.join(output_dir, '*.pdf'))
       raise InvalidFileType, 'Document conversion produced no PDF output' if pdf_files.empty?
