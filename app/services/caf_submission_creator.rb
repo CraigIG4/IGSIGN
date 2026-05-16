@@ -66,7 +66,11 @@ class CafSubmissionCreator
   end
 
   def build_submission
-    template = find_or_create_caf_template
+    # NDA agreements use the standing NDA Template (pre-built document + fields).
+    # All other types use the generic CAF Template which provides the signing-page
+    # submitter slots; the actual document is attached separately by
+    # attach_contract_document.
+    template = @caf.agreement_type == 'nda' ? find_nda_template! : find_or_create_caf_template
 
     Submission.create!(
       account: @caf.account,
@@ -144,30 +148,45 @@ class CafSubmissionCreator
     File.delete(pdf_path) if pdf_path && File.exist?(pdf_path)
   end
 
-  # Attaches every uploaded agreement document to the submission and registers
-  # each as an externally-visible document (internal_only: false).
+  # Registers externally-visible documents (internal_only: false) on the submission.
   #
-  # Documents live on @caf.template (created by AgreementsController#process_upload
-  # via Templates::CreateAttachments), not on @caf.contract_document.
-  # Multiple files may be attached when the sender uploaded more than one document.
+  # Upload path: blobs from @caf.template are re-attached to the submission as
+  # new ActiveStorage::Attachment records (new UUIDs).  CafStageDocument entries
+  # reference those new submission-level UUIDs.
+  #
+  # NDA path: the NDA document is already embedded in the NDA Template's schema
+  # which the submission inherits.  Re-attaching the blob would duplicate the
+  # document in the signing form.  Instead, CafStageDocument entries are created
+  # directly from the template schema using the template-level attachment UUIDs.
   def attach_contract_document(submission)
     template = @caf.template
     return unless template
 
-    template.documents.attachments.each do |src_attach|
-      blob = src_attach.blob
-      submission.documents.attach(blob)
-      attachment = ActiveStorage::Attachment.find_by!(
-        record_type: 'Submission', record_id: submission.id,
-        name: 'documents', blob_id: blob.id
-      )
+    if @caf.agreement_type == 'nda'
+      (template.schema || []).each do |item|
+        CafStageDocument.create!(
+          submission:    submission,
+          document_uuid: item['attachment_uuid'],
+          document_name: item['name'].to_s,
+          internal_only: false
+        )
+      end
+    else
+      template.documents.attachments.each do |src_attach|
+        blob = src_attach.blob
+        submission.documents.attach(blob)
+        attachment = ActiveStorage::Attachment.find_by!(
+          record_type: 'Submission', record_id: submission.id,
+          name: 'documents', blob_id: blob.id
+        )
 
-      CafStageDocument.create!(
-        submission:    submission,
-        document_uuid: attachment.uuid,
-        document_name: blob.filename.to_s,
-        internal_only: false
-      )
+        CafStageDocument.create!(
+          submission:    submission,
+          document_uuid: attachment.uuid,
+          document_name: blob.filename.to_s,
+          internal_only: false
+        )
+      end
     end
   end
 
@@ -180,7 +199,14 @@ class CafSubmissionCreator
   # submission attachment UUID before merging.  When multiple documents are
   # uploaded, all template→submission UUID pairs are built into a single map
   # and applied in one pass over the fields array.
+  #
+  # NDA path: the submission IS the NDA template, so fields already reference
+  # the correct attachment UUIDs.  No blobs were re-attached, so no remap is
+  # needed — returning early leaves submission.template_fields nil and DocuSeal
+  # renders the template's own fields directly.
   def merge_agreement_template_fields!(submission)
+    return if @caf.agreement_type == 'nda'
+
     template = @caf.template
     return unless template && template.fields.present?
 
@@ -258,6 +284,15 @@ class CafSubmissionCreator
       schema: [],
       submitters: [{ 'name' => 'Approver', 'uuid' => SecureRandom.uuid }]
     )
+  end
+
+  # Looks up the standing NDA Template.  Raises with an actionable message if
+  # it has not been created yet so the error surfaces cleanly at Send time.
+  def find_nda_template!
+    @caf.account.templates.find_by(name: 'IGSIGN NDA Template') ||
+      raise(StandardError,
+            'NDA Template has not been configured. ' \
+            "Create it in the Templates editor (#{@caf.account.id}) first.")
   end
 
   def build_default_stages(submission)

@@ -79,7 +79,16 @@ class AgreementsController < ApplicationController
     @agreement.auto_assign_signatories!
 
     if @agreement.save
-      redirect_to upload_agreement_path(@agreement)
+      if @agreement.agreement_type == 'nda'
+        # NDA path: bind the standing NDA template (if configured) and skip upload.
+        # If the template hasn't been created yet the agreement still saves; the
+        # missing-template error surfaces at Send time via CafSubmissionCreator.
+        nda_tpl = current_account.templates.find_by(name: 'IGSIGN NDA Template')
+        @agreement.update!(template: nda_tpl) if nda_tpl
+        redirect_to review_agreement_path(@agreement)
+      else
+        redirect_to upload_agreement_path(@agreement)
+      end
     else
       @companies = current_account.companies.alphabetical
       @step = 1

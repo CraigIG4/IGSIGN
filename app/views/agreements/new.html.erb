@@ -39,6 +39,19 @@
           <%= f.select :entity, IgSignatories::ENTITIES.map { |k, v| [v[:name], k.to_s] }, { include_blank: '-- Select entity --' }, id: 'ag_entity', style: 'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:14px;background:white;', required: true %>
         </div>
       </div>
+      <%# NDA path note — shown via JS when agreement_type == 'nda' %>
+      <div id="nda_note" style="display:none;border-radius:10px;border:1px solid #d1fae5;background:#f0fdf4;padding:1rem;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <svg style="width:18px;height:18px;flex-shrink:0;margin-top:1px;color:#16a34a;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+          </svg>
+          <div>
+            <p style="font-size:13px;font-weight:600;color:#15803d;margin-bottom:3px;">Standard IG NDA Template</p>
+            <p style="font-size:13px;color:#166534;">IGSIGN will use the standard IG NDA template. No document upload required. You will review the signing package before sending.</p>
+          </div>
+        </div>
+      </div>
+
       <div id="entity_panel" style="display:none;border-radius:10px;border:1px solid #dbeafe;background:#eff6ff;padding:1rem;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
           <div>
@@ -175,7 +188,7 @@
     </div>
     <div style="margin-top:2rem;display:flex;align-items:center;justify-content:space-between;padding-top:1.5rem;border-top:1px solid #e5e7eb;">
       <%= link_to agreements_path, style: 'font-size:14px;color:#6b7280;text-decoration:none;' do %>&larr; Cancel<% end %>
-      <%= f.submit 'Continue to Upload →', style: 'padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;color:white;background-color:#162B3C;cursor:pointer;border:none;' %>
+      <%= f.submit 'Continue to Upload →', id: 'ag_submit', style: 'padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;color:white;background-color:#162B3C;cursor:pointer;border:none;' %>
     </div>
   <% end %>
 </div>
@@ -247,6 +260,17 @@
   }
   entSel&&entSel.addEventListener('change',updatePanel);
   typeSel&&typeSel.addEventListener('change',updatePanel);
+
+  /* ── NDA note + submit label — fires on type change independently of entity ── */
+  function updateNdaNote(){
+    var at=typeSel?typeSel.value:'';
+    var isNda=(at==='nda');
+    var ndaNote=document.getElementById('nda_note');
+    if(ndaNote)ndaNote.style.display=isNda?'block':'none';
+    var submitBtn=document.getElementById('ag_submit');
+    if(submitBtn)submitBtn.value=isNda?'Continue to Review →':'Continue to Upload →';
+  }
+  typeSel&&typeSel.addEventListener('change',updateNdaNote);
 
   /* ── Company search ─────────────────────────────────────────────────────── */
   var si=document.getElementById('co_search'),rb=document.getElementById('co_results'),sb=document.getElementById('co_sel'),ci=document.getElementById('co_id'),cn=document.getElementById('ag_ct_name'),ce=document.getElementById('ag_ct_email');
