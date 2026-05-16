@@ -119,8 +119,13 @@ class AgreementsController < ApplicationController
     rescue StandardError => e
       template.destroy
       Rails.logger.error "[IGSIGN] Upload failed agreement=#{@agreement.id}: #{e.message}"
-      redirect_to upload_agreement_path(@agreement),
-                  alert: 'Upload failed. Please try again or contact support.'
+      user_message =
+        if e.message.match?(/LibreOffice|not installed/i)
+          'Word documents require LibreOffice which is not available. Please convert your document to PDF and upload again.'
+        else
+          'Upload failed. Please try again or contact support.'
+        end
+      redirect_to upload_agreement_path(@agreement), alert: user_message
     end
   end
   # rubocop:enable Metrics/MethodLength
