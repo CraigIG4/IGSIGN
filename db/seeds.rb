@@ -41,6 +41,35 @@ else
 end
 
 # ---------------------------------------------------------------------------
+# Pilot admin users
+# IMPORTANT: These users are seeded with a default password (IgSign2026!).
+# Each user MUST change their password on first login.
+# See docs/operations/pilot-launch-checklist.md for the full handover checklist.
+# ---------------------------------------------------------------------------
+[
+  { first_name: 'Sean',   last_name: 'Bergsma',     email: 'sean@ignitiongroup.co.za' },
+  { first_name: 'Donovan', last_name: 'Bergsma',    email: 'donovan@ignitiongroup.co.za' },
+  { first_name: 'Laren',  last_name: 'Farquharson', email: 'laren@ignitiongroup.co.za' }
+].each do |attrs|
+  pilot_user = User.find_or_initialize_by(email: attrs[:email])
+
+  if pilot_user.new_record?
+    pilot_user.assign_attributes(
+      first_name:   attrs[:first_name],
+      last_name:    attrs[:last_name],
+      password:     'IgSign2026!',
+      role:         User::ADMIN_ROLE,
+      account:      account,
+      confirmed_at: Time.current   # bypass email confirmation
+    )
+    pilot_user.save!
+    puts "Created pilot admin: #{pilot_user.email}"
+  else
+    puts "Pilot admin already exists: #{pilot_user.email}"
+  end
+end
+
+# ---------------------------------------------------------------------------
 # IG Entities and People
 # ---------------------------------------------------------------------------
 # IgSignatories::ENTITIES and IgSignatories::PEOPLE are Ruby constants defined
