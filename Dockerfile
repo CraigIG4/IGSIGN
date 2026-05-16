@@ -49,7 +49,7 @@ ENV OPENSSL_CONF=/etc/openssl_legacy.cnf
 
 WORKDIR /app
 
-RUN apt-get update -qq && apt-get install -y --no-install-recommends     libpq5 libvips42 libheif1 fontconfig curl     && rm -rf /var/lib/apt/lists/*
+RUN apt-get update -qq && apt-get install -y --no-install-recommends     libpq5 libvips42 libheif1 fontconfig curl libreoffice-headless default-jre-headless     && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd -g 2000 docuseal && useradd -u 2000 -g docuseal -s /bin/sh -m -d /home/docuseal docuseal
 
