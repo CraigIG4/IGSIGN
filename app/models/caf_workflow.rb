@@ -21,6 +21,7 @@
 #  requestor_name         :string
 #  signatories            :jsonb
 #  status                 :string           default("draft"), not null
+#  status_updated_at      :datetime
 #  created_at             :datetime         not null
 #  updated_at             :datetime         not null
 #  account_id             :bigint           not null
@@ -103,11 +104,15 @@ class CafWorkflow < ApplicationRecord
   validates :counterparty_email,
             format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
 
-  scope :active, -> { where.not(status: %w[complete cancelled]) }
-  scope :pending, -> { where(status: %w[pending_ig sent_counterparty]) }
+  scope :active,   -> { where.not(status: %w[complete cancelled]) }
+  scope :pending,  -> { where(status: %w[pending_ig sent_counterparty]) }
   scope :complete, -> { where(status: 'complete') }
-  scope :draft, -> { where(status: 'draft') }
-  scope :recent, -> { order(created_at: :desc) }
+  scope :draft,    -> { where(status: 'draft') }
+  scope :recent,   -> { order(created_at: :desc) }
+  scope :overdue,  -> {
+    where(status: %w[pending_ig ig_complete sent_counterparty])
+      .where('COALESCE(status_updated_at, updated_at) <= ?', 9.days.ago)
+  }
 
   # ── Labels ────────────────────────────────────────────────────────────────
 
@@ -171,6 +176,46 @@ class CafWorkflow < ApplicationRecord
   def sent_counterparty? = status == 'sent_counterparty'
   def complete?          = status == 'complete'
   def cancelled?         = status == 'cancelled'
+
+  # ── Timeline / overdue helpers ─────────────────────────────────────────────
+
+  # Number of whole days the workflow has been in its current status.
+  # Falls back to updated_at if status_updated_at is not yet stamped.
+  def days_in_current_stage
+    reference = status_updated_at || updated_at
+    ((Time.current - reference) / 1.day).to_i
+  end
+
+  # True when the workflow has been in an active signing status for >9 days.
+  def overdue?
+    !%w[complete cancelled draft].include?(status) && days_in_current_stage > 9
+  end
+
+  # True when the workflow has been waiting for >5 days (yellow warning threshold).
+  def slightly_overdue?
+    !%w[complete cancelled draft].include?(status) && days_in_current_stage > 5
+  end
+
+  # Returns the name of the person/party currently holding the workflow,
+  # working entirely from already-loaded ActiveRecord associations.
+  # Returns nil if the association data hasn't been eager-loaded or
+  # the stage can't be determined.
+  def current_holder_name
+    case status
+    when 'sent_counterparty'
+      counterparty_name.presence || contracting_party.presence || 'Counterparty'
+    when 'pending_ig', 'ig_complete'
+      return nil unless caf_submission
+
+      active_stage = caf_submission.caf_stages.to_a.find { |s| s.status == 'active' }
+      return nil unless active_stage
+
+      first_unsigned = active_stage.caf_stage_submitters.to_a
+                                   .sort_by(&:position)
+                                   .find { |css| css.submitter.completed_at.nil? }
+      first_unsigned&.submitter&.name
+    end
+  end
 
   # Returns the wizard step symbol a draft agreement should resume at.
   # Used by the agreements index "Continue →" link so that each agreement

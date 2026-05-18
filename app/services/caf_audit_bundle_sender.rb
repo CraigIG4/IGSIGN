@@ -20,7 +20,7 @@ class CafAuditBundleSender
       # we return early — preventing duplicate audit emails and status updates.
       return { success: true } unless stage2.complete!
 
-      @caf.update!(status: 'complete')
+      @caf.update!(status: 'complete', status_updated_at: Time.current)
     end
 
     # Send audit bundle emails outside the transaction so DB is committed first.

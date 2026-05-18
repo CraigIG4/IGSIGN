@@ -69,7 +69,8 @@ module Admin
       if @caf.draft?
         result = CafSubmissionCreator.new(@caf, current_user).call
         if result[:success]
-          @caf.update!(status: 'pending_ig', caf_submission: result[:submission])
+          @caf.update!(status: 'pending_ig', caf_submission: result[:submission],
+                       status_updated_at: Time.current)
           redirect_to admin_workflow_path(@caf),
                       notice: 'CAF submitted for internal approval. Signatories have been notified.'
         else

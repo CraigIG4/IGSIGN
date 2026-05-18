@@ -42,7 +42,7 @@ class CafCompletionHandler
       record_stage_transition_event
 
       # ── 4. Update workflow status ─────────────────────────────────────────────
-      @caf.update!(status: 'sent_counterparty')
+      @caf.update!(status: 'sent_counterparty', status_updated_at: Time.current)
 
       Rails.logger.info("[CafCompletionHandler] CAF #{@caf.id} IG stage complete → counterparty notified")
     end

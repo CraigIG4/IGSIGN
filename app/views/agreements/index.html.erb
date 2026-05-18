@@ -1,6 +1,6 @@
 <% content_for :title, 'Agreements' %>
 
-<div class="max-w-5xl mx-auto px-4 py-8">
+<div class="max-w-6xl mx-auto px-4 py-8">
 
   <%# ── Header ──────────────────────────────────────────────────────────────── %>
   <div class="flex items-center justify-between mb-6">
@@ -19,92 +19,235 @@
   </div>
 
   <%# ── Stats bar ────────────────────────────────────────────────────────────── %>
-  <div class="grid grid-cols-4 gap-4 mb-6">
+  <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
     <% [
-      { label: 'Total',    count: @stats[:total],    color: '#1a2332' },
-      { label: 'Draft',    count: @stats[:draft],    color: '#9ca3af' },
-      { label: 'Active',   count: @stats[:active],   color: '#d97706' },
-      { label: 'Complete', count: @stats[:complete], color: '#16a34a' }
+      { label: 'Total',    count: @stats[:total],    color: '#1a2332', icon: nil },
+      { label: 'Draft',    count: @stats[:draft],    color: '#9ca3af', icon: nil },
+      { label: 'Active',   count: @stats[:active],   color: '#d97706', icon: nil },
+      { label: 'Complete', count: @stats[:complete], color: '#16a34a', icon: nil }
     ].each do |s| %>
       <div class="rounded-xl border border-gray-200 bg-white px-4 py-3">
         <p class="text-2xl font-bold" style="color:<%= s[:color] %>;"><%= s[:count] %></p>
         <p class="text-xs text-gray-400 mt-0.5"><%= s[:label] %></p>
       </div>
     <% end %>
-  </div>
-
-  <%# ── Filter tabs ──────────────────────────────────────────────────────────── %>
-  <div class="flex items-center gap-1 mb-4 border-b border-gray-200">
-    <% [['', 'All'], ['draft', 'Draft'], ['pending_ig', 'Pending IG'], ['sent_counterparty', 'With Counterparty'], ['complete', 'Complete']].each do |val, label| %>
-      <% is_active = params[:status].to_s == val %>
-      <%= link_to agreements_path(status: val.presence),
-                  class: "px-3 py-2 text-sm font-medium border-b-2 transition-colors -mb-px
-              #{is_active ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-700'}" do %>
-        <%= label %>
-      <% end %>
-    <% end %>
-  </div>
-
-  <%# ── Table ───────────────────────────────────────────────────────────────── %>
-  <% if @agreements.any? %>
-    <div class="rounded-xl border border-gray-200 bg-white overflow-hidden">
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="border-b border-gray-200" style="background-color:#f8fafc;">
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Counterparty</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Entity</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Date</th>
-            <th class="px-4 py-3"></th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-          <% @agreements.each do |a| %>
-            <tr class="hover:bg-gray-50 transition-colors">
-              <td class="px-4 py-3">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold text-white"
-                      style="background-color:#1a2332;">
-                  <%= a.agreement_type_label.split(' — ').first %>
-                </span>
-              </td>
-              <td class="px-4 py-3">
-                <p class="font-medium text-gray-900 truncate max-w-[180px]">
-                  <%= a.contracting_party.presence || '—' %>
-                </p>
-                <% if a.company %>
-                  <p class="text-xs text-gray-400 truncate"><%= a.company.name %></p>
-                <% end %>
-              </td>
-              <td class="px-4 py-3 hidden md:table-cell text-gray-600 text-xs">
-                <%= a.entity_name %>
-              </td>
-              <td class="px-4 py-3">
-                <span class="badge <%= a.status_badge_class %> badge-sm whitespace-nowrap">
-                  <%= a.status_label %>
-                </span>
-              </td>
-              <td class="px-4 py-3 hidden md:table-cell text-gray-400 text-xs whitespace-nowrap">
-                <%= a.created_at.strftime('%d %b %Y') %>
-              </td>
-              <td class="px-4 py-3 text-right">
-                <% if a.draft? %>
-                  <%# Deep-link to the correct wizard step. NDA skips upload; non-NDA
-                      routes to upload (no template), position (template/no fields),
-                      or review (template + fields placed). %>
-                  <%= link_to 'Continue →',
-                              send(:"#{a.next_draft_step}_agreement_path", a),
-                              class: 'text-xs font-medium text-blue-600 hover:text-blue-800' %>
-                <% else %>
-                  <%= link_to 'View →', agreement_path(a),
-                              class: 'text-xs font-medium text-blue-600 hover:text-blue-800' %>
-                <% end %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+    <%# Overdue counter — red when non-zero %>
+    <div class="rounded-xl border px-4 py-3
+                <%= @stats[:overdue] > 0 ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white' %>">
+      <p class="text-2xl font-bold <%= @stats[:overdue] > 0 ? 'text-red-600' : 'text-gray-300' %>">
+        <%= @stats[:overdue] %>
+      </p>
+      <p class="text-xs mt-0.5 <%= @stats[:overdue] > 0 ? 'text-red-500 font-semibold' : 'text-gray-400' %>">
+        Overdue
+      </p>
     </div>
+  </div>
+
+  <%# ── Filter tabs + view toggle ───────────────────────────────────────────── %>
+  <div class="flex items-center justify-between mb-4 border-b border-gray-200">
+    <div class="flex items-center gap-1">
+      <% [['', 'All'], ['draft', 'Draft'], ['pending_ig', 'Pending IG'],
+          ['sent_counterparty', 'With Counterparty'], ['complete', 'Complete']].each do |val, label| %>
+        <% is_active = params[:status].to_s == val %>
+        <%= link_to agreements_path(status: val.presence),
+                    class: "px-3 py-2 text-sm font-medium border-b-2 transition-colors -mb-px
+            #{is_active ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-700'}" do %>
+          <%= label %>
+        <% end %>
+      <% end %>
+    </div>
+
+    <%# Table / Pipeline toggle %>
+    <div class="flex items-center gap-1 mb-px" id="ig-view-toggle">
+      <button id="ig-btn-table"
+              onclick="igSetView('table')"
+              class="p-1.5 rounded border text-gray-400 hover:text-gray-700 transition-colors"
+              title="Table view" aria-label="Table view">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M3 10h18M3 14h18M3 6h18M3 18h18"/>
+        </svg>
+      </button>
+      <button id="ig-btn-pipeline"
+              onclick="igSetView('pipeline')"
+              class="p-1.5 rounded border text-gray-400 hover:text-gray-700 transition-colors"
+              title="Pipeline view" aria-label="Pipeline view">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="18" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <% if @agreements.any? %>
+
+    <%# ── TABLE VIEW ────────────────────────────────────────────────────────── %>
+    <div id="ig-view-table">
+      <div class="rounded-xl border border-gray-200 bg-white overflow-hidden">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-200" style="background-color:#f8fafc;">
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Counterparty</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Entity</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Holder</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Days</th>
+              <th class="px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @agreements.each do |a| %>
+              <%
+                a_days    = a.days_in_current_stage
+                a_overdue = a.overdue?
+                a_warn    = a.slightly_overdue?
+                a_holder  = a.current_holder_name
+              %>
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-4 py-3">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold text-white"
+                        style="background-color:#1a2332;">
+                    <%= a.agreement_type_label.split(' — ').first %>
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <p class="font-medium text-gray-900 truncate max-w-[180px]">
+                    <%= a.contracting_party.presence || '—' %>
+                  </p>
+                  <% if a.company %>
+                    <p class="text-xs text-gray-400 truncate"><%= a.company.name %></p>
+                  <% end %>
+                </td>
+                <td class="px-4 py-3 hidden md:table-cell text-gray-600 text-xs">
+                  <%= a.entity_name %>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-1.5">
+                    <span class="badge <%= a.status_badge_class %> badge-sm whitespace-nowrap">
+                      <%= a.status_label %>
+                    </span>
+                    <% if a_overdue %>
+                      <span class="inline-flex px-1.5 py-0.5 rounded text-xs font-bold text-white bg-red-600">!</span>
+                    <% end %>
+                  </div>
+                </td>
+                <td class="px-4 py-3 hidden md:table-cell text-gray-600 text-xs">
+                  <%= a_holder.presence || '—' %>
+                </td>
+                <td class="px-4 py-3 hidden md:table-cell text-xs font-semibold
+                           <%= a_overdue ? 'text-red-600' : a_warn ? 'text-amber-600' : 'text-gray-400' %>">
+                  <%= a.draft? || a.complete? ? '—' : "#{a_days}d" %>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <% if a.draft? %>
+                    <%= link_to 'Continue →',
+                                send(:"#{a.next_draft_step}_agreement_path", a),
+                                class: 'text-xs font-medium text-blue-600 hover:text-blue-800' %>
+                  <% elsif a_overdue && (a.pending_ig? || a.sent_counterparty?) %>
+                    <%= button_to remind_agreement_path(a), method: :post,
+                                  class: 'text-xs font-semibold text-red-600 hover:text-red-800 underline bg-transparent border-0 cursor-pointer p-0' do %>
+                      Remind →
+                    <% end %>
+                  <% else %>
+                    <%= link_to 'View →', agreement_path(a),
+                                class: 'text-xs font-medium text-blue-600 hover:text-blue-800' %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <%# ── PIPELINE VIEW ──────────────────────────────────────────────────────── %>
+    <div id="ig-view-pipeline" class="hidden">
+      <%
+        pipeline_cols = [
+          { key: 'draft',             label: 'Draft',            color: '#9ca3af' },
+          { key: 'pending_ig',        label: 'IG Approval',      color: '#d97706' },
+          { key: 'sent_counterparty', label: 'With Counterparty', color: '#3b82f6' },
+          { key: 'complete',          label: 'Complete',          color: '#16a34a' }
+        ]
+
+        # Group all loaded agreements by status (include ig_complete in pending_ig column)
+        grouped = @agreements.group_by do |a|
+          case a.status
+          when 'ig_complete' then 'pending_ig'
+          else a.status
+          end
+        end
+      %>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <% pipeline_cols.each do |col| %>
+          <div class="rounded-xl border border-gray-200 bg-gray-50 overflow-hidden">
+            <%# Column header %>
+            <div class="px-3 py-2.5 border-b border-gray-200 flex items-center justify-between" style="background-color:#f8fafc;">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full" style="background-color:<%= col[:color] %>;"></span>
+                <span class="text-xs font-semibold text-gray-700"><%= col[:label] %></span>
+              </div>
+              <span class="text-xs font-bold text-gray-400"><%= (grouped[col[:key]] || []).size %></span>
+            </div>
+
+            <%# Cards %>
+            <div class="p-2 flex flex-col gap-2 min-h-[8rem]">
+              <% (grouped[col[:key]] || []).sort_by { |a| -(a.days_in_current_stage) }.each do |a| %>
+                <%
+                  a_days   = a.days_in_current_stage
+                  a_od     = a.overdue?
+                  a_warn   = a.slightly_overdue?
+                  a_holder = a.current_holder_name
+                %>
+                <div class="rounded-lg bg-white border shadow-sm px-3 py-2.5
+                            <%= a_od ? 'border-red-200' : a_warn ? 'border-amber-200' : 'border-gray-200' %>">
+                  <div class="flex items-start justify-between gap-1 mb-1">
+                    <span class="inline-flex px-1.5 py-0.5 rounded text-xs font-semibold text-white"
+                          style="background-color:#1a2332;">
+                      <%= a.agreement_type_label.split(' — ').first %>
+                    </span>
+                    <% if a_od %>
+                      <span class="inline-flex px-1.5 py-0.5 rounded text-xs font-bold text-white bg-red-600 whitespace-nowrap">
+                        OVERDUE
+                      </span>
+                    <% end %>
+                  </div>
+                  <p class="text-sm font-semibold text-gray-900 leading-tight truncate mt-1">
+                    <%= a.contracting_party.presence || '—' %>
+                  </p>
+                  <% if a_holder.present? && !a.draft? && !a.complete? %>
+                    <p class="text-xs text-gray-500 mt-0.5 truncate">↳ <%= a_holder %></p>
+                  <% end %>
+                  <div class="flex items-center justify-between mt-2">
+                    <% unless a.draft? || a.complete? %>
+                      <span class="text-xs font-semibold <%= a_od ? 'text-red-600' : a_warn ? 'text-amber-600' : 'text-gray-400' %>">
+                        <%= a_days %>d
+                      </span>
+                    <% else %>
+                      <span></span>
+                    <% end %>
+                    <% if a_od && (a.pending_ig? || a.sent_counterparty?) %>
+                      <%= button_to remind_agreement_path(a), method: :post,
+                                    class: 'text-xs font-semibold text-red-600 hover:text-red-800 bg-transparent border-0 cursor-pointer p-0 underline' do %>
+                        Remind
+                      <% end %>
+                    <% else %>
+                      <%= link_to 'View →', agreement_path(a),
+                                  class: 'text-xs font-medium text-blue-600 hover:text-blue-800' %>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+
+              <% if (grouped[col[:key]] || []).empty? %>
+                <p class="text-xs text-gray-400 text-center py-4">No agreements</p>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
   <% else %>
     <div class="rounded-xl border-2 border-dashed border-gray-200 py-16 text-center">
       <svg class="w-12 h-12 text-gray-200 mx-auto mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -119,3 +262,42 @@
   <% end %>
 
 </div>
+
+<%# ── View toggle JS (persists preference in localStorage) ─────────────────── %>
+<script nonce="<%= content_security_policy_nonce %>">
+(function () {
+  var PREF_KEY = 'igsign_agreements_view';
+
+  function igSetView(view) {
+    localStorage.setItem(PREF_KEY, view);
+    applyView(view);
+  }
+
+  function applyView(view) {
+    var tableEl    = document.getElementById('ig-view-table');
+    var pipelineEl = document.getElementById('ig-view-pipeline');
+    var btnTable   = document.getElementById('ig-btn-table');
+    var btnPipeline = document.getElementById('ig-btn-pipeline');
+    if (!tableEl || !pipelineEl) return;
+
+    if (view === 'pipeline') {
+      tableEl.classList.add('hidden');
+      pipelineEl.classList.remove('hidden');
+      if (btnPipeline) { btnPipeline.classList.add('bg-gray-200', 'text-gray-800'); }
+      if (btnTable)    { btnTable.classList.remove('bg-gray-200', 'text-gray-800'); }
+    } else {
+      pipelineEl.classList.add('hidden');
+      tableEl.classList.remove('hidden');
+      if (btnTable)    { btnTable.classList.add('bg-gray-200', 'text-gray-800'); }
+      if (btnPipeline) { btnPipeline.classList.remove('bg-gray-200', 'text-gray-800'); }
+    }
+  }
+
+  // Expose globally so onclick handlers can call it
+  window.igSetView = igSetView;
+
+  // Apply saved preference on page load
+  var saved = localStorage.getItem(PREF_KEY) || 'table';
+  applyView(saved);
+})();
+</script>

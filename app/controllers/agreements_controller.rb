@@ -9,17 +9,21 @@ class AgreementsController < ApplicationController
   # ── Index ──────────────────────────────────────────────────────────────────
 
   def index
-    scope = current_account.caf_workflows.includes(:company, :created_by_user, :template).recent
+    scope = current_account.caf_workflows
+                            .includes(:company, :created_by_user, :template,
+                                      caf_submission: { caf_stages: { caf_stage_submitters: :submitter } })
+                            .recent
 
     sf = params[:status].to_s.strip
     scope = scope.where(status: sf) if sf.present? && CafWorkflow::STATUSES.include?(sf)
 
     @agreements = scope
     @stats = {
-      total: current_account.caf_workflows.count,
-      draft: current_account.caf_workflows.draft.count,
-      active: current_account.caf_workflows.active.count,
-      complete: current_account.caf_workflows.complete.count
+      total:   current_account.caf_workflows.count,
+      draft:   current_account.caf_workflows.draft.count,
+      active:  current_account.caf_workflows.active.count,
+      complete: current_account.caf_workflows.complete.count,
+      overdue: current_account.caf_workflows.overdue.count
     }
   end
 
@@ -29,6 +33,7 @@ class AgreementsController < ApplicationController
     @signatories            = @agreement.signatories || []
     @submitter_statuses     = build_submitter_statuses(@agreement)
     @counterparty_signatory = load_counterparty_signatory
+    @current_holder         = load_current_holder
   end
 
   # ── Signing Journey fragment (Turbo Frame polling endpoint) ────────────
@@ -214,7 +219,8 @@ class AgreementsController < ApplicationController
     result = CafSubmissionCreator.new(@agreement, current_user).call
 
     if result[:success]
-      @agreement.update!(status: 'pending_ig', caf_submission: result[:submission])
+      @agreement.update!(status: 'pending_ig', caf_submission: result[:submission],
+                         status_updated_at: Time.current)
       @agreement.company&.sync_agreements_count!
       redirect_to agreement_path(@agreement),
                   notice: 'Agreement submitted. Internal signatories have been notified.'
@@ -461,6 +467,42 @@ class AgreementsController < ApplicationController
 
     @agreement.company.company_signatories
               .find_by(email: @agreement.counterparty_email.strip.downcase)
+  end
+
+  # Loads the current holder hash for the show page status card:
+  # { name:, role:, email:, invited_at:, days: }
+  # Returns nil when the workflow is draft/complete or no active stage is found.
+  def load_current_holder
+    return nil if @agreement.draft? || @agreement.complete? || @agreement.cancelled?
+    return nil unless @agreement.caf_submission
+
+    if @agreement.sent_counterparty?
+      return {
+        name:       @agreement.counterparty_name.presence || @agreement.contracting_party || 'Counterparty',
+        role:       'Counterparty Signatory',
+        email:      @agreement.counterparty_email,
+        invited_at: nil,
+        days:       @agreement.days_in_current_stage
+      }
+    end
+
+    active_stage = @agreement.caf_submission.caf_stages.active.ordered_by_position.first
+    return nil unless active_stage
+
+    css = active_stage.caf_stage_submitters
+                      .not_completed
+                      .includes(:submitter)
+                      .ordered
+                      .first
+    return nil unless css
+
+    {
+      name:       css.submitter.name,
+      role:       css.role,
+      email:      css.submitter.email,
+      invited_at: css.invited_at,
+      days:       css.invited_at ? ((Time.current - css.invited_at) / 1.day).to_i : @agreement.days_in_current_stage
+    }
   end
 
   # Returns the number of whole days since a CafStageSubmitter's invite was sent.
