@@ -4,8 +4,18 @@
 # at GET /templates.
 #
 # Admins are redirected to /admin/templates (the management view).
-# All other authenticated users see a browse-by-kind card grid of Active templates.
-# Clicking a template card starts a new agreement with that template pre-selected.
+# Senders see two sections:
+#
+#   1. NDA — one card per IG entity (13 cards), linking to new_agreement with
+#      agreement_type=nda&entity=<key> pre-set.  Cards are shown for every
+#      IgSignatories entity regardless of whether an active metadata record
+#      exists — the NDA can still proceed via dynamic generation.
+#
+#   2. Upload Agreement — single entry point to start an agreement from an
+#      uploaded document (non-NDA types: msa, sla, vendor, employment, etc.).
+#
+# CAF templates (short_form_caf, long_form_caf) are admin-only and are NOT
+# shown here — senders never choose the CAF template directly.
 class TemplatesLibraryController < ApplicationController
   skip_authorization_check
   before_action :authenticate_user!
@@ -16,23 +26,25 @@ class TemplatesLibraryController < ApplicationController
       redirect_to admin_templates_path and return
     end
 
-    # Fetch active templates that have IGSIGN metadata
-    base = current_account.templates
-             .where(archived_at: nil)
-             .joins(:igsign_metadata)
-             .where(igsign_template_metadata: { status: 'active' })
-             .includes(:igsign_metadata, :author)
-             .order('igsign_template_metadata.kind, templates.name')
+    # Build the 13 entity cards for the NDA section.
+    # Each card carries the entity key, display name, short name, and whether
+    # an active NDA metadata record exists for this account + entity.
+    active_entity_keys = IgsignTemplateMetadata
+                           .active
+                           .where(kind: 'nda')
+                           .joins(:template)
+                           .where(templates: { account_id: current_account.id })
+                           .pluck('entity_scope')
+                           .flatten
+                           .to_set
 
-    @templates_by_kind = base.group_by { |t| t.igsign_metadata.kind }
-
-    # Also surface templates with no metadata so nothing is hidden from senders
-    @untagged = current_account.templates
-                  .where(archived_at: nil)
-                  .where.missing(:igsign_metadata)
-                  .includes(:author)
-                  .order(:name)
-
-    @kind_labels = IgsignTemplateMetadata::KIND_LABELS
+    @nda_entities = IgSignatories::ENTITIES.map do |key, details|
+      {
+        key:        key.to_s,
+        name:       details[:name],
+        short_name: details[:short_name],
+        active:     active_entity_keys.include?(key.to_s)
+      }
+    end
   end
 end

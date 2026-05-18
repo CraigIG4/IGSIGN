@@ -248,6 +248,53 @@ else
 end
 
 # ---------------------------------------------------------------------------
+# Per-Entity NDA Template Metadata (Prompt 4)
+# ---------------------------------------------------------------------------
+# Creates one IgsignTemplateMetadata record per IG entity, kind='nda'.
+# All seeded with status='draft' — an admin must activate each record once
+# the entity's NDA template has been reviewed and approved.
+#
+# entity_scope is set to [entity_key] so IgsignTemplateMetadata.entity_nda_for
+# can resolve the correct metadata for a given entity at agreement-create time.
+#
+# All 13 records point to the shared 'IGSIGN NDA Template' DocuSeal template.
+# The NDA document itself is generated dynamically by NdaAgreementGenerator
+# at Send time — the template association provides submitter slot bindings only.
+#
+# Idempotent: matched by template + entity_scope JSON value.
+# ---------------------------------------------------------------------------
+
+nda_base_template = caf_account&.templates&.find_by(name: 'IGSIGN NDA Template')
+
+if caf_account.nil?
+  puts 'Per-entity NDA metadata: skipped — account not found'
+elsif nda_base_template.nil?
+  puts 'Per-entity NDA metadata: skipped — IGSIGN NDA Template not found (run template setup first)'
+else
+  IgSignatories::ENTITIES.each_key do |entity_key|
+    # Find by template + matching entity_scope (JSONB contains check via SQL fallback)
+    existing = IgsignTemplateMetadata
+                 .where(template: nda_base_template, kind: 'nda')
+                 .find { |m| m.entity_scope == [entity_key.to_s] }
+
+    if existing
+      puts "NDA metadata: already exists for #{entity_key}"
+    else
+      IgsignTemplateMetadata.create!(
+        template:     nda_base_template,
+        kind:         'nda',
+        status:       'draft',
+        version:      1,
+        entity_scope: [entity_key.to_s],
+        notes:        "Standard IG NDA for #{IgSignatories.entity_name(entity_key)}. " \
+                      'Activate once legal has reviewed the NDA signing-page template.'
+      )
+      puts "NDA metadata: created (draft) for #{entity_key}"
+    end
+  end
+end
+
+# ---------------------------------------------------------------------------
 # Default Approval Matrices
 # ---------------------------------------------------------------------------
 # Four default matrices covering the standard IG agreement types.

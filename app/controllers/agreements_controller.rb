@@ -85,10 +85,14 @@ class AgreementsController < ApplicationController
 
     if @agreement.save
       if @agreement.agreement_type == 'nda'
-        # NDA path: bind the standing NDA template (if configured) and skip upload.
-        # If the template hasn't been created yet the agreement still saves; the
-        # missing-template error surfaces at Send time via CafSubmissionCreator.
-        nda_tpl = current_account.templates.find_by(name: 'IGSIGN NDA Template')
+        # NDA path: look up an entity-specific active NDA template via
+        # IgsignTemplateMetadata.  Falls back to any active NDA template for this
+        # account (e.g. a global record with empty entity_scope), then to the
+        # legacy 'IGSIGN NDA Template' name for backward compatibility.
+        # If none is found the agreement still saves — the missing-template
+        # error surfaces at Send time via CafSubmissionCreator.
+        nda_tpl = IgsignTemplateMetadata.entity_nda_for(current_account, @agreement.entity)&.template
+        nda_tpl ||= current_account.templates.find_by(name: 'IGSIGN NDA Template')
         @agreement.update!(template: nda_tpl) if nda_tpl
         redirect_to review_agreement_path(@agreement)
       else

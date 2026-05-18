@@ -78,6 +78,25 @@
       <% end %>
     </div>
 
+    <%# Entity scope — only relevant for NDA templates (kind='nda').
+        Stored as a JSONB array, edited here as a comma-separated text field.
+        Admin JS converts on submit; controller permits the string and converts
+        it back to an array before save via strong params. %>
+    <div style="margin-top:16px;" id="entity_scope_field">
+      <%= f.label :entity_scope_csv, 'Entity scope (NDA only)', style: 'display:block;font-size:13px;font-weight:600;margin-bottom:4px;' %>
+      <input type="text"
+             id="entity_scope_csv"
+             name="igsign_template_metadata[entity_scope_csv]"
+             value="<%= Array(metadata.entity_scope).join(', ') %>"
+             placeholder="e.g. iti, comit  (leave blank for all entities)"
+             style="width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:13px;box-sizing:border-box;">
+      <p style="font-size:11px;color:#7B787F;margin-top:4px;">
+        Comma-separated entity keys from IgSignatories::ENTITIES (e.g. <code>iti</code>, <code>comit</code>).
+        Leave blank for a generic template that applies to all entities.
+        Valid keys: <code><%= IgSignatories::ENTITIES.keys.map(&:to_s).join(', ') %></code>
+      </p>
+    </div>
+
     <div style="margin-top:16px;">
       <%= f.label :notes, 'Internal notes (Legal team only)', style: 'display:block;font-size:13px;font-weight:600;margin-bottom:4px;' %>
       <%= f.text_area :notes,

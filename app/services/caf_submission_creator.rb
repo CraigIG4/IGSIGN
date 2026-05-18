@@ -340,6 +340,43 @@ class CafSubmissionCreator
     )
   end
 
+  # TODO: Part C — AI-assisted CAF field extraction (SKIPPED — API key not available)
+  #
+  # When OPENROUTER_API_KEY (or ANTHROPIC_API_KEY) is available, implement:
+  #
+  #   class CafAiExtractor
+  #     BASE_URL  = ENV.fetch('AI_BASE_URL', 'https://openrouter.ai/api/v1')
+  #     MODEL     = ENV.fetch('AI_MODEL',    'anthropic/claude-3-haiku')
+  #
+  #     def initialize(caf)
+  #       @caf = caf
+  #     end
+  #
+  #     # Sends the uploaded contract text to the AI and returns a hash of
+  #     # extracted CAF fields (agreement_purpose, agreement_value, agreement_term,
+  #     # payment_terms, key_risks).  Returns {} on failure so the form stays
+  #     # pre-populated with whatever the sender manually entered.
+  #     def extract
+  #       return {} unless api_key.present?
+  #       prompt = build_prompt
+  #       response = client.post('/chat/completions', body: { model: MODEL, messages: [...] })
+  #       parse_response(response)
+  #     rescue StandardError => e
+  #       Rails.logger.warn("[CafAiExtractor] AI extraction failed: #{e.message}")
+  #       {}
+  #     end
+  #
+  #     private
+  #     def api_key   = ENV['OPENROUTER_API_KEY'] || ENV['ANTHROPIC_API_KEY']
+  #     def client    = Faraday.new(url: BASE_URL, headers: { 'Authorization' => "Bearer #{api_key}", 'Content-Type' => 'application/json' })
+  #   end
+  #
+  # Call site: AgreementsController#review action, before rendering the review
+  # form.  Auto-populate blank CAF fields with AI suggestions (shown as grey
+  # placeholder text so the user can confirm/override before sending).
+  #
+  # Estimated effort: ~4h backend + 2h UI.  Blocked on: OPENROUTER_API_KEY in env.
+
   # DEPRECATED: NDA agreements no longer use a standing DocuSeal template.
   # The NDA document is generated dynamically by NdaAgreementGenerator.
   # This method is retained for reference only; it is no longer called.

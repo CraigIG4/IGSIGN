@@ -1,4 +1,13 @@
 <% content_for :title, 'New Agreement' %>
+<%
+  # Determine the starting mode from params:
+  #   agreement_type=nda  → NDA mode (from library entity card or back from error)
+  #   entity=<key>        → pre-selected entity
+  #   agreement_type=upload or any non-nda type → upload mode
+  preselect_mode   = params[:agreement_type].to_s == 'nda' ? 'nda' : (params[:agreement_type].present? ? 'upload' : '')
+  preselect_entity = params[:entity].to_s
+%>
+
 <div class="max-w-5xl mx-auto px-4 py-8">
   <div style="display:flex;align-items:center;margin-bottom:2rem;">
     <% [['1', 'Agreement Details'], ['2', 'Upload Document'], ['3', 'Review & Send']].each_with_index do |(n, label), i| %>
@@ -11,6 +20,23 @@
   </div>
   <h1 style="font-size:1.5rem;font-weight:700;color:#111827;margin-bottom:4px;">New Agreement</h1>
   <p style="font-size:14px;color:#6b7280;margin-bottom:1.5rem;">Signatories are assigned automatically based on entity and agreement type.</p>
+
+  <%# ── Document type toggle: NDA | Upload Agreement ─────────────────────── %>
+  <div id="doc_type_toggle" style="display:flex;gap:0;border:1px solid #d1d5db;border-radius:10px;overflow:hidden;margin-bottom:1.5rem;max-width:440px;">
+    <button type="button" id="btn_mode_nda"
+            style="flex:1;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:background 0.15s,color 0.15s;"
+            onclick="setDocMode('nda')">
+      <svg style="width:14px;height:14px;display:inline;vertical-align:-2px;margin-right:5px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 9h3.75M3.75 5.25h16.5c.621 0 1.125.504 1.125 1.125v13.5c0 .621-.504 1.125-1.125 1.125H3.75c-.621 0-1.125-.504-1.125-1.125V6.375c0-.621.504-1.125 1.125-1.125Z"/></svg>
+      Standard NDA
+    </button>
+    <button type="button" id="btn_mode_upload"
+            style="flex:1;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;border:none;border-left:1px solid #d1d5db;transition:background 0.15s,color 0.15s;"
+            onclick="setDocMode('upload')">
+      <svg style="width:14px;height:14px;display:inline;vertical-align:-2px;margin-right:5px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+      Upload Agreement
+    </button>
+  </div>
+
   <%= form_with scope: :agreement, url: agreements_path, method: :post, html: { id: 'agwiz' } do |f| %>
     <%# Pass template_id through the form if pre-selected from the library %>
     <% if @preselected_template_id.present? %>
@@ -29,17 +55,46 @@
       </div>
     <% end %>
     <div style="display:grid;gap:1.25rem;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-        <div>
-          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Agreement Type <span style="color:#ef4444">*</span></label>
-          <%= f.select :agreement_type, CafWorkflow::AGREEMENT_TYPES.map { |k, v| [v, k] }, { include_blank: '-- Select type --' }, id: 'ag_type', style: 'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:14px;background:white;', required: true %>
-        </div>
-        <div>
-          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">IG Entity <span style="color:#ef4444">*</span></label>
-          <%= f.select :entity, IgSignatories::ENTITIES.map { |k, v| [v[:name], k.to_s] }, { include_blank: '-- Select entity --' }, id: 'ag_entity', style: 'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:14px;background:white;', required: true %>
+
+      <%# ── NDA mode: entity selector (type is hidden / set to 'nda') ──────── %>
+      <div id="nda_fields" style="display:none;">
+        <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">IG Entity signing this NDA <span style="color:#ef4444">*</span></label>
+        <%# Hidden type field — always 'nda' in NDA mode %>
+        <input type="hidden" id="ag_type_nda_hidden" name="agreement[agreement_type]" value="nda">
+        <select id="ag_entity_nda" name="agreement[entity]"
+                style="width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:14px;background:white;">
+          <option value="">-- Select entity --</option>
+          <% IgSignatories::ENTITIES.each do |k, v| %>
+            <option value="<%= k %>" <%= 'selected' if preselect_entity == k.to_s %>><%= v[:name] %></option>
+          <% end %>
+        </select>
+      </div>
+
+      <%# ── Upload mode: type + entity side-by-side ──────────────────────── %>
+      <div id="upload_fields" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Agreement Type <span style="color:#ef4444">*</span></label>
+            <%# Non-NDA types only — NDA has its own dedicated path %>
+            <% upload_types = CafWorkflow::AGREEMENT_TYPES.reject { |k, _| k == 'nda' } %>
+            <%= f.select :agreement_type, upload_types.map { |k, v| [v, k] },
+                  { include_blank: '-- Select type --' },
+                  id: 'ag_type',
+                  style: 'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:14px;background:white;',
+                  required: false %>
+          </div>
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">IG Entity <span style="color:#ef4444">*</span></label>
+            <%= f.select :entity, IgSignatories::ENTITIES.map { |k, v| [v[:name], k.to_s] },
+                  { include_blank: '-- Select entity --' },
+                  id: 'ag_entity',
+                  style: 'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:14px;background:white;',
+                  required: false %>
+          </div>
         </div>
       </div>
-      <%# NDA path note — shown via JS when agreement_type == 'nda' %>
+
+      <%# NDA path info note — shown in NDA mode %>
       <div id="nda_note" style="display:none;border-radius:10px;border:1px solid #d1fae5;background:#f0fdf4;padding:1rem;">
         <div style="display:flex;align-items:flex-start;gap:10px;">
           <svg style="width:18px;height:18px;flex-shrink:0;margin-top:1px;color:#16a34a;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -243,34 +298,69 @@
   var SEARCH='<%= search_companies_agreements_path(format: :json) %>';
   var SIGNATORIES_URL='<%= recent_signatories_agreements_path(format: :json) %>';
   var sjChain=[];
-  var typeSel=document.getElementById('ag_type'),entSel=document.getElementById('ag_entity'),panel=document.getElementById('entity_panel');
+
+  /* ── Document mode toggle (NDA | Upload) ─────────────────────────────── */
+  function setFieldsetEnabled(containerId, enabled) {
+    var el = document.getElementById(containerId);
+    if (!el) return;
+    el.querySelectorAll('input,select,textarea').forEach(function(f) { f.disabled = !enabled; });
+    el.style.display = enabled ? '' : 'none';
+  }
+  window.setDocMode = function(mode) {
+    var isNda = (mode === 'nda');
+    setFieldsetEnabled('nda_fields', isNda);
+    setFieldsetEnabled('upload_fields', !isNda);
+    var ndaNote = document.getElementById('nda_note');
+    if (ndaNote) ndaNote.style.display = isNda ? 'block' : 'none';
+    var submitBtn = document.getElementById('ag_submit');
+    if (submitBtn) submitBtn.value = isNda ? 'Continue to Review →' : 'Continue to Upload →';
+    var btnNda = document.getElementById('btn_mode_nda');
+    var btnUp  = document.getElementById('btn_mode_upload');
+    if (btnNda) { btnNda.style.background = isNda ? '#162B3C' : '#f9fafb'; btnNda.style.color = isNda ? '#fff' : '#374151'; }
+    if (btnUp)  { btnUp.style.background  = isNda ? '#f9fafb' : '#162B3C'; btnUp.style.color  = isNda ? '#374151' : '#fff'; }
+    updatePanel();
+  };
+
+  /* ── Entity / type helpers that work in both modes ───────────────────── */
+  function activeEntitySel() {
+    var ndaEl = document.getElementById('nda_fields');
+    var isNda = ndaEl && ndaEl.style.display !== 'none';
+    return document.getElementById(isNda ? 'ag_entity_nda' : 'ag_entity');
+  }
+  function activeAgreementType() {
+    var ndaEl = document.getElementById('nda_fields');
+    var isNda = ndaEl && ndaEl.style.display !== 'none';
+    if (isNda) return 'nda';
+    var sel = document.getElementById('ag_type');
+    return sel ? sel.value : '';
+  }
+
+  var panel = document.getElementById('entity_panel');
   function updatePanel(){
-    var ek=entSel&&entSel.value;if(!ek){panel.style.display='none';return;}
-    var e=E.find(function(x){return x.key===ek;});if(!e){panel.style.display='none';return;}
+    var entSel = activeEntitySel();
+    var ek = entSel && entSel.value;
+    if (!ek) { if (panel) panel.style.display = 'none'; sjChain=[]; renderSigningJourney([],'',' '); return; }
+    var e = E.find(function(x){ return x.key===ek; });
+    if (!e) { if (panel) panel.style.display = 'none'; return; }
     document.getElementById('ep_name').textContent=e.name;
     document.getElementById('ep_reg').textContent=e.registration?'Reg: '+e.registration:'';
     document.getElementById('ep_addr').textContent=e.address||'';
-    var at=typeSel?typeSel.value:'',ct=M[at]||'long_form';
+    var at=activeAgreementType(),ct=M[at]||'long_form';
     document.getElementById('ep_ct').textContent={nda:'(NDA)',short_form:'(Short-form)',long_form:'(Long-form)'}[ct]||'';
     var chain=C[ek+'_'+ct]||[];
     document.getElementById('ep_chain').innerHTML=chain.length?chain.map(function(p,i){return'<span style="display:flex;align-items:center;gap:6px;margin-bottom:1px;"><span style="width:18px;height:18px;border-radius:50%;background:#162B3C;color:white;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">'+(i+1)+'</span><strong>'+p.name+'</strong>&nbsp;<span style="color:#6b7280;">'+p.title+'</span></span>';}).join(''):'<span style="color:#9ca3af">Select agreement type to see chain</span>';
-    panel.style.display='block';
+    if (panel) panel.style.display='block';
     document.getElementById('ep_copy').onclick=function(){if(navigator.clipboard){navigator.clipboard.writeText(e.name+'\nReg: '+e.registration+'\n'+e.address).then(function(){var ok=document.getElementById('ep_ok');ok.style.display='inline';setTimeout(function(){ok.style.display='none';},2000);});}};
     sjChain=chain;renderSigningJourney(chain,(cn&&cn.value)||'',(ce&&ce.value)||'');
   }
-  entSel&&entSel.addEventListener('change',updatePanel);
-  typeSel&&typeSel.addEventListener('change',updatePanel);
 
-  /* ── NDA note + submit label — fires on type change independently of entity ── */
-  function updateNdaNote(){
-    var at=typeSel?typeSel.value:'';
-    var isNda=(at==='nda');
-    var ndaNote=document.getElementById('nda_note');
-    if(ndaNote)ndaNote.style.display=isNda?'block':'none';
-    var submitBtn=document.getElementById('ag_submit');
-    if(submitBtn)submitBtn.value=isNda?'Continue to Review →':'Continue to Upload →';
-  }
-  typeSel&&typeSel.addEventListener('change',updateNdaNote);
+  /* Bind entity + type change events */
+  var entNda  = document.getElementById('ag_entity_nda');
+  var entUp   = document.getElementById('ag_entity');
+  var typeSel = document.getElementById('ag_type');
+  entNda  && entNda.addEventListener('change', updatePanel);
+  entUp   && entUp.addEventListener('change', updatePanel);
+  typeSel && typeSel.addEventListener('change', updatePanel);
 
   /* ── Company search ─────────────────────────────────────────────────────── */
   var si=document.getElementById('co_search'),rb=document.getElementById('co_results'),sb=document.getElementById('co_sel'),ci=document.getElementById('co_id'),cn=document.getElementById('ag_ct_name'),ce=document.getElementById('ag_ct_email');
@@ -461,5 +551,9 @@
   function escHtml(s){
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
+
+  /* ── Page-load initialisation ────────────────────────────────────────── */
+  var bootMode = '<%= preselect_mode.present? ? preselect_mode : 'nda' %>';
+  setDocMode(bootMode);
 })();
 </script>

@@ -1,36 +1,41 @@
-<%# ── IGSIGN Template Library — Sender Browse View ── %>
+<%# ── IGSIGN Template Library — Sender Browse View (Prompt 4) ── %>
 
 <style>
   .tmpl-card {
-    background:#fff;
-    border:1px solid #e8ebed;
-    border-radius:12px;
-    padding:20px;
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-    transition:box-shadow 0.18s ease, transform 0.18s ease;
-    cursor:pointer;
+    background: #fff;
+    border: 1px solid #e8ebed;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: box-shadow 0.18s ease, transform 0.18s ease;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
   }
   .tmpl-card:hover {
-    box-shadow:0 8px 24px rgba(22,43,60,0.10);
-    transform:translateY(-2px);
+    box-shadow: 0 8px 24px rgba(22,43,60,0.10);
+    transform: translateY(-2px);
   }
-  .tmpl-kind-header {
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin-bottom:16px;
+  .tmpl-card.tmpl-card--active {
+    border-color: rgba(69,172,52,0.35);
+  }
+  .tmpl-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
   }
   .tmpl-kind-pill {
-    font-size:10px;
-    font-weight:800;
-    text-transform:uppercase;
-    letter-spacing:0.08em;
-    color:#162B3C;
-    background:rgba(22,43,60,0.07);
-    padding:3px 10px;
-    border-radius:100px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #162B3C;
+    background: rgba(22,43,60,0.07);
+    padding: 3px 10px;
+    border-radius: 100px;
   }
 </style>
 
@@ -39,100 +44,85 @@
   <div style="position:absolute;inset:0;background-image:url('/brand/igsign-background-pattern.svg');background-size:cover;opacity:0.15;pointer-events:none;border-radius:14px;"></div>
   <div style="position:relative;z-index:1;">
     <div style="font-size:11px;color:rgba(255,255,255,0.45);letter-spacing:4px;text-transform:uppercase;margin-bottom:8px;">IGSIGN</div>
-    <div style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.3px;">Agreement Templates</div>
+    <div style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.3px;">Start an Agreement</div>
     <div style="width:36px;height:3px;background:#45AC34;border-radius:2px;margin-top:10px;"></div>
-    <div style="font-size:13px;color:rgba(255,255,255,0.55);margin-top:8px;">Browse approved templates. Click any card to start a new agreement.</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.55);margin-top:8px;">Select an IG entity for a standard NDA, or upload your own agreement document.</div>
   </div>
 </div>
 
-<%# Nothing to show yet %>
-<% if @templates_by_kind.empty? && @untagged.empty? %>
-  <div class="card" style="padding:60px;text-align:center;">
-    <svg xmlns="http://www.w3.org/2000/svg" style="width:48px;height:48px;opacity:0.3;margin:0 auto 16px;" fill="none" viewBox="0 0 24 24" stroke="#162B3C" stroke-width="1.5">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
-    </svg>
-    <p style="font-size:16px;font-weight:700;color:#162B3C;">No active templates yet</p>
-    <p style="font-size:14px;color:#7B787F;margin-top:4px;">Legal is setting up the template library. Check back soon.</p>
+<%# ── Section 1: NDA ──────────────────────────────────────────────────── %>
+<div style="margin-bottom:36px;">
+  <div class="tmpl-section-header">
+    <div style="width:3px;height:20px;background:#45AC34;border-radius:2px;"></div>
+    <span class="tmpl-kind-pill">NDA</span>
+    <span style="font-size:12px;color:#7B787F;">Non-Disclosure Agreement &mdash; select the IG entity signing</span>
   </div>
 
-<% else %>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <% @nda_entities.each do |entity| %>
+      <%= link_to new_agreement_path(agreement_type: 'nda', entity: entity[:key]),
+            class: "tmpl-card#{' tmpl-card--active' if entity[:active]}",
+            style: 'text-decoration:none;color:inherit;' do %>
 
-  <%# Grouped by kind %>
-  <% @templates_by_kind.each do |kind, templates| %>
-    <div style="margin-bottom:32px;">
-      <div class="tmpl-kind-header">
-        <div style="width:3px;height:20px;background:#45AC34;border-radius:2px;"></div>
-        <span class="tmpl-kind-pill"><%= @kind_labels[kind] || kind.humanize %></span>
-        <span style="font-size:12px;color:#7B787F;"><%= templates.length %> template<%= 's' if templates.length != 1 %></span>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <% templates.each do |tmpl| %>
-          <% meta = tmpl.igsign_metadata %>
-          <%= link_to new_agreement_path(template_id: tmpl.id),
-                class: 'tmpl-card',
-                style: 'text-decoration:none;color:inherit;' do %>
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-              <div style="font-size:15px;font-weight:700;color:#162B3C;line-height:1.3;flex:1;"><%= tmpl.name %></div>
-              <span class="badge badge-primary" style="flex-shrink:0;margin-top:2px;"><%= meta.kind_label %></span>
-            </div>
-
-            <% if meta&.notes.present? %>
-              <p style="font-size:12px;color:#7B787F;line-height:1.5;margin:0;"><%= truncate(meta.notes, length: 100) %></p>
-            <% end %>
-
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
-              <span style="font-size:11px;color:#7B787F;">
-                <% if meta&.owner %>
-                  Owner: <%= meta.owner.full_name %>
-                <% else %>
-                  Legal Team
-                <% end %>
-              </span>
-              <span style="font-size:11px;color:#7B787F;">v<%= meta&.version || 1 %></span>
-            </div>
-
-            <div style="margin-top:6px;padding-top:12px;border-top:1px solid #f0f2f4;display:flex;align-items:center;gap:6px;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#45AC34" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-              <span style="font-size:12px;color:#45AC34;font-weight:600;">Start agreement</span>
-            </div>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+          <div style="font-size:15px;font-weight:700;color:#162B3C;line-height:1.3;flex:1;">
+            <%= entity[:short_name] %>
+          </div>
+          <% if entity[:active] %>
+            <span style="flex-shrink:0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#15803d;background:#dcfce7;border-radius:100px;padding:2px 8px;margin-top:2px;">Active</span>
+          <% else %>
+            <span style="flex-shrink:0;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#9ca3af;background:#f3f4f6;border-radius:100px;padding:2px 8px;margin-top:2px;">Draft</span>
           <% end %>
-        <% end %>
+        </div>
+
+        <p style="font-size:12px;color:#7B787F;line-height:1.4;margin:0;"><%= entity[:name] %></p>
+
+        <div style="margin-top:auto;padding-top:12px;border-top:1px solid #f0f2f4;display:flex;align-items:center;gap:6px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#45AC34" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          <span style="font-size:12px;color:#45AC34;font-weight:600;">Start NDA</span>
+        </div>
+
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<%# ── Section 2: Upload Agreement ─────────────────────────────────────── %>
+<div style="margin-bottom:32px;">
+  <div class="tmpl-section-header">
+    <div style="width:3px;height:20px;background:#6b7280;border-radius:2px;"></div>
+    <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#374151;background:rgba(107,114,128,0.1);padding:3px 10px;border-radius:100px;">Other Agreements</span>
+    <span style="font-size:12px;color:#7B787F;">MSA, SLA, Vendor, Employment, Addendum &hellip;</span>
+  </div>
+
+  <%= link_to new_agreement_path(agreement_type: 'upload'),
+        class: 'tmpl-card',
+        style: 'text-decoration:none;color:inherit;max-width:420px;' do %>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="width:44px;height:44px;border-radius:10px;background:#f3f4f6;border:1px dashed #d1d5db;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </div>
+      <div style="flex:1;">
+        <p style="font-size:15px;font-weight:700;color:#162B3C;margin:0 0 3px;">Upload Agreement Document</p>
+        <p style="font-size:12px;color:#7B787F;margin:0;line-height:1.4;">Start with your own PDF or Word document. Select the agreement type, entity, and counterparty — IGSIGN handles the signing workflow.</p>
       </div>
     </div>
-  <% end %>
-
-  <%# Untagged — visible but without a kind group %>
-  <% if @untagged.any? %>
-    <div style="margin-bottom:32px;">
-      <div class="tmpl-kind-header">
-        <div style="width:3px;height:20px;background:#bbb;border-radius:2px;"></div>
-        <span style="font-size:11px;font-weight:700;color:#7B787F;text-transform:uppercase;letter-spacing:0.06em;">Other</span>
-        <span style="font-size:12px;color:#bbb;"><%= @untagged.length %> template<%= 's' if @untagged.length != 1 %></span>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <% @untagged.each do |tmpl| %>
-          <%= link_to new_agreement_path(template_id: tmpl.id),
-                class: 'tmpl-card',
-                style: 'text-decoration:none;color:inherit;opacity:0.8;' do %>
-            <div style="font-size:15px;font-weight:700;color:#162B3C;"><%= tmpl.name %></div>
-            <div style="margin-top:auto;padding-top:12px;border-top:1px solid #f0f2f4;display:flex;align-items:center;gap:6px;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#45AC34" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-              <span style="font-size:12px;color:#45AC34;font-weight:600;">Start agreement</span>
-            </div>
-          <% end %>
-        <% end %>
-      </div>
+    <div style="padding-top:12px;border-top:1px solid #f0f2f4;display:flex;align-items:center;gap:6px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#45AC34" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      <span style="font-size:12px;color:#45AC34;font-weight:600;">Start agreement</span>
     </div>
   <% end %>
-
-<% end %>
+</div>
 
 <%# Footer note %>
-<div style="margin-top:32px;padding:16px 20px;background:#f8fafb;border-radius:10px;border:1px solid #e8ebed;">
+<div style="margin-top:24px;padding:16px 20px;background:#f8fafb;border-radius:10px;border:1px solid #e8ebed;">
   <p style="font-size:12px;color:#7B787F;margin:0;">
-    Don't see the template you need?
+    Don't see what you need?
     <%= link_to 'Contact Legal', 'mailto:legal@ignitiongroup.co.za', style: 'color:#45AC34;font-weight:600;' %>
-    to request a new template or to start an agreement from a custom document.
+    to request a new template type or get help with a custom agreement.
   </p>
 </div>
