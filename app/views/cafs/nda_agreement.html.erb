@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mutual Non-Disclosure Agreement &mdash; <%= @caf[:entity_name] %> &amp; <%= @caf[:counterparty_company].presence || 'Counterparty' %></title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{background:white;}
+body{font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:10pt;color:#1a1a1a;line-height:1.6;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.page{width:210mm;min-height:297mm;padding:25mm 25mm 20mm 25mm;}
+.lh{width:100%;border-collapse:collapse;border-bottom:3pt solid #162B3C;margin-bottom:18pt;}
+.lh td{padding-bottom:10pt;vertical-align:middle;}
+.logo-badge{display:inline-block;background:#162B3C;color:white;font-size:13pt;font-weight:700;letter-spacing:2pt;padding:5pt 14pt 4pt;border-radius:3pt;}
+.doc-title{font-size:15pt;font-weight:700;color:#162B3C;margin-bottom:2pt;letter-spacing:0.3pt;}
+.doc-sub{font-size:9pt;color:#6b7280;}
+.doc-ref{font-size:8pt;color:#9ca3af;margin-top:6pt;}
+.parties-box{background:#f8fafc;border:1pt solid #e2e8f0;border-left:4pt solid #162B3C;border-radius:4pt;padding:14pt 16pt;margin:16pt 0;}
+.party-label{font-size:7.5pt;font-weight:700;color:#162B3C;text-transform:uppercase;letter-spacing:0.5pt;margin-bottom:3pt;}
+.party-name{font-size:11pt;font-weight:700;color:#162B3C;}
+.party-reg{font-size:8.5pt;color:#6b7280;margin-top:1pt;}
+.party-addr{font-size:8.5pt;color:#4b5563;margin-top:2pt;white-space:pre-line;}
+.party-role{display:inline-block;background:#162B3C;color:white;font-size:7pt;font-weight:700;padding:2pt 9pt;border-radius:20pt;margin-top:4pt;letter-spacing:0.3pt;}
+.party-div{border-top:1pt solid #e2e8f0;margin:10pt 0;}
+.together{font-size:8.5pt;color:#6b7280;font-style:italic;margin-top:8pt;}
+h2{font-size:10.5pt;font-weight:700;color:#162B3C;text-transform:uppercase;letter-spacing:0.5pt;margin-top:18pt;margin-bottom:6pt;border-bottom:1pt solid #e2e8f0;padding-bottom:3pt;}
+h3{font-size:9.5pt;font-weight:700;color:#162B3C;margin-top:10pt;margin-bottom:4pt;}
+p{margin-bottom:7pt;font-size:10pt;}
+ol.main-list{padding-left:0;margin-bottom:7pt;list-style:none;counter-reset:main-counter;}
+ol.main-list > li{counter-increment:main-counter;padding-left:0;margin-bottom:5pt;display:flex;gap:10pt;}
+ol.main-list > li::before{content:counter(main-counter) ".";font-weight:600;color:#162B3C;min-width:18pt;flex-shrink:0;}
+ol.sub-list{padding-left:18pt;margin-bottom:5pt;list-style:none;counter-reset:sub-counter;}
+ol.sub-list > li{counter-increment:sub-counter;margin-bottom:4pt;display:flex;gap:8pt;}
+ol.sub-list > li::before{content:counter(sub-counter,lower-alpha) ")";color:#374151;min-width:16pt;flex-shrink:0;}
+.def-term{font-weight:700;}
+.highlight-box{background:#fffbeb;border:1pt solid #fbbf24;border-radius:3pt;padding:8pt 10pt;margin:10pt 0;font-size:9pt;color:#92400e;}
+.notice-box{background:#eff6ff;border:1pt solid #bfdbfe;border-radius:3pt;padding:8pt 10pt;margin:10pt 0;font-size:8.5pt;color:#1e40af;line-height:1.55;}
+.sig-block{margin-top:14pt;}
+.sig-tbl{width:100%;border-collapse:collapse;}
+.sig-tbl td{border:1pt solid #d4d7dd;padding:8pt 10pt;vertical-align:top;}
+.sig-hdr{background:#162B3C;color:white;font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:0.4pt;}
+.sig-party-col{width:32%;background:#f7f9fc;}
+.sig-sign-col{width:43%;}
+.sig-date-col{width:25%;}
+.sig-name{font-weight:700;font-size:10pt;color:#162B3C;}
+.sig-reg{font-size:7.5pt;color:#6b7280;margin-top:1pt;}
+.sig-person{font-weight:600;font-size:9pt;margin-top:6pt;}
+.sig-title{font-size:8pt;color:#6b7280;margin-top:1pt;}
+.sig-lbl{font-size:6.5pt;color:#9ca3af;text-transform:uppercase;letter-spacing:0.4pt;}
+.sig-line{border-bottom:1pt solid #374151;height:32pt;margin:4pt 0 2pt;}
+.sig-line-sm{border-bottom:1pt solid #374151;height:20pt;margin:4pt 0 2pt;}
+.ecta{background:#eff6ff;border:1pt solid #bfdbfe;border-radius:3pt;padding:8pt 10pt;margin-top:14pt;font-size:8pt;color:#1e40af;line-height:1.55;}
+.ftr{border-top:1pt solid #e2e8f0;margin-top:12pt;padding-top:5pt;font-size:7pt;color:#9ca3af;display:flex;justify-content:space-between;}
+.conf{font-size:6.5pt;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.5pt;}
+</style>
+</head>
+<body><div class="page">
+
+<%# ── Letterhead ── %>
+<table class="lh"><tr>
+  <td>
+    <div class="logo-badge">IGSIGN</div>
+  </td>
+  <td style="text-align:right;vertical-align:top;">
+    <div class="doc-title">MUTUAL NON-DISCLOSURE AGREEMENT</div>
+    <div class="doc-sub">Confidential &mdash; Legally Binding under ECT Act 25 of 2002</div>
+    <div class="doc-ref">Workflow #IGSIGN-<%= "%04d" % @caf[:agreement_id] %> &mdash; Prepared <%= @caf[:date_prepared] %></div>
+  </td>
+</tr></table>
+
+<%# ── Parties ── %>
+<div class="parties-box">
+  <p style="margin-bottom:10pt;font-size:9pt;color:#4b5563;">This Mutual Non-Disclosure Agreement ("<strong>Agreement</strong>") is entered into between:</p>
+
+  <div class="party-label">Party 1 — Ignition Group Entity</div>
+  <div class="party-name"><%= @caf[:entity_name] %></div>
+  <div class="party-reg">Registration No: <%= @caf[:entity_registration] %></div>
+  <div class="party-addr"><%= @caf[:entity_address] %></div>
+  <div class="party-role">&ldquo;Ignition&rdquo;</div>
+
+  <div class="party-div"></div>
+
+  <div class="party-label">Party 2 — Counterparty</div>
+  <div class="party-name"><%= @caf[:counterparty_company].presence || '[Counterparty Name]' %></div>
+  <% if @caf[:counterparty_registration].present? %>
+    <div class="party-reg">Registration No: <%= @caf[:counterparty_registration] %></div>
+  <% end %>
+  <% if @caf[:counterparty_address].present? %>
+    <div class="party-addr"><%= @caf[:counterparty_address] %></div>
+  <% end %>
+  <div class="party-role">&ldquo;Second Party&rdquo;</div>
+
+  <p class="together">(each a "<strong>Party</strong>" and together the "<strong>Parties</strong>")</p>
+</div>
+
+<%# ── 1. Definitions ── %>
+<h2>1. Definitions</h2>
+<p>In this Agreement, unless the context indicates a contrary intention, the following words and expressions bear the meanings assigned to them below:</p>
+<ol class="main-list">
+  <li><div><span class="def-term">"Affiliates"</span> means, in relation to a Party, any company or other legal entity which controls, is controlled by, or is under common control with that Party;</div></li>
+  <li><div><span class="def-term">"Agreement"</span> means this Mutual Non-Disclosure Agreement, together with any schedules, annexures and amendments hereto;</div></li>
+  <li><div><span class="def-term">"Authorised Disclosure"</span> means a disclosure of Confidential Information which is not prohibited by this Agreement;</div></li>
+  <li><div><span class="def-term">"Authorised Persons"</span> means directors, officers, employees, professional advisers or representatives of the Receiving Party, or its Affiliates, who need to know the Confidential Information for the Purpose and who are bound by obligations of confidence no less restrictive than those set out in this Agreement;</div></li>
+  <li><div><span class="def-term">"Confidential Information"</span> means any and all information (whether in oral, written, graphic, electronic or any other form) which relates to the business, assets, affairs, finances, technology, processes, systems, operations, strategies or plans of either Party, including but not limited to technical data, trade secrets, know-how, research, product plans, products, services, customers, markets, software, developments, inventions, processes, formulas, technology, designs, drawings, engineering, hardware configuration, marketing, finances and other business information, that is disclosed by the Disclosing Party to the Receiving Party;</div></li>
+  <li><div><span class="def-term">"Disclosing Party"</span> means the Party disclosing Confidential Information to the other Party;</div></li>
+  <li><div><span class="def-term">"Effective Date"</span> means the date of last signature of this Agreement by the Parties;</div></li>
+  <li><div><span class="def-term">"Intellectual Property"</span> means all intellectual property rights including without limitation patents, trade marks, service marks, trade names, copyright, design rights, database rights, know-how, trade secrets and all other forms of intellectual property rights subsisting anywhere in the world, whether or not registered or registrable;</div></li>
+  <li><div><span class="def-term">"Purpose"</span> means the evaluation and exploration of a potential business relationship or transaction between the Parties, including but not limited to: <%= @caf[:agreement_purpose].presence || @caf[:mandate_description].presence || 'the evaluation of a potential business relationship between the Parties' %>;</div></li>
+  <li><div><span class="def-term">"Receiving Party"</span> means the Party receiving Confidential Information from the Disclosing Party;</div></li>
+  <li><div><span class="def-term">"Related Entities"</span> means any holding company, subsidiary company or associated company of a Party as defined in the Companies Act 71 of 2008;</div></li>
+  <li><div><span class="def-term">"POPI Act"</span> means the Protection of Personal Information Act 4 of 2013;</div></li>
+  <li><div><span class="def-term">"Personal Information"</span> has the meaning ascribed to it in the POPI Act.</div></li>
+</ol>
+
+<%# ── 2. Interpretation ── %>
+<h2>2. Interpretation</h2>
+<ol class="main-list">
+  <li><div>The provisions of this clause apply in the interpretation of this Agreement except where the context indicates a contrary intention.</div></li>
+  <li><div>References to the singular include the plural and vice versa, and references to one gender include all genders.</div></li>
+  <li><div>The headings in this Agreement are for convenience only and shall not affect the interpretation of this Agreement.</div></li>
+  <li><div>If any provision is a general provision, it will not be limited by a more specific provision dealing with the same subject matter.</div></li>
+  <li><div>Any reference to legislation includes all amendments to that legislation.</div></li>
+</ol>
+
+<%# ── 3. Introduction ── %>
+<h2>3. Introduction</h2>
+<ol class="main-list">
+  <li><div>The Parties are desirous of exploring a potential business relationship and in connection therewith may wish to share certain Confidential Information with each other for the Purpose.</div></li>
+  <li><div>The Parties wish to ensure that all Confidential Information shared between them shall be kept strictly confidential and used solely for the Purpose.</div></li>
+  <li><div>This Agreement governs the disclosure of Confidential Information by each Party to the other Party and sets out the obligations of each Party in relation to such Confidential Information.</div></li>
+</ol>
+
+<%# ── 4. Duration ── %>
+<h2>4. Duration</h2>
+<ol class="main-list">
+  <li><div>This Agreement shall commence on the Effective Date and shall remain in force for a period of <strong><%= @caf[:agreement_term].presence || '3 (three) years' %></strong>, unless terminated earlier by either Party upon 30 (thirty) days' prior written notice to the other Party.</div></li>
+  <li><div>Notwithstanding termination or expiry of this Agreement, the obligations of confidentiality contained herein shall survive for a period of 2 (two) years after termination or expiry.</div></li>
+  <li><div>Upon termination or expiry of this Agreement, each Party shall, at the request of the Disclosing Party, promptly return or destroy all Confidential Information in its possession.</div></li>
+</ol>
+
+<%# ── 5. Property of Disclosing Party ── %>
+<h2>5. Property of Disclosing Party</h2>
+<ol class="main-list">
+  <li><div>All Confidential Information disclosed by either Party to the other Party pursuant to this Agreement remains the exclusive property of the Disclosing Party.</div></li>
+  <li><div>Nothing in this Agreement shall be construed as granting the Receiving Party any rights, by licence or otherwise, in or to the Confidential Information or any Intellectual Property of the Disclosing Party.</div></li>
+  <li><div>The disclosure of Confidential Information shall not constitute any representation, warranty, assurance, guarantee or inducement by the Disclosing Party with respect to the accuracy or completeness of such information.</div></li>
+</ol>
+
+<%# ── 6. Supply and Use of Information ── %>
+<h2>6. Supply and Use of Information</h2>
+<ol class="main-list">
+  <li><div>The Receiving Party agrees to receive and to use the Confidential Information solely for the Purpose and for no other purpose whatsoever.</div></li>
+  <li><div>The Receiving Party undertakes to keep all Confidential Information strictly confidential and to disclose it only to its Authorised Persons on a strict need-to-know basis.</div></li>
+  <li><div>The Receiving Party shall ensure that each Authorised Person is made aware of the confidential nature of the information and the obligations in this Agreement prior to disclosure.</div></li>
+  <li>
+    <div>
+      <div class="highlight-box" style="margin-top:4pt;">
+        <strong>AI / Machine Learning Restriction.</strong> The Receiving Party shall <strong>NOT</strong> process, analyse, upload or otherwise use the Confidential Information in connection with any machine learning or artificial intelligence (&ldquo;AI&rdquo;) models, whether proprietary, third-party, cloud-based or on-premise, without the prior written consent of the Disclosing Party.
+      </div>
+    </div>
+  </li>
+  <li><div>The Receiving Party shall protect the Confidential Information with at least the same degree of care used to protect its own confidential information, and in no event with less than reasonable care.</div></li>
+  <li><div>The Receiving Party shall promptly notify the Disclosing Party upon becoming aware of any actual or suspected unauthorised disclosure or misuse of the Confidential Information.</div></li>
+</ol>
+
+<%# ── 7. Undertaking ── %>
+<h2>7. Undertaking</h2>
+<ol class="main-list">
+  <li>
+    <div>Each Party, in its capacity as a Receiving Party, undertakes that it shall not, without the prior written consent of the Disclosing Party:
+      <ol class="sub-list" style="margin-top:4pt;">
+        <li><div>disclose, reveal, report or transfer the Confidential Information to any third party;</div></li>
+        <li><div>use the Confidential Information for any purpose other than the Purpose;</div></li>
+        <li><div>reproduce or copy the Confidential Information except to the extent strictly necessary for the Purpose;</div></li>
+        <li><div>reverse engineer, disassemble or decompile any prototypes, software or other tangible objects embodying the Confidential Information.</div></li>
+      </ol>
+    </div>
+  </li>
+  <li><div>The obligations under clause 7.1 do not apply to information that:
+    <ol class="sub-list" style="margin-top:4pt;">
+      <li><div>is or becomes publicly available through no fault of the Receiving Party;</div></li>
+      <li><div>was known to the Receiving Party prior to disclosure by the Disclosing Party;</div></li>
+      <li><div>is independently developed by the Receiving Party without use of the Confidential Information; or</div></li>
+      <li><div>is required to be disclosed by law, court order or regulatory requirement, provided the Receiving Party gives prompt notice to the Disclosing Party and cooperates in seeking a protective order.</div></li>
+    </ol>
+  </div></li>
+</ol>
+
+<%# ── 8. Data Privacy and Protection ── %>
+<h2>8. Data Privacy and Protection</h2>
+<ol class="main-list">
+  <li><div>To the extent that any Confidential Information constitutes Personal Information as defined in the POPI Act, each Party in its capacity as Receiving Party shall process such Personal Information in compliance with the POPI Act and all applicable data protection legislation.</div></li>
+  <li><div>Each Party shall implement and maintain appropriate technical and organisational measures to protect Personal Information against unauthorised access, disclosure, alteration or destruction.</div></li>
+  <li><div>Each Party shall only process Personal Information for the Purpose and shall not process Personal Information for any other purpose without the prior written consent of the other Party.</div></li>
+  <li><div>In the event of a data breach involving Personal Information, the affected Party shall notify the other Party within 72 (seventy-two) hours of becoming aware of the breach and shall cooperate in the investigation and remediation thereof.</div></li>
+  <li><div>Each Party shall ensure that its Authorised Persons are aware of and comply with all applicable data protection obligations in relation to Personal Information.</div></li>
+</ol>
+
+<%# ── 9. Breach ── %>
+<h2>9. Breach</h2>
+<ol class="main-list">
+  <li><div>The Parties acknowledge that any breach of this Agreement may cause irreparable harm to the Disclosing Party, for which monetary damages may not be an adequate remedy.</div></li>
+  <li><div>In the event of a breach or threatened breach, the Disclosing Party shall be entitled to seek injunctive relief or other equitable remedy in addition to any other rights or remedies available at law or under this Agreement.</div></li>
+  <li><div>Nothing in this clause shall be construed as limiting either Party&rsquo;s other rights and remedies available at law or in equity.</div></li>
+</ol>
+
+<%# ── 10. Secrecy ── %>
+<h2>10. Secrecy</h2>
+<ol class="main-list">
+  <li><div>Each Party shall keep the existence and terms of this Agreement, including any discussions or negotiations between the Parties, strictly confidential and shall not disclose such information to any third party without the prior written consent of the other Party, except as required by law.</div></li>
+</ol>
+
+<%# ── 11. Entire Agreement ── %>
+<h2>11. Entire Agreement</h2>
+<ol class="main-list">
+  <li><div>This Agreement constitutes the entire agreement between the Parties with respect to the subject matter hereof and supersedes all prior discussions, representations, warranties, agreements or understandings of any nature, whether oral or written, relating thereto.</div></li>
+</ol>
+
+<%# ── 12. Notices ── %>
+<h2>12. Notices</h2>
+<ol class="main-list">
+  <li><div>All notices, demands or communications required or permitted under this Agreement shall be in writing and delivered by hand, prepaid registered post or email to the addresses specified below:
+    <div style="margin-top:8pt;background:#f8fafc;border:1pt solid #e2e8f0;border-radius:3pt;padding:10pt 12pt;font-size:9pt;">
+      <strong>Ignition Group Entity:</strong><br>
+      <%= @caf[:entity_name] %><br>
+      <em><%= @caf[:entity_address].to_s.gsub("\n", ', ') %></em><br>
+      Email: legal@ignitiongroup.co.za<br>
+      For the attention of: Craig G. Lawrence, Group Chief Legal Officer
+    </div>
+    <div style="margin-top:8pt;background:#f8fafc;border:1pt solid #e2e8f0;border-radius:3pt;padding:10pt 12pt;font-size:9pt;">
+      <strong>Second Party:</strong><br>
+      <%= @caf[:counterparty_company].presence || '[Counterparty Name]' %><br>
+      <% if @caf[:counterparty_address].present? %>
+        <em><%= @caf[:counterparty_address].to_s.gsub("\n", ', ') %></em><br>
+      <% end %>
+      For the attention of: <%= @caf[:counterparty_contact_name].presence || '[Authorised Signatory]' %><br>
+      Email: <%= @caf[:counterparty_email].presence || '[Counterparty Email]' %>
+    </div>
+  </div></li>
+  <li><div>Any notice shall be deemed to have been received: (a) if delivered by hand, on the date of delivery; (b) if sent by registered post, 5 (five) business days after posting; (c) if sent by email, on transmission provided no delivery failure notification is received by the sender within 24 hours.</div></li>
+</ol>
+
+<%# ── 13. General ── %>
+<h2>13. General</h2>
+<ol class="main-list">
+  <li><div><strong>Governing Law.</strong> This Agreement shall be governed by and construed in accordance with the laws of the Republic of South Africa.</div></li>
+  <li><div><strong>Jurisdiction.</strong> The Parties consent to the exclusive jurisdiction of the KwaZulu-Natal High Court, Durban, in respect of any dispute arising from or in connection with this Agreement.</div></li>
+  <li><div><strong>No Warranty.</strong> The Parties acknowledge that the Confidential Information is provided on an &ldquo;as is&rdquo; basis and the Disclosing Party makes no representations or warranties as to accuracy, completeness or fitness for any particular purpose.</div></li>
+  <li><div><strong>No Obligation.</strong> Nothing in this Agreement shall obligate either Party to enter into any further agreement or business relationship with the other Party.</div></li>
+  <li><div><strong>Costs.</strong> Each Party shall bear its own legal costs in connection with the negotiation and execution of this Agreement.</div></li>
+</ol>
+
+<%# ── 14. Severability ── %>
+<h2>14. Severability</h2>
+<ol class="main-list">
+  <li><div>If any provision of this Agreement is found to be invalid, illegal or unenforceable, such provision shall be severed from this Agreement and the remaining provisions shall continue in full force and effect. The Parties shall negotiate in good faith to replace any severed provision with a valid provision that achieves the same commercial objective.</div></li>
+</ol>
+
+<%# ── 15. Variation ── %>
+<h2>15. Variation</h2>
+<ol class="main-list">
+  <li><div>No variation, amendment or modification of this Agreement shall be of any force or effect unless it is in writing and signed by the duly authorised representatives of both Parties.</div></li>
+</ol>
+
+<%# ── 16. Relaxation ── %>
+<h2>16. Relaxation</h2>
+<ol class="main-list">
+  <li><div>No failure or delay by either Party in exercising any right or remedy under this Agreement shall constitute a waiver of that right or remedy. No waiver shall be valid unless made in writing.</div></li>
+</ol>
+
+<%# ── Signature Blocks ── %>
+<h2 style="margin-top:22pt;">Signatures</h2>
+<p style="font-size:9pt;color:#4b5563;margin-bottom:10pt;">IN WITNESS WHEREOF, the duly authorised representatives of the Parties have signed this Agreement on the dates indicated below.</p>
+
+<table class="sig-tbl">
+  <tr>
+    <td class="sig-hdr">Party 1 &mdash; Ignition Group Entity</td>
+    <td class="sig-hdr">Signature &amp; Full Name</td>
+    <td class="sig-hdr">Date</td>
+  </tr>
+  <tr>
+    <td class="sig-party-col">
+      <div class="sig-name"><%= @caf[:entity_name] %></div>
+      <div class="sig-reg">Reg: <%= @caf[:entity_registration] %></div>
+      <div class="sig-person">Craig G. Lawrence</div>
+      <div class="sig-title">Group Chief Legal Officer</div>
+    </td>
+    <td class="sig-sign-col">
+      <div class="sig-lbl">Signature</div><div class="sig-line"></div>
+      <div class="sig-lbl">Full Name (print)</div><div class="sig-line-sm"></div>
+    </td>
+    <td class="sig-date-col">
+      <div class="sig-lbl">Date</div><div class="sig-line-sm"></div>
+      <div class="sig-lbl">Capacity</div><div class="sig-line-sm"></div>
+    </td>
+  </tr>
+  <tr>
+    <td class="sig-hdr">Party 2 &mdash; Second Party</td>
+    <td class="sig-hdr">Signature &amp; Full Name</td>
+    <td class="sig-hdr">Date</td>
+  </tr>
+  <tr>
+    <td class="sig-party-col">
+      <div class="sig-name"><%= @caf[:counterparty_company].presence || '[Counterparty Name]' %></div>
+      <% if @caf[:counterparty_registration].present? %>
+        <div class="sig-reg">Reg: <%= @caf[:counterparty_registration] %></div>
+      <% end %>
+      <div class="sig-person"><%= @caf[:counterparty_contact_name].presence || '[Authorised Signatory]' %></div>
+      <div class="sig-title">Duly Authorised Representative</div>
+    </td>
+    <td class="sig-sign-col">
+      <div class="sig-lbl">Signature</div><div class="sig-line"></div>
+      <div class="sig-lbl">Full Name (print)</div><div class="sig-line-sm"></div>
+    </td>
+    <td class="sig-date-col">
+      <div class="sig-lbl">Date</div><div class="sig-line-sm"></div>
+      <div class="sig-lbl">Capacity</div><div class="sig-line-sm"></div>
+    </td>
+  </tr>
+</table>
+
+<%# ── ECT Act Notice ── %>
+<div class="ecta">
+  <strong>Electronic Signatures &mdash; ECT Act Notice.</strong>
+  This Agreement is executed as an electronic document pursuant to the
+  <strong>Electronic Communications and Transactions Act 25 of 2002 (ECT Act)</strong>.
+  All electronic signatures appended hereto constitute valid, binding and enforceable
+  signatures (SES-grade) as defined in the ECT Act and are legally equivalent to
+  handwritten signatures. Executed via IGSIGN &mdash; Ignition Group&rsquo;s internal
+  electronic signing platform.
+</div>
+
+<%# ── Footer ── %>
+<div class="ftr">
+  <div>
+    <span class="conf">CONFIDENTIAL &mdash; LEGAL DOCUMENT</span><br>
+    Mutual Non-Disclosure Agreement &mdash; IGSIGN-<%= "%04d" % @caf[:agreement_id] %>
+  </div>
+  <div style="text-align:right;">
+    <%= @caf[:entity_name] %> &amp; <%= @caf[:counterparty_company].presence || 'Counterparty' %><br>
+    Generated <%= @caf[:date_prepared] %> via IGSIGN
+  </div>
+</div>
+
+</div></body></html>

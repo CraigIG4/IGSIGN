@@ -38,6 +38,8 @@ class CafPdfGenerator
       entity_registration: entity[:registration] || 'To be verified',
       entity_address: entity[:address] || IgSignatories::REGISTERED_ADDRESS,
       counterparty_company: (@agreement.contracting_party.presence || @agreement.company&.name).to_s,
+      counterparty_registration: @agreement.company&.registration_number.to_s,
+      counterparty_address: @agreement.company&.address.to_s,
       counterparty_contact_name: @agreement.counterparty_name.to_s,
       counterparty_email: @agreement.counterparty_email.to_s,
       mandate_description: @agreement.mandate_description.to_s,

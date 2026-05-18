@@ -47,8 +47,15 @@ class CafSubmissionCreator
     attach_signatories(submission)
     attach_stages(submission)
     attach_caf_pdf_document(submission)
-    attach_contract_document(submission)
-    merge_agreement_template_fields!(submission)
+
+    if @caf.agreement_type == 'nda'
+      # NDA path: dynamically generate the agreement PDF — no static template document needed.
+      attach_nda_agreement_document(submission)
+    else
+      attach_contract_document(submission)
+      merge_agreement_template_fields!(submission)
+    end
+
     extend_submission_schema(submission)
 
     submission.caf_stages.ordered_by_position.first&.activate!
@@ -66,11 +73,12 @@ class CafSubmissionCreator
   end
 
   def build_submission
-    # NDA agreements use the standing NDA Template (pre-built document + fields).
-    # All other types use the generic CAF Template which provides the signing-page
-    # submitter slots; the actual document is attached separately by
-    # attach_contract_document.
-    template = @caf.agreement_type == 'nda' ? find_nda_template! : find_or_create_caf_template
+    # All agreement types use the generic CAF Template which provides submitter
+    # slots and any pre-positioned signing-page fields.  The agreement document
+    # itself is attached separately:
+    #   - NDA: generated dynamically by NdaAgreementGenerator (attach_nda_agreement_document)
+    #   - Others: blobs from @caf.template re-attached by attach_contract_document
+    template = find_or_create_caf_template
 
     Submission.create!(
       account: @caf.account,
@@ -190,6 +198,42 @@ class CafSubmissionCreator
     end
   end
 
+  # Generates the NDA agreement PDF via NdaAgreementGenerator and attaches it
+  # to the submission as a counterparty-visible (internal_only: false) document.
+  # This replaces the former static "IGSIGN NDA Template" approach, allowing
+  # party names and purpose to be embedded dynamically in every agreement.
+  #
+  # Failures are logged and swallowed so the signing flow degrades gracefully
+  # if LibreOffice is unavailable (signatories will sign the CAF only).
+  def attach_nda_agreement_document(submission)
+    pdf_path = nil
+    pdf_path = NdaAgreementGenerator.new(@caf).generate
+
+    blob = ActiveStorage::Blob.create_and_upload!(
+      io:           File.open(pdf_path),
+      filename:     "nda_agreement_#{@caf.id}.pdf",
+      content_type: 'application/pdf'
+    )
+    submission.documents.attach(blob)
+    attachment = ActiveStorage::Attachment.find_by!(
+      record_type: 'Submission', record_id: submission.id,
+      name: 'documents', blob_id: blob.id
+    )
+
+    CafStageDocument.create!(
+      submission:    submission,
+      document_uuid: attachment.uuid,
+      document_name: blob.filename.to_s,
+      internal_only: false
+    )
+
+    process_document_async(attachment)
+  rescue StandardError => e
+    Rails.logger.error("[CafSubmissionCreator] NDA agreement PDF generation failed for #{@caf.id}: #{e.message}")
+  ensure
+    File.delete(pdf_path) if pdf_path && File.exist?(pdf_path)
+  end
+
   # Merges user-positioned fields from the agreement template into the
   # submission so the signing form renders them alongside the CAF fields.
   #
@@ -286,8 +330,9 @@ class CafSubmissionCreator
     )
   end
 
-  # Looks up the standing NDA Template.  Raises with an actionable message if
-  # it has not been created yet so the error surfaces cleanly at Send time.
+  # DEPRECATED: NDA agreements no longer use a standing DocuSeal template.
+  # The NDA document is generated dynamically by NdaAgreementGenerator.
+  # This method is retained for reference only; it is no longer called.
   def find_nda_template!
     @caf.account.templates.find_by(name: 'IGSIGN NDA Template') ||
       raise(StandardError,

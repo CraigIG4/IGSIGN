@@ -176,19 +176,36 @@ body{font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:9pt;color:#1a1a1
 </table>
 
 <%# ── E. Contracts Risk Governance Matrix ────────────────────────────── %>
-<div class="sh">E &mdash; Contracts Risk Governance Matrix</div>
+<div class="sh">E &mdash; Contracts Risk Governance Matrix &mdash; Risk Management Clause Details</div>
 <table class="dt">
   <tr>
-    <th style="width:34%">Risk Area</th>
-    <th class="c" style="width:10%">Green</th>
-    <th class="c" style="width:10%">Amber</th>
-    <th class="c" style="width:10%">Red</th>
-    <th class="c" style="width:10%">Redline</th>
+    <th style="width:32%">Risk / Clause Area</th>
+    <th class="c" style="width:9%">Green</th>
+    <th class="c" style="width:9%">Amber</th>
+    <th class="c" style="width:9%">Red</th>
+    <th class="c" style="width:9%">Redline</th>
     <th>Mitigation / Details</th>
   </tr>
-  <% ['Contracts Risk Governance Handbook compliance', 'Limitation of Liability', 'Liability Cap (specify amount)', 'Termination for Convenience', 'Indemnities', 'Payment Terms', 'Processing of Personal Information (POPI / GDPR)', 'Intellectual Property Ownership', 'Other risk'].each do |area| %>
+  <% [
+    'Limitation of Liability',
+    'Indirect &amp; Consequential Losses',
+    'Cancellation / Termination',
+    'Payment Terms',
+    'Anti-Bribery',
+    'POPI / Data Protection',
+    'Changes in Shareholding',
+    'Change in Control',
+    'Insurance',
+    'BBBEE',
+    'Business Continuity',
+    'IP Ownership',
+    'Assignment',
+    'Liability Cap Value (specify R amount)',
+    'Contractual Terms to Note',
+    'Negotiated Legal Terms'
+  ].each do |area| %>
   <tr>
-    <td><%= area %></td>
+    <td><%= area.html_safe %></td>
     <td style="text-align:center"><div class="cb"></div></td>
     <td style="text-align:center"><div class="cb"></div></td>
     <td style="text-align:center"><div class="cb"></div></td>
@@ -205,9 +222,14 @@ body{font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:9pt;color:#1a1a1
   <tr><th style="width:22%">Topic</th><th>Detail</th><th style="width:22%">Topic</th><th>Detail</th></tr>
   <tr><td class="lc">Customer or Supplier?</td><td></td><td class="lc">Term of Contract</td><td></td></tr>
   <tr><td class="lc">Commencement Date</td><td></td><td class="lc">Expiry Date</td><td></td></tr>
-  <tr><td class="lc">Auto-Renewal Clause?</td><td></td><td class="lc">Renewal Notice Date</td><td></td></tr>
+  <tr>
+    <td class="lc">Renewal Required?</td>
+    <td><span class="cb"></span>&nbsp;Yes &nbsp;&nbsp; <span class="cb"></span>&nbsp;No</td>
+    <td class="lc">Renewal Date</td>
+    <td></td>
+  </tr>
   <tr><td class="lc">Action Required to Renew</td><td colspan="3"></td></tr>
-  <tr><td class="lc">Negotiated / Non-standard Terms</td><td colspan="3" style="height:26pt;"></td></tr>
+  <tr><td class="lc">Reference Checked by Legal</td><td><div style="height:20pt;border-bottom:1pt solid #555;width:70%;"></div><div style="font-size:7pt;color:#9ca3af;margin-top:2pt;">Craig G. Lawrence &mdash; Group CLO</div></td><td class="lc">Negotiated / Non-standard Terms</td><td style="height:26pt;"></td></tr>
 </table>
 
 <%# ── G. Approval Chain ───────────────────────────────────────────────── %>
@@ -225,7 +247,7 @@ body{font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:9pt;color:#1a1a1
       <div class="sig-org">Agreement Originator</div>
       <div class="sig-person"><%= @caf[:requestor_name] %></div>
       <div class="sig-ptitle"><%= @caf[:requestor_email] %></div>
-      <div class="sig-note">I have read and understood all commercial terms. I approve that the IG entity should be bound by the terms of this agreement.</div>
+      <div class="sig-note">I have read and understood all the commercial terms of this agreement. I approve that the Ignition Company should be bound by the terms of this agreement. I further warrant that I have ensured the counterparty has complied with all credit-related requests as per CFO direction.</div>
     </td>
     <td class="sig-area">
       <div class="sig-lbl">Signature</div><div class="sig-line"></div>
