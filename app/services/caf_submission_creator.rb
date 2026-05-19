@@ -167,44 +167,30 @@ class CafSubmissionCreator
   end
 
   # Registers externally-visible documents (internal_only: false) on the submission.
+  # Only called for non-NDA workflows (NDA documents are generated dynamically by
+  # attach_nda_agreement_document instead).
   #
-  # Upload path: blobs from @caf.template are re-attached to the submission as
-  # new ActiveStorage::Attachment records (new UUIDs).  CafStageDocument entries
+  # Blobs from @caf.template are re-attached to the submission as new
+  # ActiveStorage::Attachment records (new UUIDs).  CafStageDocument entries
   # reference those new submission-level UUIDs.
-  #
-  # NDA path: the NDA document is already embedded in the NDA Template's schema
-  # which the submission inherits.  Re-attaching the blob would duplicate the
-  # document in the signing form.  Instead, CafStageDocument entries are created
-  # directly from the template schema using the template-level attachment UUIDs.
   def attach_contract_document(submission)
     template = @caf.template
     return unless template
 
-    if @caf.agreement_type == 'nda'
-      (template.schema || []).each do |item|
-        CafStageDocument.create!(
-          submission:    submission,
-          document_uuid: item['attachment_uuid'],
-          document_name: item['name'].to_s,
-          internal_only: false
-        )
-      end
-    else
-      template.documents.attachments.each do |src_attach|
-        blob = src_attach.blob
-        submission.documents.attach(blob)
-        attachment = ActiveStorage::Attachment.find_by!(
-          record_type: 'Submission', record_id: submission.id,
-          name: 'documents', blob_id: blob.id
-        )
+    template.documents.attachments.each do |src_attach|
+      blob = src_attach.blob
+      submission.documents.attach(blob)
+      attachment = ActiveStorage::Attachment.find_by!(
+        record_type: 'Submission', record_id: submission.id,
+        name: 'documents', blob_id: blob.id
+      )
 
-        CafStageDocument.create!(
-          submission:    submission,
-          document_uuid: attachment.uuid,
-          document_name: blob.filename.to_s,
-          internal_only: false
-        )
-      end
+      CafStageDocument.create!(
+        submission:    submission,
+        document_uuid: attachment.uuid,
+        document_name: blob.filename.to_s,
+        internal_only: false
+      )
     end
   end
 
