@@ -3,6 +3,11 @@
 class SendSubmitterInvitationEmailJob
   include Sidekiq::Job
 
+  # Explicit retry limit: invitation emails are time-sensitive; 5 attempts
+  # over ~5 minutes is sufficient.  Beyond that the workflow should be
+  # investigated manually rather than hammering the mail server.
+  sidekiq_options queue: 'default', retry: 5
+
   def perform(params = {})
     submitter = Submitter.find(params['submitter_id'])
 

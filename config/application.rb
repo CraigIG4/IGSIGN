@@ -12,6 +12,7 @@ require 'rails/health_controller'
 
 require_relative '../lib/api_path_consider_json_middleware'
 require_relative '../lib/normalize_client_ip_middleware'
+require_relative '../lib/igsign_signing_throttle_middleware'
 
 Bundler.require(*Rails.groups)
 
@@ -39,10 +40,14 @@ module DocuSeal
     config.middleware.insert_before ActionDispatch::Static, Rack::Deflater
     config.middleware.insert_before ActionDispatch::Static, NormalizeClientIpMiddleware
     config.middleware.insert_before ActionDispatch::Static, ApiPathConsiderJsonMiddleware
+    # Rate-limit counterparty signing endpoints (/s/* and /d/*).
+    # Runs after NormalizeClientIpMiddleware so the IP is already normalised.
+    config.middleware.use IgsignSigningThrottleMiddleware
 
     config.generators.system_tests = nil
 
-    autoloaders.once.do_not_eager_load("#{Turbo::Engine.root}/app/channels") # https://github.com/hotwired/turbo-rails/issues/512
+    # workaround: https://github.com/hotwired/turbo-rails/issues/512
+    autoloaders.once.do_not_eager_load("#{Turbo::Engine.root}/app/channels")
 
     ActiveSupport.run_load_hooks(:application_config, self)
   end

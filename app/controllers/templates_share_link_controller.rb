@@ -11,7 +11,10 @@ class TemplatesShareLinkController < ApplicationController
     @template.update!(template_params)
 
     if params[:redir].present?
-      redirect_to params[:redir]
+      # allow_other_host: false prevents open-redirect to external domains.
+      # Rails 8 enforces this by default but being explicit here documents the
+      # intent and guards against accidental config changes.
+      redirect_to params[:redir], allow_other_host: false
     else
       head :ok
     end
