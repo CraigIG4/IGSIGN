@@ -31,6 +31,13 @@ class ProfileController < ApplicationController
     end
   end
 
+  # IGSIGN — marks the staff walkthrough as complete for the current user.
+  # Called via AJAX (fetch) from the tour JS; responds with JSON.
+  def complete_tour
+    current_user.update_column(:walkthrough_completed_at, Time.current)
+    render json: { ok: true }
+  end
+
   private
 
   def contact_params

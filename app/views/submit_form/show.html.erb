@@ -8,7 +8,180 @@
 <% page_blob_struct = Struct.new(:url, :metadata) %>
 <% schema = Submissions.filtered_conditions_schema(@submitter.submission, values:, include_submitter_uuid: @submitter.uuid) %>
 <% font_scale = 1000.0 / PdfUtils::US_LETTER_W %>
+<%
+  # Compute field counts for the progress banner.
+  _all_fields     = @submitter.submission.template_fields || @submitter.submission.template.fields
+  _my_fields      = _all_fields.select { |f| f['submitter_uuid'] == @submitter.uuid && f['readonly'] != true }
+  _total_fields   = _my_fields.size
+  _done_fields    = _my_fields.count { |f| @submitter.values[f['uuid']].present? }
+
+  # Requestor info for the help panel.
+  _requestor      = @submitter.submission.created_by_user || @submitter.submission.template&.author
+  _requestor_name = _requestor&.full_name.presence || @submitter.account.name
+  _requestor_email = _requestor&.email.presence
+%>
 <%= render 'submit_form/igsign_welcome' %>
+
+<%# ── IGSIGN: progress banner ───────────────────────────────────────────────── %>
+<% if _total_fields > 0 %>
+  <div id="ig-progress-banner"
+       style="position:sticky; top:0; z-index:40; background:#162B3C; color:#ffffff; font-size:13px; font-weight:600; padding:8px 20px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 2px 8px rgba(22,43,60,0.18);">
+    <span>
+      <span style="color:#45AC34;">&#10003;</span>
+      Field <span id="ig-fields-done"><%= _done_fields %></span> of <span id="ig-fields-total"><%= _total_fields %></span>
+      &nbsp;&middot;&nbsp;
+      <span id="ig-progress-label" style="font-weight:400; color:rgba(255,255,255,0.7);">
+        <%= _done_fields == 0 ? 'Start below — click a highlighted field' : "#{_total_fields - _done_fields} remaining" %>
+      </span>
+    </span>
+    <button id="ig-help-btn"
+            aria-label="Signing help"
+            style="background:rgba(255,255,255,0.12); border:none; border-radius:50%; width:28px; height:28px; color:#ffffff; font-size:14px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;"
+            onmouseover="this.style.background='rgba(69,172,52,0.35)'"
+            onmouseout="this.style.background='rgba(255,255,255,0.12)'">?</button>
+  </div>
+<% end %>
+
+<%# ── IGSIGN: help slide-out panel ─────────────────────────────────────────── %>
+<div id="ig-help-panel"
+     role="dialog"
+     aria-modal="false"
+     aria-label="Signing help"
+     style="position:fixed; top:0; right:-340px; width:320px; height:100dvh; background:#ffffff; box-shadow:-4px 0 24px rgba(22,43,60,0.18); z-index:1000; transition:right 0.25s ease; overflow-y:auto; box-sizing:border-box; padding:28px 24px;">
+
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <div style="font-size:15px; font-weight:700; color:#162B3C;">How to sign</div>
+    <button id="ig-help-close"
+            aria-label="Close help panel"
+            style="background:none; border:none; cursor:pointer; color:#9aa3ae; padding:4px; line-height:1;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:20px; margin-bottom:28px;">
+    <div style="display:flex; gap:14px;">
+      <div style="width:28px; height:28px; border-radius:50%; background:#162B3C; color:#45AC34; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;">1</div>
+      <div>
+        <div style="font-size:13px; font-weight:700; color:#162B3C; margin-bottom:3px;">Scroll the document</div>
+        <div style="font-size:12px; color:#5a6572; line-height:1.5;">Read through all pages before signing. Highlighted boxes show where your input is needed.</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:14px;">
+      <div style="width:28px; height:28px; border-radius:50%; background:#162B3C; color:#45AC34; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;">2</div>
+      <div>
+        <div style="font-size:13px; font-weight:700; color:#162B3C; margin-bottom:3px;">Click each field</div>
+        <div style="font-size:12px; color:#5a6572; line-height:1.5;">Click a highlighted field on the document or use the form at the bottom of the screen.</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:14px;">
+      <div style="width:28px; height:28px; border-radius:50%; background:#162B3C; color:#45AC34; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;">3</div>
+      <div>
+        <div style="font-size:13px; font-weight:700; color:#162B3C; margin-bottom:3px;">Draw or type your signature</div>
+        <div style="font-size:12px; color:#5a6572; line-height:1.5;">You can draw, type, or upload an image of your signature.</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:14px;">
+      <div style="width:28px; height:28px; border-radius:50%; background:#162B3C; color:#45AC34; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;">4</div>
+      <div>
+        <div style="font-size:13px; font-weight:700; color:#162B3C; margin-bottom:3px;">Submit</div>
+        <div style="font-size:12px; color:#5a6572; line-height:1.5;">Once all fields are complete, click <strong>Submit</strong>. A signed copy is emailed to you immediately.</div>
+      </div>
+    </div>
+  </div>
+
+  <% if _requestor_name.present? || _requestor_email.present? %>
+    <div style="border-top:1px solid #e8ebed; padding-top:20px;">
+      <div style="font-size:11px; font-weight:700; color:#7B787F; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:10px;">Questions?</div>
+      <p style="margin:0 0 8px; font-size:13px; color:#4a5568; line-height:1.5;">
+        Contact the person who sent this agreement:
+      </p>
+      <div style="font-size:13px; font-weight:600; color:#162B3C;"><%= _requestor_name %></div>
+      <% if _requestor_email.present? %>
+        <a href="mailto:<%= _requestor_email %>"
+           style="font-size:13px; color:#45AC34; text-decoration:none; word-break:break-all;"><%= _requestor_email %></a>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<script nonce="<%= content_security_policy_nonce %>">
+(function () {
+  var panel   = document.getElementById('ig-help-panel');
+  var helpBtn = document.getElementById('ig-help-btn');
+  var closeBtn = document.getElementById('ig-help-close');
+  if (!panel) return;
+
+  function openPanel()  { panel.style.right = '0'; }
+  function closePanel() { panel.style.right = '-340px'; }
+
+  if (helpBtn)  helpBtn.addEventListener('click',  openPanel);
+  if (closeBtn) closeBtn.addEventListener('click', closePanel);
+
+  // Escape closes the panel
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closePanel();
+  });
+
+  // ── Progress banner updates via MutationObserver ──────────────────────────
+  // DocuSeal's submission form is injected as a Stimulus controller.
+  // We observe the entire page for changes to inputs/textareas with
+  // data-field-uuid attributes (DocuSeal's standard pattern) and update
+  // the progress counter accordingly.
+  var totalEl  = document.getElementById('ig-fields-total');
+  var doneEl   = document.getElementById('ig-fields-done');
+  var labelEl  = document.getElementById('ig-progress-label');
+  var banner   = document.getElementById('ig-progress-banner');
+
+  if (!totalEl || !doneEl) return;
+
+  var total = parseInt(totalEl.textContent, 10) || 0;
+
+  function countDone() {
+    // Count distinct field UUIDs that have a non-empty value in DocuSeal's form.
+    // DocuSeal stamps each interactive element with data-field-uuid.
+    var filled = new Set();
+    document.querySelectorAll('[data-field-uuid]').forEach(function (el) {
+      var uuid = el.dataset.fieldUuid;
+      if (!uuid) return;
+      var val = el.value || el.textContent || '';
+      if (val.trim()) filled.add(uuid);
+    });
+    return filled.size;
+  }
+
+  function updateBanner() {
+    var done = countDone();
+    doneEl.textContent = done;
+    if (labelEl) {
+      var rem = total - done;
+      if (done === 0) {
+        labelEl.textContent = 'Start below — click a highlighted field';
+      } else if (rem <= 0) {
+        labelEl.textContent = 'All done — click Submit';
+        if (banner) banner.style.background = '#1a5c0e';
+      } else {
+        labelEl.textContent = rem + ' remaining';
+      }
+    }
+  }
+
+  // Observe the whole document body for attribute/character changes deep
+  // in the DocuSeal form, debounced to avoid thrashing on fast typing.
+  var debounce = null;
+  var observer = new MutationObserver(function () {
+    clearTimeout(debounce);
+    debounce = setTimeout(updateBanner, 150);
+  });
+
+  observer.observe(document.body, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    attributeFilter: ['value', 'data-value', 'class'],
+    characterData: true
+  });
+})();
+</script>
 <% decline_modal_id = nil %>
 <% delegate_modal_id = nil %>
 <div style="max-height: -webkit-fill-available;">

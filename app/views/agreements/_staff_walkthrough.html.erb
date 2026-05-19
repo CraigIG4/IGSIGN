@@ -1,0 +1,197 @@
+<%#
+  IGSIGN Staff Walkthrough — 7-step tooltip tour for first-time senders.
+  Shown when:
+    a) current_user.walkthrough_completed_at.nil?  (first login), OR
+    b) ?tour=true is present in the URL (replay).
+  Completion POSTs to PATCH /settings/profile/complete_tour via fetch (no redirect).
+
+  Each step has:
+    - target: CSS selector for the element to highlight (nil = centred overlay)
+    - title / body: tooltip content
+%>
+<% tour_steps = [
+  {
+    target: nil,
+    title:  'Welcome to IGSIGN',
+    body:   'This is your agreements hub. From here you can create, track, and manage every contract and NDA across the Ignition Group. This quick tour takes about 60 seconds.',
+    icon:   '👋'
+  },
+  {
+    target: 'a[href*="new_agreement"], a[href*="/agreements/new"]',
+    title:  'Create a new agreement',
+    body:   'Click <strong>New Agreement</strong> to start. Choose an NDA for a specific entity or upload a contract for any agreement type.',
+    icon:   '📄'
+  },
+  {
+    target: '#ig-stats-bar, .grid.grid-cols-2.sm\\:grid-cols-5',
+    title:  'Your live dashboard',
+    body:   'These counters update in real time — Total, Draft, Active, Complete, and Overdue. Red means action is needed.',
+    icon:   '📊'
+  },
+  {
+    target: '.tab, [role="tab"], .border-b .flex.items-center',
+    title:  'Filter by status',
+    body:   'Use the tabs to focus: <strong>Pending IG</strong> shows agreements waiting for internal signatures; <strong>With Counterparty</strong> shows those waiting on the other side.',
+    icon:   '🔍'
+  },
+  {
+    target: 'table tbody tr:first-child, .agreement-row:first-child',
+    title:  'Agreement rows',
+    body:   'Each row shows the counterparty, agreement type, status, and who signs next. Click the agreement name to view its full signing journey.',
+    icon:   '📋'
+  },
+  {
+    target: 'table tbody tr:first-child .btn, .agreement-row:first-child .btn',
+    title:  'Quick actions',
+    body:   'Use the buttons to send reminders, view the signing journey, or re-send invitation emails without opening the full agreement.',
+    icon:   '⚡'
+  },
+  {
+    target: nil,
+    title:  "You're all set!",
+    body:   'That\'s everything you need to know. For help or to report an issue, contact the Legal team at <a href="mailto:legal@ignition.group" style="color:#45AC34;">legal@ignition.group</a>.',
+    icon:   '✅'
+  }
+] %>
+
+<%# Overlay backdrop + tooltip container %>
+<div id="ig-tour-backdrop"
+     style="display:none; position:fixed; inset:0; z-index:8000; background:rgba(22,43,60,0.55); pointer-events:none;"></div>
+
+<div id="ig-tour-tooltip"
+     role="dialog"
+     aria-live="polite"
+     aria-label="Tour step"
+     style="display:none; position:fixed; z-index:8001; max-width:340px; width:calc(100vw - 32px); background:#ffffff; border-radius:14px; box-shadow:0 12px 40px rgba(22,43,60,0.28); padding:24px 22px; box-sizing:border-box;">
+
+  <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:14px;">
+    <span id="ig-tour-icon" style="font-size:22px; line-height:1; flex-shrink:0;"></span>
+    <div>
+      <div id="ig-tour-title" style="font-size:15px; font-weight:700; color:#162B3C; margin-bottom:4px;"></div>
+      <div id="ig-tour-body"  style="font-size:13px; color:#4a5568; line-height:1.6;"></div>
+    </div>
+  </div>
+
+  <div style="display:flex; align-items:center; justify-content:space-between;">
+    <div style="font-size:11px; color:#9aa3ae;">
+      Step <span id="ig-tour-step-num"></span> of <%= tour_steps.size %>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button id="ig-tour-skip"
+              style="background:none; border:none; cursor:pointer; font-size:13px; color:#9aa3ae; font-family:inherit; padding:0; text-decoration:underline;">
+        Skip tour
+      </button>
+      <button id="ig-tour-next"
+              style="background:#162B3C; color:#ffffff; border:none; border-radius:8px; padding:9px 20px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit;">
+        Next →
+      </button>
+    </div>
+  </div>
+</div>
+
+<script nonce="<%= content_security_policy_nonce %>">
+(function () {
+  var COMPLETE_URL = '<%= complete_tour_settings_profile_index_path %>';
+  var CSRF_TOKEN   = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+  var steps = <%= raw tour_steps.to_json %>;
+  var current = 0;
+  var backdrop = document.getElementById('ig-tour-backdrop');
+  var tooltip  = document.getElementById('ig-tour-tooltip');
+  var highlight = null; // currently highlighted element
+
+  function markDone() {
+    fetch(COMPLETE_URL, {
+      method: 'PATCH',
+      headers: { 'X-CSRF-Token': CSRF_TOKEN, 'Content-Type': 'application/json', 'Accept': 'application/json' }
+    }).catch(function () { /* fire-and-forget */ });
+  }
+
+  function closeTour() {
+    backdrop.style.display = 'none';
+    tooltip.style.display  = 'none';
+    if (highlight) { highlight.style.outline = ''; highlight.style.position = ''; }
+    markDone();
+  }
+
+  function positionTooltip(targetEl) {
+    tooltip.style.display = 'block';
+    if (!targetEl) {
+      // Centred on screen
+      tooltip.style.top    = '50%';
+      tooltip.style.left   = '50%';
+      tooltip.style.transform = 'translate(-50%, -50%)';
+      return;
+    }
+    tooltip.style.transform = '';
+    var rect  = targetEl.getBoundingClientRect();
+    var tH    = tooltip.offsetHeight;
+    var tW    = tooltip.offsetWidth;
+    var vH    = window.innerHeight;
+    var vW    = window.innerWidth;
+    var top   = rect.bottom + 12;
+    var left  = rect.left;
+
+    // Flip above if not enough room below
+    if (top + tH > vH - 16) top = rect.top - tH - 12;
+    // Keep within viewport horizontally
+    if (left + tW > vW - 16) left = vW - tW - 16;
+    if (left < 16) left = 16;
+
+    tooltip.style.top  = Math.max(16, top) + 'px';
+    tooltip.style.left = left + 'px';
+  }
+
+  function showStep(idx) {
+    if (idx >= steps.length) { closeTour(); return; }
+    var step = steps[idx];
+    document.getElementById('ig-tour-icon').textContent     = step.icon || '';
+    document.getElementById('ig-tour-title').textContent    = step.title;
+    document.getElementById('ig-tour-body').innerHTML       = step.body;
+    document.getElementById('ig-tour-step-num').textContent = idx + 1;
+    document.getElementById('ig-tour-next').textContent     = idx === steps.length - 1 ? 'Finish ✓' : 'Next →';
+
+    // Remove previous highlight
+    if (highlight) { highlight.style.outline = ''; highlight.style.zIndex = ''; }
+    highlight = null;
+
+    var targetEl = null;
+    if (step.target) {
+      targetEl = document.querySelector(step.target);
+      if (targetEl) {
+        highlight = targetEl;
+        targetEl.style.outline = '3px solid #45AC34';
+        targetEl.style.zIndex  = '8002';
+        // Scroll into view
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    backdrop.style.display = 'block';
+    backdrop.style.pointerEvents = 'none'; // let clicks pass through
+    positionTooltip(targetEl);
+  }
+
+  document.getElementById('ig-tour-next').addEventListener('click', function () {
+    current += 1;
+    if (current >= steps.length) { closeTour(); } else { showStep(current); }
+  });
+
+  document.getElementById('ig-tour-skip').addEventListener('click', closeTour);
+
+  // Keyboard nav
+  document.addEventListener('keydown', function (e) {
+    if (tooltip.style.display === 'none') return;
+    if (e.key === 'Escape')     closeTour();
+    if (e.key === 'ArrowRight') { current += 1; if (current >= steps.length) { closeTour(); } else { showStep(current); } }
+  });
+
+  // Start on DOMContentLoaded
+  document.addEventListener('DOMContentLoaded', function () {
+    showStep(0);
+  });
+
+  // If DOM already loaded (Turbo), start immediately
+  if (document.readyState !== 'loading') showStep(0);
+})();
+</script>

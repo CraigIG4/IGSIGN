@@ -19,12 +19,31 @@
     <!-- Body -->
     <div style="padding:24px 28px;">
       <!-- Agreement card -->
-      <div style="background:#f5f7f9; border:1px solid #e8ebed; border-left:4px solid #45AC34; border-radius:8px; padding:14px 18px; margin-bottom:20px;">
+      <div style="background:#f5f7f9; border:1px solid #e8ebed; border-left:4px solid #45AC34; border-radius:8px; padding:14px 18px; margin-bottom:16px;">
         <div style="font-size:11px; font-weight:700; color:#7B787F; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:4px;">Signed document</div>
         <div style="font-size:15px; font-weight:700; color:#162B3C;"><%= @submitter.submission.name || @submitter.submission.template.name %></div>
         <div style="font-size:12px; color:#7B787F; margin-top:4px;">
           Signed on <%= l(@submitter.completed_at.to_date, format: :long) %>
         </div>
+      </div>
+
+      <!-- Email confirmation notice -->
+      <% if @submitter.email.present? %>
+        <div style="display:flex; align-items:flex-start; gap:10px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px 14px; margin-bottom:16px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:1px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <p style="margin:0; font-size:13px; color:#15803d; line-height:1.5;">
+            Your signed copy has been emailed to <strong><%= @submitter.email %></strong>.
+          </p>
+        </div>
+      <% end %>
+
+      <!-- What happens next -->
+      <div style="background:#f8fafb; border:1px solid #e8ebed; border-radius:8px; padding:14px 16px; margin-bottom:16px;">
+        <div style="font-size:11px; font-weight:700; color:#7B787F; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:8px;">What happens next</div>
+        <p style="margin:0; font-size:13px; color:#4a5568; line-height:1.6;">
+          Ignition Group will receive your signed document and be in touch.
+          If you have any questions, contact the person who sent this agreement.
+        </p>
       </div>
 
       <!-- Buttons -->

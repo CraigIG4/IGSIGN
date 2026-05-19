@@ -1,6 +1,8 @@
 <%#
-  IGSIGN Welcome overlay — shown once per signing session via sessionStorage.
-  Hidden by default; JS reveals it on first visit, then removes on "Continue".
+  IGSIGN Welcome overlay — shown once per signing session.
+  Persistence layers (both checked before showing):
+    1. localStorage  "ig-welcomed-<slug>" — survives browser restarts (device-level)
+    2. sessionStorage "ig-welcomed-<slug>" — within a single tab session
   Falls back gracefully if JS is disabled (overlay stays hidden = no barrier).
 %>
 <%
@@ -24,7 +26,6 @@
     <!-- Header bar -->
     <div style="display:flex; align-items:center; gap:10px; margin-bottom:24px;">
       <div style="width:40px; height:40px; background:#162B3C; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-        <!-- Document / pen icon -->
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#45AC34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
         </svg>
@@ -51,18 +52,33 @@
       <div style="font-size:16px; font-weight:700; color:#162B3C;"><%= doc_name %></div>
     </div>
 
-    <!-- What you'll need -->
+    <!-- Three-step signing preview -->
     <div style="margin-bottom:24px;">
-      <div style="font-size:11px; font-weight:700; color:#7B787F; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:10px;">What to expect</div>
-      <div style="display:flex; flex-direction:column; gap:8px;">
-        <div style="display:flex; gap:10px; font-size:13px; color:#4a4a4a;">
-          <span>⏱</span><span>About 5 minutes to review and sign</span>
+      <div style="font-size:11px; font-weight:700; color:#7B787F; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:12px;">How it works</div>
+      <div style="display:flex; flex-direction:column; gap:0;">
+        <%# Step 1 %>
+        <div style="display:flex; gap:14px; align-items:flex-start; padding-bottom:14px; position:relative;">
+          <div style="width:28px; height:28px; border-radius:50%; background:#162B3C; color:#45AC34; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;">1</div>
+          <div>
+            <div style="font-size:13px; font-weight:700; color:#162B3C; margin-bottom:2px;">Review</div>
+            <div style="font-size:12px; color:#5a6572; line-height:1.45;">Scroll through the document and read carefully before signing.</div>
+          </div>
         </div>
-        <div style="display:flex; gap:10px; font-size:13px; color:#4a4a4a;">
-          <span>📄</span><span>You'll receive a signed copy by email once complete</span>
+        <%# Step 2 %>
+        <div style="display:flex; gap:14px; align-items:flex-start; padding-bottom:14px; position:relative;">
+          <div style="width:28px; height:28px; border-radius:50%; background:#162B3C; color:#45AC34; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;">2</div>
+          <div>
+            <div style="font-size:13px; font-weight:700; color:#162B3C; margin-bottom:2px;">Sign</div>
+            <div style="font-size:12px; color:#5a6572; line-height:1.45;">Complete the highlighted fields and click <strong>Submit</strong> to apply your signature.</div>
+          </div>
         </div>
-        <div style="display:flex; gap:10px; font-size:13px; color:#4a4a4a;">
-          <span>🔒</span><span>Signed under the ECT Act 25 of 2002 — legally binding</span>
+        <%# Step 3 %>
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <div style="width:28px; height:28px; border-radius:50%; background:#162B3C; color:#45AC34; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;">3</div>
+          <div>
+            <div style="font-size:13px; font-weight:700; color:#162B3C; margin-bottom:2px;">Download your copy</div>
+            <div style="font-size:12px; color:#5a6572; line-height:1.45;">A signed PDF is emailed to you automatically and available to download immediately.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -74,6 +90,14 @@
             onmouseout="this.style.opacity='1'">
       Continue to review documents →
     </button>
+
+    <!-- Skip intro -->
+    <div style="text-align:center; margin-top:14px;">
+      <button id="ig-welcome-skip"
+              style="background:none; border:none; cursor:pointer; font-size:13px; color:#9aa3ae; font-family:inherit; text-decoration:underline; padding:4px 8px;">
+        Skip intro
+      </button>
+    </div>
 
     <!-- Close (small X for accessibility) -->
     <button id="ig-welcome-close"
@@ -91,16 +115,29 @@
   var overlay = document.getElementById('ig-welcome-overlay');
   if (!overlay) return;
 
-  // Show on first visit only
-  if (!sessionStorage.getItem(KEY)) {
+  // Check both localStorage (persistent) and sessionStorage (tab-scoped).
+  // Either flag means the user has already seen the welcome on this device/tab.
+  function alreadySeen() {
+    try {
+      if (localStorage.getItem(KEY)) return true;
+    } catch (e) { /* localStorage blocked (private mode etc) — fall through */ }
+    try {
+      if (sessionStorage.getItem(KEY)) return true;
+    } catch (e) { /* sessionStorage blocked */ }
+    return false;
+  }
+
+  if (!alreadySeen()) {
     overlay.style.display = 'flex';
-    // Trap focus inside overlay for accessibility
     var firstFocusable = overlay.querySelector('#ig-welcome-continue');
     if (firstFocusable) firstFocusable.focus();
   }
 
   function dismiss() {
-    sessionStorage.setItem(KEY, '1');
+    // Persist in both storages so the modal doesn't reappear in this tab or on
+    // return visits from the same device.
+    try { localStorage.setItem(KEY, '1'); } catch (e) {}
+    try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
     overlay.style.opacity = '0';
     overlay.style.transition = 'opacity 0.2s';
     setTimeout(function () { overlay.remove(); }, 200);
@@ -108,13 +145,14 @@
 
   document.getElementById('ig-welcome-continue').addEventListener('click', dismiss);
   document.getElementById('ig-welcome-close').addEventListener('click', dismiss);
+  document.getElementById('ig-welcome-skip').addEventListener('click', dismiss);
 
-  // Allow Escape key
+  // Escape key
   overlay.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') dismiss();
   });
 
-  // Click backdrop to dismiss
+  // Click backdrop
   overlay.addEventListener('click', function (e) {
     if (e.target === overlay) dismiss();
   });
