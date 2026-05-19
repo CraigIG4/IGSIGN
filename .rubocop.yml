@@ -10,7 +10,7 @@ AllCops:
     - node_modules/**/*
     - bin/*
     - vendor/**/*
-  TargetRubyVersion: '4.0'
+  TargetRubyVersion: '3.4'
   SuggestExtensions: false
 
 Metrics/BlockLength:
