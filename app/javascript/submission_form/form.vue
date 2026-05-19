@@ -577,7 +577,6 @@
               ><span>...</span></span>
             </span>
           </button>
-          <div
           <p
             v-if="!onlyRequiredFields && stepFields.length === currentStep + 1 || (onlyRequiredFields && !findNextStep(currentStep))"
             class="ig-ect-note"
@@ -585,6 +584,7 @@
             By clicking &ldquo;{{ submitButtonText }}&rdquo;, you are signing this agreement under the
             Electronic Communications and Transactions Act 25 of 2002. This action is recorded.
           </p>
+          <div
             v-if="showFillAllRequiredFields"
             role="alert"
             class="text-center mt-1"

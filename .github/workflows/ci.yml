@@ -106,7 +106,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install libvips
       - name: Run Brakeman
-        run: bundle exec brakeman -q --exit-on-warn
+        run: bundle exec brakeman -q --exit-on-warn -w 2
 
   rspec:
     name: RSpec

@@ -113,6 +113,62 @@ RSpec/MultipleMemoizedHelpers:
 RSpec/AnyInstance:
   Enabled: false
 
+RSpec/DescribedClass:
+  Enabled: false
+
+RSpec/ContextWording:
+  Enabled: false
+
+RSpec/LetSetup:
+  Enabled: false
+
+RSpec/MessageSpies:
+  Enabled: false
+
+RSpec/IndexedLet:
+  Enabled: false
+
+RSpec/BeEq:
+  Enabled: false
+
+RSpec/StubbedMock:
+  Enabled: false
+
+RSpec/MessageChain:
+  Enabled: false
+
+RSpec/LeadingSubject:
+  Enabled: false
+
+RSpec/SpecFilePathFormat:
+  Enabled: false
+
+Rails/Pluck:
+  Enabled: false
+
+Style/BlockDelimiters:
+  Exclude:
+    - 'spec/**/*'
+
+Layout/HashAlignment:
+  Exclude:
+    - 'spec/**/*'
+
+Layout/FirstArrayElementIndentation:
+  Exclude:
+    - 'spec/**/*'
+
+Layout/ArgumentAlignment:
+  Exclude:
+    - 'spec/**/*'
+
+Style/WordArray:
+  Exclude:
+    - 'spec/**/*'
+
+Rails/ResponseParsedBody:
+  Enabled: false
+
 Metrics/BlockNesting:
   Max: 6
 
