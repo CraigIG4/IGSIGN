@@ -4,7 +4,9 @@
 class AgreementsController < ApplicationController
   skip_authorization_check
   before_action :authenticate_user!
-  before_action :set_agreement, only: %i[show upload process_upload position save_fields review send_agreement caf_preview signing_journey remind]
+  before_action :set_agreement,
+                only: %i[show upload process_upload position save_fields
+                         review send_agreement caf_preview signing_journey remind]
 
   # ── Index ──────────────────────────────────────────────────────────────────
 
@@ -80,24 +82,12 @@ class AgreementsController < ApplicationController
 
     build_inline_company(@agreement, params)
     autofill_from_company!(@agreement)
-
     @agreement.auto_assign_signatories!
 
     if @agreement.save
-      if @agreement.agreement_type == 'nda'
-        # NDA path: look up an entity-specific active NDA template via
-        # IgsignTemplateMetadata.  Falls back to any active NDA template for this
-        # account (e.g. a global record with empty entity_scope), then to the
-        # legacy 'IGSIGN NDA Template' name for backward compatibility.
-        # If none is found the agreement still saves — the missing-template
-        # error surfaces at Send time via CafSubmissionCreator.
-        nda_tpl = IgsignTemplateMetadata.entity_nda_for(current_account, @agreement.entity)&.template
-        nda_tpl ||= current_account.templates.find_by(name: 'IGSIGN NDA Template')
-        @agreement.update!(template: nda_tpl) if nda_tpl
-        redirect_to review_agreement_path(@agreement)
-      else
-        redirect_to upload_agreement_path(@agreement)
-      end
+      attach_nda_template!(@agreement) if @agreement.agreement_type == 'nda'
+      redirect_to @agreement.agreement_type == 'nda' ? review_agreement_path(@agreement)
+                                                     : upload_agreement_path(@agreement)
     else
       @companies = current_account.companies.alphabetical
       @step = 1
@@ -142,7 +132,8 @@ class AgreementsController < ApplicationController
       Rails.logger.error "[IGSIGN] Upload failed agreement=#{@agreement.id}: #{e.message}"
       user_message =
         if e.message.match?(/LibreOffice|not installed/i)
-          'Word documents require LibreOffice which is not available. Please convert your document to PDF and upload again.'
+          'Word documents require LibreOffice which is not available. ' \
+          'Please convert your document to PDF and upload again.'
         else
           'Upload failed. Please try again or contact support.'
         end
@@ -345,6 +336,16 @@ class AgreementsController < ApplicationController
   end
 
   private
+
+  # Looks up the best-match active NDA template for the agreement's entity and
+  # attaches it.  Falls back to any account-scoped generic NDA, then to the
+  # legacy template name.  If nothing is found, save succeeds and the missing
+  # template surfaces as an error at Send time (CafSubmissionCreator).
+  def attach_nda_template!(agreement)
+    tpl = IgsignTemplateMetadata.entity_nda_for(current_account, agreement.entity)&.template
+    tpl ||= current_account.templates.find_by(name: 'IGSIGN NDA Template')
+    agreement.update!(template: tpl) if tpl
+  end
 
   def set_agreement
     @agreement = current_account.caf_workflows.find(params[:id])

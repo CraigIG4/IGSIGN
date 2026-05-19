@@ -13,7 +13,9 @@ class CafAuditBundleSender
   def call
     ActiveRecord::Base.transaction do
       stage2 = counterparty_stage
-      return { success: false, error: 'Counterparty stage not found or not complete' } unless stage2&.all_submitters_complete?
+      unless stage2&.all_submitters_complete?
+        return { success: false, error: 'Counterparty stage not found or not complete' }
+      end
 
       # Optimistic lock: only one concurrent caller can win the status transition.
       # If another thread already completed stage2, complete! returns false and
@@ -30,7 +32,8 @@ class CafAuditBundleSender
     Rails.logger.info("[CafAuditBundleSender] CAF #{@caf.id} fully complete — audit bundle sent")
     { success: true }
   rescue StandardError => e
-    Rails.logger.error("[CafAuditBundleSender] failed for CAF #{@caf.id}: #{e.message}\n#{e.backtrace.first(5).join("\n")}")
+    backtrace = e.backtrace.first(5).join("\n")
+    Rails.logger.error("[CafAuditBundleSender] failed for CAF #{@caf.id}: #{e.message}\n#{backtrace}")
     { success: false, error: e.message }
   end
 

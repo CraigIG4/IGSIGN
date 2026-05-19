@@ -93,7 +93,8 @@ module Admin
 
       active_stage = submission.caf_stages.active.ordered_by_position.first
       unless active_stage
-        return redirect_to admin_workflow_path(@caf), alert: 'No active stage found — workflow may already be complete.'
+        return redirect_to admin_workflow_path(@caf),
+                           alert: 'No active stage found — workflow may already be complete.'
       end
 
       count = 0

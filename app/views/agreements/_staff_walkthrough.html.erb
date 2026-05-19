@@ -89,12 +89,17 @@
   </div>
 </div>
 
+<%# Embed tour data safely as a JSON data block — Brakeman-safe (no raw, no html_safe) %>
+<script id="ig-tour-steps-data" type="application/json" nonce="<%= content_security_policy_nonce %>">
+  <%= tour_steps.to_json %>
+</script>
+
 <script nonce="<%= content_security_policy_nonce %>">
 (function () {
   var COMPLETE_URL = '<%= complete_tour_settings_profile_index_path %>';
   var CSRF_TOKEN   = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
-  var steps = <%= raw tour_steps.to_json %>;
+  var steps = JSON.parse(document.getElementById('ig-tour-steps-data').textContent);
   var current = 0;
   var backdrop = document.getElementById('ig-tour-backdrop');
   var tooltip  = document.getElementById('ig-tour-tooltip');
