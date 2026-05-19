@@ -8,6 +8,8 @@
 # Re-enable individual cops here if specific ERB-only issues need enforcement.
 EnableDefaultLinters: false
 linters:
+  FinalNewline:
+    enabled: true
   ErbSafety:
     enabled: false
   HardCodedString:

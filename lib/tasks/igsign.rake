@@ -6,21 +6,21 @@
 
 namespace :igsign do
   namespace :people do
-    desc "List all people in the IgSignatories registry with their current active status"
+    desc 'List all people in the IgSignatories registry with their current active status'
     task list: :environment do
       overrides = IgSignatories.overrides
-      puts "\n%-20s %-35s %-45s %s" % %w[Key Name Email Active]
+      puts format("\n%-20s %-35s %-45s %s", 'Key', 'Name', 'Email', 'Active')
       puts '-' * 110
       IgSignatories::PEOPLE.each do |key, p|
         override = overrides.dig(key.to_s, 'active')
         active = override.nil? ? p[:active] : override
         status = active ? 'YES' : 'NO  ← INACTIVE'
-        puts "%-20s %-35s %-45s %s" % [key, p[:name], p[:email], status]
+        puts format('%-20s %-35s %-45s %s', key, p[:name], p[:email], status)
       end
       puts
     end
 
-    desc "Deactivate a person by email — rake \"igsign:people:deactivate[email@ignitiongroup.co.za]\""
+    desc 'Deactivate a person by email — rake "igsign:people:deactivate[email@ignitiongroup.co.za]"'
     task :deactivate, [:email] => :environment do |_, args|
       email = args[:email].to_s.strip
       abort('Usage: rake "igsign:people:deactivate[email@ignitiongroup.co.za]"') if email.blank?
@@ -35,7 +35,7 @@ namespace :igsign do
       puts 'Commit config/ig_signatory_overrides.yml and push to preserve across redeploys.'
     end
 
-    desc "Reactivate a person by email — rake \"igsign:people:reactivate[email@ignitiongroup.co.za]\""
+    desc 'Reactivate a person by email — rake "igsign:people:reactivate[email@ignitiongroup.co.za]"'
     task :reactivate, [:email] => :environment do |_, args|
       email = args[:email].to_s.strip
       abort('Usage: rake "igsign:people:reactivate[email@ignitiongroup.co.za]"') if email.blank?
@@ -54,8 +54,8 @@ end
 
 def write_override(person_key, field, value)
   require 'yaml'
-  file = Rails.root.join('config', 'ig_signatory_overrides.yml')
-  data = File.exist?(file) ? (YAML.safe_load(File.read(file)) || {}) : {}
+  file = Rails.root.join('config/ig_signatory_overrides.yml')
+  data = File.exist?(file) ? (YAML.safe_load_file(file) || {}) : {}
   data[person_key] ||= {}
   data[person_key][field] = value
 
@@ -69,5 +69,5 @@ def write_override(person_key, field, value)
     #
   HEADER
 
-  File.write(file, header + data.to_yaml.sub(/\A---\n/, ''))
+  File.write(file, header + data.to_yaml.delete_prefix("---\n"))
 end

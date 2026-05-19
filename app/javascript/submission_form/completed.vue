@@ -26,6 +26,7 @@
       />
     </div>
     <div class="space-y-3 mt-5">
+      <a
         v-if="completedButton.url"
         :href="sanitizeUrl(completedButton.url)"
         rel="noopener noreferrer nofollow"

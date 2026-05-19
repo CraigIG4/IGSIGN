@@ -199,3 +199,28 @@ Rails/UnknownEnv:
     - test
     - production
     - local
+
+Style/FormatStringToken:
+  Enabled: false
+
+RSpec/VerifiedDoubles:
+  Enabled: false
+
+RSpec/SubjectStub:
+  Enabled: false
+
+Style/IfUnlessModifier:
+  Exclude:
+    - 'lib/templates/create_attachments.rb'
+
+Layout/ExtraSpacing:
+  Exclude:
+    - 'spec/**/*'
+
+Layout/SpaceBeforeFirstArg:
+  Exclude:
+    - 'spec/**/*'
+
+Lint/UselessAssignment:
+  Exclude:
+    - 'spec/**/*'
