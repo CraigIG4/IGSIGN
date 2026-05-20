@@ -46,13 +46,11 @@ class PreviewDocumentPageController < ActionController::API
     File.open(file_path, File::RDWR | File::CREAT, 0o644) do |f|
       f.flock(File::LOCK_EX)
 
-      # rubocop:disable Style/ZeroLengthPredicate
       if f.size.zero?
         f.binmode
 
         f.write(attachment.download)
       end
-      # rubocop:enable Style/ZeroLengthPredicate
     end
 
     file_path

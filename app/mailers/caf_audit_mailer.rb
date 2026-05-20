@@ -2,7 +2,6 @@
 
 # IGSIGN — Mailer for the final audit bundle delivery.
 class CafAuditMailer < ApplicationMailer
-
   # Sends the fully executed document + IGSIGN signing certificate to a recipient.
   #
   # signed_documents: Array of ActiveStorage::Attachment objects representing the

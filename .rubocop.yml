@@ -154,7 +154,7 @@ Style/BlockDelimiters:
   Enabled: false
 
 Layout/SpaceAroundOperators:
-  AllowForAlignment: true
+  Enabled: false
 
 Style/MultilineTernaryOperator:
   Enabled: false

@@ -4,15 +4,18 @@ require 'rails_helper'
 
 RSpec.describe ReminderMailer, type: :mailer do
   let(:account)    { create(:account) }
+  let(:user)       { create(:user, account: account) }
+  let(:template)   { create(:template, account: account, author: user) }
   let(:workflow) do
     create(:caf_workflow,
            account:            account,
+           created_by_user:    user,
            requestor_name:     'Test Requestor',
            requestor_email:    'requestor@example.com',
            contracting_party:  'Acme Corp',
            agreement_type:     'msa')
   end
-  let(:submission) { create(:submission, account: account) }
+  let(:submission) { create(:submission, template: template, created_by_user: user) }
   let(:stage)      { create(:caf_stage, submission: submission, status: 'active') }
   let(:submitter) do
     create(:submitter, submission: submission,

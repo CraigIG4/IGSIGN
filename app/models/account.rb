@@ -53,8 +53,9 @@ class Account < ApplicationRecord
                                          inverse_of: :account, class_name: 'User'
 
   # IGSIGN extensions
-  has_many :companies,      dependent: :destroy
-  has_many :caf_workflows,  dependent: :destroy
+  has_many :companies,             dependent: :destroy
+  has_many :caf_workflows,         dependent: :destroy
+  has_many :caf_approval_matrices, dependent: :destroy
 
   attribute :timezone, :string, default: 'UTC'
   attribute :locale, :string, default: 'en-US'

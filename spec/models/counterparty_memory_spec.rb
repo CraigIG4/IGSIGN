@@ -11,7 +11,7 @@
 #
 require 'rails_helper'
 
-RSpec.describe 'Counterparty Memory', type: :model do
+RSpec.describe 'Counterparty Memory', type: :request do
   let(:user)    { create(:user) }
   let(:account) { user.account }
   let(:company) { create(:company, account: account) }

@@ -4,7 +4,7 @@ FactoryBot.define do
   factory :template do
     account
 
-    author factory: %i[user]
+    author { association :user, account: account }
     name { Faker::Book.title }
 
     transient do

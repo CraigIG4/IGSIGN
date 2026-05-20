@@ -6,6 +6,7 @@ FactoryBot.define do
     created_by_user { association :user, account: account }
     entity          { 'iti' }
     agreement_type  { 'msa' }
+    caf_type        { 'long_form' }
     requestor_name  { 'Test User' }
     requestor_email { Faker::Internet.email }
     counterparty_name  { Faker::Name.name }
