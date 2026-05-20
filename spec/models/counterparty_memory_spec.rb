@@ -240,6 +240,7 @@ RSpec.describe 'Counterparty Memory', type: :request do
     end
 
     before do
+      workflow
       stage2
       CafStageSubmitter.create!(caf_stage: stage2, submitter: cp_submitter, role: 'Counterparty Signatory', position: 0)
       # Stub CafAuditBundleSender so we don't need the full email stack

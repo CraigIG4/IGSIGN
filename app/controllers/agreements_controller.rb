@@ -392,7 +392,9 @@ class AgreementsController < ApplicationController
     end
 
     cp_sub = caf_subs_by_role['Counterparty']
-    subs << { 'name' => 'Counterparty', 'uuid' => cp_sub['uuid'] } if cp_sub
+    if cp_sub && subs.none? { |s| s['name'] == 'Counterparty' }
+      subs << { 'name' => 'Counterparty', 'uuid' => cp_sub['uuid'] }
+    end
 
     @agreement.template.update!(submitters: subs) if subs != @agreement.template.submitters
   end
@@ -402,6 +404,8 @@ class AgreementsController < ApplicationController
   # Only runs when the template has no fields yet, so manual edits are preserved.
   def auto_place_fields!
     template = @agreement.template
+    return if (template.fields || []).any?
+
     att_uuid = template.schema_documents.first&.uuid
     return unless att_uuid
 

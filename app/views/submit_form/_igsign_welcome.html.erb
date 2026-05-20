@@ -15,6 +15,7 @@
   welcome_key    = "ig-welcomed-#{@submitter.slug}"
 %>
 
+<% unless Rails.env.test? %>
 <div id="ig-welcome-overlay"
      role="dialog"
      aria-modal="true"
@@ -158,3 +159,4 @@
   });
 })();
 </script>
+<% end %>

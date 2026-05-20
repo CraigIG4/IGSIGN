@@ -149,7 +149,8 @@ RSpec.describe 'CAF field placement', type: :model do
 
   describe '#auto_place_fields!' do
     before do
-      caf_template # ensure caf_template exists
+      caf_template
+      allow(agreement).to receive(:template).and_return(agreement_template)
       controller.send(:sync_template_submitters!)
     end
 
@@ -272,8 +273,9 @@ RSpec.describe 'CAF field placement', type: :model do
                      'areas' => [{ 'attachment_uuid' => att_uuid }] }]
         )
         # No blob attached to the submission
-        allow(agreement.template).to receive_message_chain(:documents, :attachments, :first)
-          .and_return(instance_double(ActiveStorage::Attachment, uuid: att_uuid, blob_id: 999))
+        src_attach = instance_double(ActiveStorage::Attachment, uuid: att_uuid, blob_id: 999)
+        allow(agreement.template).to receive_message_chain(:documents, :attachments)
+          .and_return([src_attach])
       end
 
       it 'does not raise' do
