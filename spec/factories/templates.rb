@@ -18,6 +18,8 @@ FactoryBot.define do
     end
 
     after(:create) do |template, ev|
+      next if ev.submitter_count.zero? && ev.attachment_count.zero?
+
       number_words = %w[first second third fourth fifth sixth seventh eighth ninth tenth]
 
       template.submitters = Array.new(ev.submitter_count) do |i|

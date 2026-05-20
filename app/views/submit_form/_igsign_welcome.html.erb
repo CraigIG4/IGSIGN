@@ -10,7 +10,7 @@
   requestor_name = requestor&.full_name.presence || @submitter.account.name
   org_name       = @submitter.account.name
   doc_name       = @submitter.submission.name.presence || @submitter.submission.template.name
-  doc_count      = @submitter.submission.template_schema.size
+  doc_count      = @submitter.submission.template&.schema&.size.to_i
   doc_label      = doc_count == 1 ? '1 document' : "#{doc_count} documents"
   welcome_key    = "ig-welcomed-#{@submitter.slug}"
 %>

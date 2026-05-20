@@ -25,6 +25,7 @@ RSpec.describe 'CAF field placement', type: :model do
   let(:caf_template) do
     create(:template, account: account, author: user,
                       name: 'IGSIGN CAF Template',
+                      submitter_count: 0, attachment_count: 0,
                       submitters: [
                         { 'name' => 'BU Head',      'uuid' => bu_head_uuid },
                         { 'name' => 'Counterparty', 'uuid' => cp_uuid }
@@ -40,6 +41,7 @@ RSpec.describe 'CAF field placement', type: :model do
   let(:agreement_template) do
     t = create(:template, account: account, author: user,
                           name: 'MSA — ACME',
+                          submitter_count: 0, attachment_count: 0,
                           submitters: [],
                           fields: [],
                           schema: [{ 'attachment_uuid' => att_uuid, 'name' => 'agreement' }])
