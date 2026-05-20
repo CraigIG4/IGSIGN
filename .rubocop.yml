@@ -38,6 +38,7 @@ Metrics/MethodLength:
     - 'app/controllers/agreements_controller.rb'
     - 'app/services/caf_completion_handler.rb'
     - 'app/services/caf_submission_creator.rb'
+    - 'app/services/caf_pdf_generator.rb'
 
 Metrics/CyclomaticComplexity:
   Max: 15
@@ -91,6 +92,7 @@ Metrics/AbcSize:
     - 'app/controllers/agreements_controller.rb'
     - 'app/services/caf_completion_handler.rb'
     - 'app/services/caf_submission_creator.rb'
+    - 'app/services/caf_pdf_generator.rb'
 
 Metrics/ModuleLength:
   Max: 1000
@@ -210,12 +212,27 @@ RSpec/SubjectStub:
   Enabled: false
 
 Style/IfUnlessModifier:
-  Exclude:
-    - 'lib/templates/create_attachments.rb'
+  Enabled: false
 
 Layout/ExtraSpacing:
+  AllowForAlignment: true
   Exclude:
     - 'spec/**/*'
+
+Layout/HashAlignment:
+  Enabled: false
+
+Rails/HttpStatusNameConsistency:
+  Enabled: false
+
+Rails/ActionOrder:
+  Enabled: false
+
+Rails/Blank:
+  Enabled: false
+
+Style/SafeNavigationChainLength:
+  Enabled: false
 
 Layout/SpaceBeforeFirstArg:
   Exclude:

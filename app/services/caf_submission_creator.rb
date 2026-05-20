@@ -282,7 +282,7 @@ class CafSubmissionCreator
   # document, then persists to submission.template_schema.
   def extend_submission_schema(submission)
     base_schema = submission.template&.schema || []
-    existing_uuids = base_schema.map { |item| item['attachment_uuid'] }.to_set
+    existing_uuids = base_schema.to_set { |item| item['attachment_uuid'] }
 
     new_items = submission.documents_attachments.reject { |a| existing_uuids.include?(a.uuid) }.map do |att|
       { 'attachment_uuid' => att.uuid, 'name' => att.blob.filename.base }

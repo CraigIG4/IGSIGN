@@ -81,7 +81,6 @@ module Admin
       end
     end
 
-    # rubocop:disable Metrics/MethodLength
     # POST /admin/workflows/:id/resend_invite — re-queue invitation emails for all
     # unsigned active-stage submitters and reset their reminder counters so the
     # 2/5/9/14-day ladder restarts from the new send time.
@@ -113,7 +112,6 @@ module Admin
       redirect_to admin_workflow_path(@caf),
                   notice: "Invitations resent to #{count} pending #{count == 1 ? 'signatory' : 'signatories'}."
     end
-    # rubocop:enable Metrics/MethodLength
 
     # GET /admin/workflows/signatories_for — AJAX: return signatories for entity + type
     def signatories_for

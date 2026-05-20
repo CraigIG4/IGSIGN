@@ -120,8 +120,8 @@ module Admin
       # Convert entity_scope_csv ("iti, comit") → entity_scope array (["iti", "comit"]).
       # Strip whitespace, reject blanks, and filter to valid IgSignatories entity keys.
       if raw.key?(:entity_scope_csv)
-        csv       = raw.delete(:entity_scope_csv).to_s
-        valid_keys = IgSignatories::ENTITIES.keys.map(&:to_s).to_set
+        csv = raw.delete(:entity_scope_csv).to_s
+        valid_keys = IgSignatories::ENTITIES.keys.to_set(&:to_s)
         raw[:entity_scope] = csv.split(',').map(&:strip).select { |k| valid_keys.include?(k) }
       end
       raw
