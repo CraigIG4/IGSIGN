@@ -45,7 +45,7 @@ module Internal
 
       if expected.blank?
         Rails.logger.error('[CafWebhook] INTERNAL_WEBHOOK_SECRET env var is not set')
-        head :service_unavailable and return
+        head(:service_unavailable) && return
       end
 
       provided = request.headers['X-Internal-Webhook-Secret']

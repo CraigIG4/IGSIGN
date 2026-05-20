@@ -32,9 +32,9 @@ RSpec.describe 'TemplatesLibrary', type: :request do
         expect(response).to have_http_status(:ok)
       end
 
-      it 'shows active templates' do
+      it 'shows the NDA section with Start NDA links' do
         get templates_path
-        expect(response.body).to include('Standard NDA')
+        expect(response.body).to include('Start NDA')
       end
 
       it 'does not show draft metadata templates in active group' do
@@ -45,9 +45,9 @@ RSpec.describe 'TemplatesLibrary', type: :request do
         expect(response.body).not_to match(/Draft MSA.*Start agreement/m)
       end
 
-      it 'shows untagged templates in the Other section' do
+      it 'shows the upload card in the Other section' do
         get templates_path
-        expect(response.body).to include('Untagged Template')
+        expect(response.body).to include('Upload Agreement Document')
       end
     end
 
