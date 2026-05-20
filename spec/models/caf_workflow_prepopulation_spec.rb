@@ -8,7 +8,7 @@
 
 require 'rails_helper'
 
-RSpec.describe 'IG Signer Prepopulation', :aggregate_failures do
+RSpec.describe 'IG Signer Prepopulation', :aggregate_failures do # rubocop:disable RSpec/DescribeClass
   # ── Helpers ──────────────────────────────────────────────────────────────────
 
   def email(key)

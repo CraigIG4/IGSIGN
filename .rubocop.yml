@@ -217,6 +217,10 @@ Layout/ExtraSpacing:
   Exclude:
     - 'spec/**/*'
 
+Layout/SpaceBeforeFirstArg:
+  Exclude:
+    - 'spec/**/*'
+
 Lint/UselessAssignment:
   Exclude:
     - 'spec/**/*'

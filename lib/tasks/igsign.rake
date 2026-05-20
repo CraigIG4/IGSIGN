@@ -9,7 +9,7 @@ namespace :igsign do
     desc 'List all people in the IgSignatories registry with their current active status'
     task list: :environment do
       overrides = IgSignatories.overrides
-      puts format("\n%-20s %-35s %-45s %s", 'Key', 'Name', 'Email', 'Active')
+      puts format("\n%-20s %-35s %-45s %s", 'Key', 'Name', 'Email', 'Active') # rubocop:disable Style/RedundantFormat
       puts '-' * 110
       IgSignatories::PEOPLE.each do |key, p|
         override = overrides.dig(key.to_s, 'active')
