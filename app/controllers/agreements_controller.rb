@@ -267,7 +267,7 @@ class AgreementsController < ApplicationController
 
   def caf_preview
     if @agreement.entity.blank?
-      return redirect_to @agreement,
+      return redirect_to agreement_path(@agreement),
                          alert: 'Cannot preview CAF: entity not selected.'
     end
 

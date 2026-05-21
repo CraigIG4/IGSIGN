@@ -77,7 +77,10 @@ RSpec.describe 'CAF field placement', type: :model do
   # ── sync_template_submitters! ────────────────────────────────────────────────
 
   describe '#sync_template_submitters!' do
-    before { caf_template } # ensure it exists in the DB
+    before do
+      caf_template
+      allow(agreement).to receive(:template).and_return(agreement_template)
+    end
 
     it 'copies the BU Head UUID from the CAF template to the agreement template' do
       controller.send(:sync_template_submitters!)
@@ -257,7 +260,10 @@ RSpec.describe 'CAF field placement', type: :model do
     let(:creator)       { CafSubmissionCreator.new(agreement, user) }
 
     context 'when the agreement template has no fields' do
-      before { agreement_template.update!(fields: []) }
+      before do
+        agreement_template.update!(fields: [])
+        submission.update_column(:template_fields, nil)
+      end
 
       it 'does not set template_fields on the submission' do
         creator.send(:merge_agreement_template_fields!, submission)
@@ -272,6 +278,7 @@ RSpec.describe 'CAF field placement', type: :model do
                      'submitter_uuid' => bu_head_uuid,
                      'areas' => [{ 'attachment_uuid' => att_uuid }] }]
         )
+        submission.update_column(:template_fields, nil)
         # No blob attached to the submission
         src_attach = instance_double(ActiveStorage::Attachment, uuid: att_uuid, blob_id: 999)
         allow(agreement.template).to receive_message_chain(:documents, :attachments)

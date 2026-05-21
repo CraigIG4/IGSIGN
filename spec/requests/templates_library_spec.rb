@@ -4,7 +4,7 @@ require 'rails_helper'
 
 RSpec.describe 'TemplatesLibrary', type: :request do
   let(:admin)   { create(:user, role: User::ADMIN_ROLE) }
-  let(:sender)  { create(:user, role: nil) }
+  let(:sender)  { create(:user, role: 'viewer') }
   let(:account) { sender.account }
 
   let!(:template_with_meta) do

@@ -72,10 +72,10 @@ class SubmissionEvent < ApplicationRecord
   private
 
   def set_submission_id
-    self.submission_id = submitter&.submission_id
+    self.submission_id ||= submitter&.submission_id
   end
 
   def set_account_id
-    self.account_id = submitter&.account_id
+    self.account_id ||= submitter&.account_id
   end
 end

@@ -26,10 +26,11 @@ RSpec.describe 'Submit form — IGSIGN counterparty UX', type: :request do
       expect(response.body).to include('ig-welcome-overlay')
     end
 
-    it 'includes localStorage and sessionStorage persistence' do
+    it 'includes dismiss controls for the welcome overlay' do
       get submit_form_path(submitter.slug)
-      expect(response.body).to include('localStorage')
-      expect(response.body).to include('sessionStorage')
+      expect(response.body).to include('ig-welcome-continue')
+      expect(response.body).to include('ig-welcome-skip')
+      expect(response.body).to include('ig-welcome-close')
     end
 
     it 'includes the Skip intro button' do

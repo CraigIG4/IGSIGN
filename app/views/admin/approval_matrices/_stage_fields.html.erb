@@ -37,8 +37,7 @@
               id="matrix_stage_<%= idx %>_routing"
               class="select select-bordered w-full stage-routing-select"
               style="font-size:13px;">
-        <option value="ordered"  <%= 'selected' if stage['routing'] == 'ordered' %>>Ordered (sequential)</option>
-        <option value="parallel" <%= 'selected' if stage['routing'] == 'parallel' %>>Parallel (all at once)</option>
+        <%= options_for_select([['Ordered (sequential)', 'ordered'], ['Parallel (all at once)', 'parallel']], stage['routing']) %>
       </select>
     </div>
   </div>
@@ -49,7 +48,7 @@
     <input type="checkbox" name="caf_approval_matrix[stages_config][<%= idx %>][strip_internal_on_complete]" value="true"
            id="matrix_stage_<%= idx %>_strip"
            class="checkbox"
-           <%= 'checked' if stage['strip_internal_on_complete'] %> />
+           <%= 'checked'.html_safe if stage['strip_internal_on_complete'] %> />
     <span>Strip internal documents when this stage completes</span>
     <span style="font-size:11px;color:#7B787F;">(removes CAF before sending to counterparty)</span>
   </label>

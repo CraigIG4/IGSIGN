@@ -4,7 +4,7 @@ require 'rails_helper'
 
 RSpec.describe 'Admin::Templates', type: :request do
   let(:admin)   { create(:user, role: User::ADMIN_ROLE) }
-  let(:viewer)  { create(:user, role: nil) }
+  let(:viewer)  { create(:user, role: 'viewer') }
   let(:account) { admin.account }
 
   let!(:template) { create(:template, author: admin, account: account) }

@@ -77,7 +77,7 @@ class CafCompletionHandler
 
     SubmissionEvent.create!(
       submission:      submission,
-      account:         @caf.account,
+      account_id:      @caf.account_id,
       event_type:      'stage_transition_to_counterparty',
       event_timestamp: Time.current,
       data: {

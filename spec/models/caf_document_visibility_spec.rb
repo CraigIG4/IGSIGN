@@ -239,7 +239,7 @@ RSpec.describe 'CAF document visibility', type: :model do
       ]
     end
 
-    before { submission.template_schema = full_schema }
+    before { submission.update!(template_schema: full_schema) }
 
     def filter_schema_for(submitter, sub)
       # Replicate the logic from SubmitFormController#maybe_filter_caf_schema_for_counterparty
