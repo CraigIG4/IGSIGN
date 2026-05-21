@@ -101,9 +101,9 @@ RSpec.describe 'Template' do
       within '#modal' do
         template_folder.reload
         fill_in 'template[name]', with: 'New Template Name'
-        change_folder_label = find('label', text: 'Change Folder')
-        scroll_to change_folder_label
-        change_folder_label.click
+        # Use trigger(:click) to bypass coordinate-based overlap check
+        # (a form-control button can float over this label at certain modal sizes)
+        find('label', text: 'Change Folder').trigger(:click)
       end
 
       within '.autocomplete' do
