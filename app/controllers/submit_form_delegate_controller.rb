@@ -36,7 +36,7 @@ class SubmitFormDelegateController < ApplicationController
 
     SendSubmitterInvitationEmailJob.perform_async('submitter_id' => @submitter.id)
 
-    redirect_to submit_form_delegated_path(old_slug)
+    redirect_to delegated_submit_form_path(old_slug)
   end
 
   private

@@ -130,7 +130,7 @@ class SubmitFormController < ApplicationController
 
     submitter_version.submitter.submission_events.find_by!(event_type: :delegate_form)
 
-    redirect_to submit_form_delegated_path(submitter_version.slug)
+    redirect_to delegated_submit_form_path(submitter_version.slug)
   end
 
   def load_submitter
