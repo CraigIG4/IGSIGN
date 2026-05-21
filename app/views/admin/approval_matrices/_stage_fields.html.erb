@@ -44,11 +44,13 @@
 
   <%# Strip internal docs toggle %>
   <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;font-size:13px;">
-    <input type="hidden"   name="caf_approval_matrix[stages_config][<%= idx %>][strip_internal_on_complete]" value="false" />
-    <input type="checkbox" name="caf_approval_matrix[stages_config][<%= idx %>][strip_internal_on_complete]" value="true"
-           id="matrix_stage_<%= idx %>_strip"
-           class="checkbox"
-           <%= 'checked'.html_safe if stage['strip_internal_on_complete'] %> />
+    <input type="hidden" name="caf_approval_matrix[stages_config][<%= idx %>][strip_internal_on_complete]" value="false" />
+    <%= tag.input(type:    'checkbox',
+                  name:    "caf_approval_matrix[stages_config][#{idx}][strip_internal_on_complete]",
+                  value:   'true',
+                  id:      "matrix_stage_#{idx}_strip",
+                  class:   'checkbox',
+                  checked: stage['strip_internal_on_complete']) %>
     <span>Strip internal documents when this stage completes</span>
     <span style="font-size:11px;color:#7B787F;">(removes CAF before sending to counterparty)</span>
   </label>

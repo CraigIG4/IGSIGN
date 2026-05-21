@@ -79,7 +79,8 @@ RSpec.describe 'TemplatesLibrary', type: :request do
     end
 
     it 'ignores template_id from a different account' do
-      other_template = create(:template, author: create(:user))
+      other_user = create(:user)
+      other_template = create(:template, author: other_user, account: other_user.account)
       get new_agreement_path(template_id: other_template.id)
       expect(response).to have_http_status(:ok)
       # Template banner should not appear (not in this account's scope)

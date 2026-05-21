@@ -217,8 +217,8 @@ Rails.application.routes.draw do
     resources :invite, only: %i[create], controller: 'submit_form_invite'
     resources :metadata, only: %i[index], controller: 'submit_form_metadata'
     resources :debug, only: %i[index], controller: 'submissions_debug' if Rails.env.development?
-    get :completed
-    get :delegated
+    get :completed, on: :member
+    get :delegated, on: :member
   end
 
   resources :submit_form_draw_signature, only: %i[show], path: 'p', param: 'slug'

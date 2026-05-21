@@ -99,7 +99,14 @@
   var COMPLETE_URL = '<%= complete_tour_settings_profile_index_path %>';
   var CSRF_TOKEN   = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
-  var steps = JSON.parse(document.getElementById('ig-tour-steps-data').textContent);
+  var stepsEl = document.getElementById('ig-tour-steps-data');
+  var steps;
+  try {
+    steps = stepsEl ? JSON.parse(stepsEl.textContent) : [];
+  } catch (e) {
+    steps = [];
+  }
+  if (!steps || !steps.length) return;
   var current = 0;
   var backdrop = document.getElementById('ig-tour-backdrop');
   var tooltip  = document.getElementById('ig-tour-tooltip');

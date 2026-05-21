@@ -101,7 +101,9 @@ RSpec.describe 'Template' do
       within '#modal' do
         template_folder.reload
         fill_in 'template[name]', with: 'New Template Name'
-        find('label', text: 'Change Folder').click
+        change_folder_label = find('label', text: 'Change Folder')
+        scroll_to change_folder_label
+        change_folder_label.click
       end
 
       within '.autocomplete' do

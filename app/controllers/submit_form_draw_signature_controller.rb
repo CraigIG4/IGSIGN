@@ -10,7 +10,7 @@ class SubmitFormDrawSignatureController < ApplicationController
   def show
     @submitter = Submitter.find_by!(slug: params[:slug])
 
-    return redirect_to submit_form_completed_path(@submitter.slug) if @submitter.completed_at?
+    return redirect_to completed_submit_form_path(@submitter.slug) if @submitter.completed_at?
 
     if @submitter.submission.template&.archived_at? || @submitter.submission.archived_at? ||
        !Submitters::AuthorizedForForm.call(@submitter, current_user, request)

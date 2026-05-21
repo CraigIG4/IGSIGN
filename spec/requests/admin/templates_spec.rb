@@ -55,7 +55,8 @@ RSpec.describe 'Admin::Templates', type: :request do
     end
 
     it 'raises 404 for template belonging to another account' do
-      other = create(:template, author: create(:user))
+      other_user = create(:user)
+      other = create(:template, author: other_user, account: other_user.account)
       expect { get edit_admin_template_path(other) }.to raise_error(ActiveRecord::RecordNotFound)
     end
   end
