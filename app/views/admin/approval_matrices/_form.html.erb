@@ -80,6 +80,8 @@
   .flow-arrow { color: #bbb; font-size: 16px; }
 </style>
 
+<% existing = matrix.stages_config.is_a?(Array) ? matrix.stages_config : [] %>
+
 <%= form_with model: matrix,
               url: matrix.persisted? ? admin_approval_matrix_path(matrix) : admin_approval_matrices_path,
               local: true, html: { id: 'matrix-form' } do |f| %>

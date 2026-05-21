@@ -15,7 +15,7 @@ RSpec.describe 'Sign In' do
       click_button 'Sign In'
 
       expect(page).to have_content('Signed in successfully')
-      expect(page).to have_content('Document Templates')
+      expect(page).to have_content('Agreements')
     end
 
     it "doesn't sign in if the email or password are incorrect" do
@@ -24,7 +24,7 @@ RSpec.describe 'Sign In' do
       click_button 'Sign In'
 
       expect(page).to have_content('Invalid email or password')
-      expect(page).not_to have_content('Document Templates')
+      expect(page).not_to have_content('Agreements')
     end
   end
 
@@ -41,7 +41,7 @@ RSpec.describe 'Sign In' do
       click_button 'Sign In'
 
       expect(page).to have_content('Signed in successfully')
-      expect(page).to have_content('Document Templates')
+      expect(page).to have_content('Agreements')
     end
 
     it 'fails to sign in with invalid OTP code' do
@@ -52,7 +52,7 @@ RSpec.describe 'Sign In' do
       click_button 'Sign In'
 
       expect(page).to have_content('Invalid email or password')
-      expect(page).not_to have_content('Document Templates')
+      expect(page).not_to have_content('Agreements')
     end
   end
 end

@@ -79,7 +79,7 @@ RSpec.describe 'App Setup' do
       sign_in(user)
       visit setup_index_path
 
-      expect(page).to have_link('Create', href: new_template_path)
+      expect(page).to have_link('New Agreement', href: new_agreement_path)
     end
   end
 

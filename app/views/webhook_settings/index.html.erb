@@ -23,7 +23,7 @@
             </p>
             <div class="flex flex-wrap gap-2 mt-2">
               <% webhook_url.events.each do |event| %>
-                <span class="badge badge-outline"><%= event %></span>
+                <span class="badge badge-outline" style="text-transform: none"><%= event %></span>
               <% end %>
             </div>
           </div>

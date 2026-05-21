@@ -136,7 +136,7 @@ RSpec.describe 'Signing Form' do
       click_on 'Complete'
 
       expect(page).to have_button('Download')
-      expect(page).to have_content('Document has been signed!')
+      expect(page).to have_content("You're done.")
 
       submitter = template.submissions.last.submitters.last
 
@@ -223,7 +223,7 @@ RSpec.describe 'Signing Form' do
       click_on 'Complete'
 
       expect(page).to have_button('Download')
-      expect(page).to have_content('Document has been signed!')
+      expect(page).to have_content("You're done.")
 
       submitter = template.submissions.last.submitters.last
 
@@ -311,7 +311,7 @@ RSpec.describe 'Signing Form' do
       click_on 'Complete'
 
       expect(page).to have_button('Download')
-      expect(page).to have_content('Document has been signed!')
+      expect(page).to have_content("You're done.")
 
       submitter = template.submissions.last.submitters.last
 
@@ -401,7 +401,7 @@ RSpec.describe 'Signing Form' do
       click_on 'Complete'
 
       expect(page).to have_button('Download')
-      expect(page).to have_content('Document has been signed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -445,7 +445,7 @@ RSpec.describe 'Signing Form' do
       fill_in 'First Name', with: 'Mary'
       click_button 'Complete'
 
-      expect(page).to have_content('Form has been completed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -470,7 +470,7 @@ RSpec.describe 'Signing Form' do
       fill_in 'First Name', with: 'Very long text'
       click_button 'Complete'
 
-      expect(page).to have_content('Form has been completed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -496,7 +496,7 @@ RSpec.describe 'Signing Form' do
       fill_in 'Birthday', with: I18n.l(25.years.ago, format: '%Y-%m-%d')
       click_button 'Complete'
 
-      expect(page).to have_content('Form has been completed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -519,7 +519,7 @@ RSpec.describe 'Signing Form' do
 
       click_button 'Complete'
 
-      expect(page).to have_content('Form has been completed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -541,7 +541,7 @@ RSpec.describe 'Signing Form' do
       check 'Do you agree?'
       click_button 'Complete'
 
-      expect(page).to have_content('Form has been completed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -565,7 +565,7 @@ RSpec.describe 'Signing Form' do
       choose 'Boy'
       click_button 'Complete'
 
-      expect(page).to have_content('Form has been completed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -588,7 +588,7 @@ RSpec.describe 'Signing Form' do
       draw_canvas
       click_button 'Sign and Complete'
 
-      expect(page).to have_content('Document has been signed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -617,7 +617,7 @@ RSpec.describe 'Signing Form' do
       fill_in 'signature_text_input', with: 'John Doe'
       click_button 'Sign and Complete'
 
-      expect(page).to have_content('Document has been signed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -645,7 +645,7 @@ RSpec.describe 'Signing Form' do
       select 'Approved'
       click_button 'Sign and Complete'
 
-      expect(page).to have_content('Document has been signed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -672,7 +672,7 @@ RSpec.describe 'Signing Form' do
       fill_in 'House number', with: '4'
       click_button 'Complete'
 
-      expect(page).to have_content('Form has been completed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -694,7 +694,7 @@ RSpec.describe 'Signing Form' do
       %w[Red Green].each { |color| check color }
       click_button 'Complete'
 
-      expect(page).to have_content('Form has been completed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -717,7 +717,7 @@ RSpec.describe 'Signing Form' do
 
       click_button 'Complete'
 
-      expect(page).to have_content('Form has been completed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -740,7 +740,7 @@ RSpec.describe 'Signing Form' do
       fill_in 'initials_text_input', with: 'John Doe'
       click_button 'Complete'
 
-      expect(page).to have_content('Document has been signed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -756,7 +756,7 @@ RSpec.describe 'Signing Form' do
       draw_canvas
       click_button 'Complete'
 
-      expect(page).to have_content('Document has been signed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -775,7 +775,7 @@ RSpec.describe 'Signing Form' do
 
       click_button 'Complete'
 
-      expect(page).to have_content('Document has been signed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -799,7 +799,7 @@ RSpec.describe 'Signing Form' do
       find('input[type="file"]', visible: false).attach_file(Rails.root.join('spec/fixtures/sample-image.png'))
       click_button 'Complete'
 
-      expect(page).to have_content('Form has been completed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -823,7 +823,7 @@ RSpec.describe 'Signing Form' do
       find('input[type="file"]', visible: false).attach_file(Rails.root.join('spec/fixtures/sample-document.pdf'))
       click_button 'Complete'
 
-      expect(page).to have_content('Form has been completed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -850,7 +850,7 @@ RSpec.describe 'Signing Form' do
       fill_in 'Cell code', with: '456'
       click_button 'Complete'
 
-      expect(page).to have_content('Form has been completed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -969,7 +969,7 @@ RSpec.describe 'Signing Form' do
       fill_in 'Comment', with: 'This is a comment'
       click_button 'Complete'
 
-      expect(page).to have_content('Form has been completed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -994,7 +994,7 @@ RSpec.describe 'Signing Form' do
       fill_in 'Comment', with: 'This is a comment'
       click_button 'Complete'
 
-      expect(page).to have_content('Form has been completed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -1017,7 +1017,7 @@ RSpec.describe 'Signing Form' do
       fill_in 'Phone (optional)', with: ''
       click_button 'Complete'
 
-      expect(page).to have_content('Form has been completed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -1040,7 +1040,7 @@ RSpec.describe 'Signing Form' do
       fill_in 'Phone (optional)', with: '+1 (773) 229-8825'
       click_button 'Complete'
 
-      expect(page).to have_content('Form has been completed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -1231,7 +1231,7 @@ RSpec.describe 'Signing Form' do
       fill_in 'First Name', with: 'Mary'
       click_button 'Complete'
 
-      expect(page).to have_content('Form has been completed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 
@@ -1266,7 +1266,7 @@ RSpec.describe 'Signing Form' do
       fill_in 'First Name', with: 'Mary'
       click_button 'Complete'
 
-      expect(page).to have_content('Form has been completed!')
+      expect(page).to have_content("You're done.")
 
       submitter.reload
 

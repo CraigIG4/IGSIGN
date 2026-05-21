@@ -19,6 +19,7 @@
         </div>
       <% end %>
       <%= link_to new_template_path,
+            data: { turbo_frame: 'modal' },
             style: 'background:#45AC34;color:#fff;border-radius:8px;padding:12px 20px;font-weight:700;font-size:14px;text-decoration:none;display:flex;align-items:center;gap:8px;white-space:nowrap;align-self:flex-start;' do %>
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
         New Template
@@ -37,7 +38,7 @@
     <div style="padding:60px;text-align:center;">
       <p style="font-size:16px;font-weight:700;color:#162B3C;">No templates yet</p>
       <p style="font-size:14px;color:#7B787F;margin-top:4px;">Upload a PDF to get started.</p>
-      <%= link_to '+ New Template', new_template_path, class: 'btn btn-primary mt-4' %>
+      <%= link_to '+ New Template', new_template_path, class: 'btn btn-primary mt-4', data: { turbo_frame: 'modal' } %>
     </div>
   <% else %>
     <table class="table w-full" style="border-collapse:collapse;">
