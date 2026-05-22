@@ -57,6 +57,8 @@ class CafApprovalMatrix < ApplicationRecord
   validate  :entity_scope_valid
   validate  :stages_config_valid
 
+  before_validation :normalize_entity_scope
+
   scope :active,          -> { where(active: true) }
   scope :for_account,     ->(account) { where(account: account) }
   scope :by_name,         -> { order(:name) }
@@ -181,6 +183,13 @@ class CafApprovalMatrix < ApplicationRecord
   end
 
   private
+
+  def normalize_entity_scope
+    return unless entity_scope.is_a?(Array)
+
+    self.entity_scope = entity_scope.reject(&:blank?)
+    self.entity_scope = nil if entity_scope.empty?
+  end
 
   def agreement_types_valid
     return unless agreement_types.is_a?(Array)

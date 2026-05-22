@@ -20,7 +20,9 @@ RSpec.describe 'Admin::ApprovalMatrices', type: :request do
       caf_approval_matrix: {
         name:            'New Matrix',
         agreement_types: ['msa'],
-        entity_scope:    [],
+        # entity_scope intentionally omitted — nil means "all entities".
+        # Passing [] encodes as entity_scope[]= in Rack, which Rails parses as [""],
+        # causing entity_scope_valid to reject the blank string as an unknown entity.
         value_threshold: '',
         stages_config:   [
           {
