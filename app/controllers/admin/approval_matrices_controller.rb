@@ -84,7 +84,7 @@ module Admin
         agreement_types: [],
         entity_scope:    [],
         stages_config:   [:name, :routing, :strip_internal_on_complete, { required_roles: [] }]
-      )
+      ).to_h
     end
 
     def default_stages_config

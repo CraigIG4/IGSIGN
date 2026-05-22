@@ -107,7 +107,9 @@ RSpec.describe 'Template' do
       end
 
       within '.autocomplete' do
-        find('div', text: template_folder.name).click
+        # Use trigger(:click) to bypass coordinate-based overlap check
+        # (form-control elements inside the modal can overlap the autocomplete dropdown)
+        find('div', text: template_folder.name).trigger(:click)
       end
 
       within '#modal' do
