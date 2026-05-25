@@ -1,0 +1,76 @@
+version: '3.8'
+
+# IGSIGN production stack — POC server (172.30.0.30)
+# External URL: https://172.30.0.30:3004  (Caddy TLS termination)
+# Internal:     127.0.0.1:8004            (this compose stack)
+#
+# Storage: SQLite3 (simpler, no separate DB container needed)
+# Queues:  Redis + Sidekiq
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  web:
+    image: igsign:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8004:3000"
+    environment:
+      RAILS_ENV: production
+      WORKDIR: /data/docuseal
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+      ENCRYPTION_SECRET: ${ENCRYPTION_SECRET}
+      INTERNAL_WEBHOOK_SECRET: ${INTERNAL_WEBHOOK_SECRET}
+      REDIS_URL: redis://redis:6379/0
+      RAILS_SERVE_STATIC_FILES: "true"
+      RAILS_LOG_TO_STDOUT: "true"
+      FORCE_SSL: "false"
+    volumes:
+      - app_data:/data/docuseal
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/up"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  worker:
+    image: igsign:latest
+    restart: unless-stopped
+    command: sh -c "cd /app && bundle exec sidekiq"
+    environment:
+      RAILS_ENV: production
+      WORKDIR: /data/docuseal
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+      ENCRYPTION_SECRET: ${ENCRYPTION_SECRET}
+      INTERNAL_WEBHOOK_SECRET: ${INTERNAL_WEBHOOK_SECRET}
+      REDIS_URL: redis://redis:6379/0
+      RAILS_LOG_TO_STDOUT: "true"
+    volumes:
+      - app_data:/data/docuseal
+    depends_on:
+      redis:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+
+volumes:
+  app_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/data/users/clawre969/apps/igsign/data
+  redis_data:

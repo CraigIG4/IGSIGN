@@ -1,0 +1,23 @@
+[Unit]
+Description=IGSIGN (DocuSeal fork) — Docker Compose stack
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/clawre969/apps/igsign
+
+# Inject secrets into the service environment so docker compose inherits them
+EnvironmentFile=/home/clawre969/apps/igsign/.env.production
+
+ExecStartPre=/usr/bin/docker compose -f /home/clawre969/apps/igsign/docker-compose.prod.yml pull redis
+ExecStart=/usr/bin/docker compose -f /home/clawre969/apps/igsign/docker-compose.prod.yml up -d
+ExecStop=/usr/bin/docker compose -f /home/clawre969/apps/igsign/docker-compose.prod.yml down
+ExecReload=/usr/bin/docker compose -f /home/clawre969/apps/igsign/docker-compose.prod.yml restart web worker
+
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

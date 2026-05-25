@@ -21,6 +21,8 @@
 /public/assets
 
 /config/master.key
+/.env.production
+/deploy/*.env*
 
 /public/packs
 /public/packs-test
