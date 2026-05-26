@@ -17,6 +17,7 @@
 #  ignition_company       :string
 #  long_form_data         :jsonb
 #  mandate_description    :text
+#  parsed_contract_data   :jsonb
 #  requestor_email        :string
 #  requestor_name         :string
 #  signatories            :jsonb

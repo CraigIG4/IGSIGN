@@ -138,6 +138,9 @@ class AgreementsController < ApplicationController
       Templates::CreateAttachments.call(template, { files: }, extract_fields: true)
       @agreement.update!(template_id: template.id)
 
+      # Kick off background AI parsing — silent failure, never blocks the upload flow
+      ContractParsingJob.perform_later(@agreement.id)
+
       field_count = template.reload.fields&.length || 0
       notice = build_field_detection_notice(field_count)
       redirect_to position_agreement_path(@agreement), notice: notice
@@ -365,6 +368,7 @@ class AgreementsController < ApplicationController
   def agreement_params
     params.require(:agreement).permit(
       :agreement_type, :entity, :ignition_company,
+      :commercial_relationship,
       :contracting_party, :counterparty_name, :counterparty_email,
       :company_id, :requestor_name, :requestor_email,
       :high_level_summary, :mandate_description,

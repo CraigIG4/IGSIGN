@@ -64,6 +64,21 @@ Group signers are limited to: Sean Bergsma (CEO), Don Bergsma (COO), Kobus Botha
 - rubocop --autocorrect-all — lint
 - rake igsign:smoke_test — pre-deploy smoke check
 
+## AI contract parsing (Stage 6)
+
+Env vars (set in Render dashboard — do NOT commit to source):
+- `AI_API_KEY` — OpenRouter API key (sk-or-v1-...)
+- `AI_BASE_URL` — https://openrouter.ai/api/v1
+- `AI_MODEL` — meta-llama/llama-3.3-70b-instruct:free (or any OpenAI-compatible model name)
+
+Flow: after document upload → `ContractParsingJob` (Sidekiq) → `DocumentMetadatas.build_text_runs` extracts PDF text via Pdfium → `ContractParser.extract` posts to OpenRouter → result saved to `caf_workflows.parsed_contract_data` (jsonb).
+
+System prompt: `config/prompts/extract_contract_v1.md`
+
+**Privacy:** Contract text is sent to OpenRouter (Meta Llama hosted model). Acceptable for POC. For production with live client contracts, switch to a self-hosted model or a provider with a zero-data-retention agreement.
+
+Smart Summary card on the review page renders only when `parsed_contract_data` is present and contains no `error` key (feature-flagged by data presence). If AI_API_KEY is unset, the job silently skips and the card does not appear.
+
 ## Pilot users
 
 Craig Lawrence (CLO), Sean Bergsma (CEO), Donovan Bergsma (COO), Laren Farquharson (CFO).

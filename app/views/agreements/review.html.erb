@@ -145,6 +145,86 @@
     <% end %>
   </div>
 
+  <%# ── Card 4: Smart Summary (AI-extracted, only shown when parsing completed) ── %>
+  <% parsed = @agreement.parsed_contract_data %>
+  <% if parsed.present? && parsed['error'].blank? %>
+    <div class="rounded-xl border border-gray-200 bg-white mb-4 overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between" style="background-color:#f8fafc;">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:#45AC34;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/>
+          </svg>
+          <span class="text-sm font-semibold text-gray-700">Smart Summary</span>
+        </div>
+        <span class="inline-flex items-center gap-1 text-xs text-gray-400">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+          AI-generated · verify before relying on
+        </span>
+      </div>
+      <div class="px-5 py-4 space-y-3 text-sm">
+
+        <%# Purpose %>
+        <% if parsed['purpose'].present? %>
+          <p class="text-gray-700 leading-relaxed"><%= parsed['purpose'] %></p>
+        <% end %>
+
+        <%# Key data grid %>
+        <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm pt-1">
+          <% if parsed['value_zar'].present? %>
+            <div>
+              <p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Contract Value</p>
+              <p class="font-medium text-gray-900">R <%= number_with_delimiter(parsed['value_zar'].to_i) %></p>
+            </div>
+          <% end %>
+          <% if parsed['term_months'].present? %>
+            <div>
+              <p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Term</p>
+              <p class="font-medium text-gray-900"><%= parsed['term_months'] %> months</p>
+            </div>
+          <% end %>
+          <% if parsed['payment_terms'].present? %>
+            <div>
+              <p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Payment Terms</p>
+              <p class="font-medium text-gray-900"><%= parsed['payment_terms'] %></p>
+            </div>
+          <% end %>
+          <% if parsed['governing_law'].present? %>
+            <div>
+              <p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Governing Law</p>
+              <p class="font-medium text-gray-900"><%= parsed['governing_law'] %></p>
+            </div>
+          <% end %>
+        </div>
+
+        <%# High-risk clauses %>
+        <% clauses = Array(parsed['high_risk_clauses']).select { |c| c['type'].present? } %>
+        <% if clauses.any? %>
+          <div class="pt-1">
+            <p class="text-xs text-gray-400 uppercase tracking-wide mb-2">Flagged Clauses</p>
+            <div class="space-y-1.5">
+              <% clauses.each do |clause| %>
+                <% sev_styles = case clause['severity']
+                                when 'high'   then 'background-color:#fef2f2;border-color:#fecaca;color:#991b1b;'
+                                when 'medium' then 'background-color:#fffbeb;border-color:#fde68a;color:#92400e;'
+                                else               'background-color:#f0fdf4;border-color:#bbf7d0;color:#166534;'
+                                end %>
+                <div style="<%= sev_styles %> border:1px solid; border-radius:8px; padding:8px 12px;">
+                  <div class="flex items-center gap-2 mb-0.5">
+                    <span class="text-xs font-semibold"><%= clause['type'] %></span>
+                    <span class="text-xs opacity-70">·</span>
+                    <span class="text-xs capitalize opacity-70"><%= clause['severity'] %> risk</span>
+                  </div>
+                  <p class="text-xs leading-relaxed"><%= clause['summary'] %></p>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+      </div>
+    </div>
+  <% end %>
+
   <%# Submission note %>
   <% first_signer = @signatories.first %>
   <% if first_signer %>
