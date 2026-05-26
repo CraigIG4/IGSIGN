@@ -32,7 +32,7 @@ module Admin
 
       if @matrix.save
         @matrix.log_audit_event(CafApprovalMatrix::EVENT_CREATED, actor: current_user)
-        redirect_to admin_approval_matrices_path,
+        redirect_to legal_ops_approval_matrices_path,
                     notice: "Matrix \"#{@matrix.name}\" created."
       else
         render :new, status: :unprocessable_entity
@@ -51,7 +51,7 @@ module Admin
           actor: current_user,
           extra: { previous: original_attrs }
         )
-        redirect_to admin_approval_matrices_path,
+        redirect_to legal_ops_approval_matrices_path,
                     notice: "Matrix \"#{@matrix.name}\" updated."
       else
         render :edit, status: :unprocessable_entity
@@ -60,10 +60,10 @@ module Admin
 
     def deactivate
       if @matrix.deactivate!(actor: current_user)
-        redirect_to admin_approval_matrices_path,
+        redirect_to legal_ops_approval_matrices_path,
                     notice: "Matrix \"#{@matrix.name}\" deactivated."
       else
-        redirect_to admin_approval_matrices_path,
+        redirect_to legal_ops_approval_matrices_path,
                     alert: "Matrix \"#{@matrix.name}\" is already inactive."
       end
     end

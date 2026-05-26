@@ -23,7 +23,7 @@ class TemplatesLibraryController < ApplicationController
   def index
     # Admin users go to the management view instead
     if current_user.role == User::ADMIN_ROLE
-      redirect_to(admin_templates_path) && return
+      redirect_to(legal_ops_templates_path) && return
     end
 
     # Build entity cards for the NDA section.

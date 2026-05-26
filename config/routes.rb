@@ -92,18 +92,19 @@ Rails.application.routes.draw do
     end
   end
 
-  # Legal Ops namespace — signatory registry + workflow admin (admin only)
+  # Legal Ops namespace — all admin management (admin only).
+  # Controllers remain in Admin:: module; only the URL prefix has moved.
   namespace :legal_ops do
+    root to: 'dashboard#index'
+
     resources :signatories, only: %i[index edit update] do
       member do
         patch :toggle_active
       end
     end
-  end
 
-  # Admin-only CAF workflow management (previously /cafs).
-  namespace :admin do
-    resources :workflows, only: %i[index new create show edit update destroy] do
+    resources :workflows, only: %i[index new create show edit update destroy],
+              controller: 'admin/workflows' do
       member do
         post :submit
         post :resend_invite
@@ -113,14 +114,16 @@ Rails.application.routes.draw do
       end
     end
 
-    resources :approval_matrices, only: %i[index new create edit update] do
+    resources :approval_matrices, only: %i[index new create edit update],
+              controller: 'admin/approval_matrices' do
       member do
         patch :deactivate
       end
     end
 
     # IGSIGN template metadata management (admin only)
-    resources :templates, only: %i[index new create edit update] do
+    resources :templates, only: %i[index new create edit update],
+              controller: 'admin/templates' do
       member do
         patch :activate
         patch :deprecate
@@ -128,10 +131,24 @@ Rails.application.routes.draw do
     end
   end
 
+  # 301 redirects from old /admin/* paths so saved links keep working.
+  # More-specific patterns MUST appear before the bare /:id catch-all.
+  get '/admin/workflows/signatories_for',   to: redirect('/legal_ops/workflows/signatories_for')
+  get '/admin/workflows/new',               to: redirect('/legal_ops/workflows/new')
+  get '/admin/workflows/:id/edit',          to: redirect { |p, _| "/legal_ops/workflows/#{p[:id]}/edit" }
+  get '/admin/workflows/:id',               to: redirect { |p, _| "/legal_ops/workflows/#{p[:id]}" }
+  get '/admin/workflows',                   to: redirect('/legal_ops/workflows')
+  get '/admin/approval_matrices/new',       to: redirect('/legal_ops/approval_matrices/new')
+  get '/admin/approval_matrices/:id/edit',  to: redirect { |p, _| "/legal_ops/approval_matrices/#{p[:id]}/edit" }
+  get '/admin/approval_matrices',           to: redirect('/legal_ops/approval_matrices')
+  get '/admin/templates/new',               to: redirect('/legal_ops/templates/new')
+  get '/admin/templates/:id/edit',          to: redirect { |p, _| "/legal_ops/templates/#{p[:id]}/edit" }
+  get '/admin/templates',                   to: redirect('/legal_ops/templates')
+
   # Legacy /cafs redirects — keeps bookmarks and old links working.
-  get '/cafs/signatories_for', to: redirect('/admin/workflows/signatories_for')
-  get '/cafs',                 to: redirect('/admin/workflows')
-  get '/cafs/:id',             to: redirect { |p, _| "/admin/workflows/#{p[:id]}" }
+  get '/cafs/signatories_for', to: redirect('/legal_ops/workflows/signatories_for')
+  get '/cafs',                 to: redirect('/legal_ops/workflows')
+  get '/cafs/:id',             to: redirect { |p, _| "/legal_ops/workflows/#{p[:id]}" }
   resources :setup, only: %i[index create]
   resource :newsletter, only: %i[show update]
   resources :enquiries, only: %i[create]

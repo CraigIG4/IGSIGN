@@ -9,30 +9,84 @@
     </a>
 
     <% if signed_in? %>
-      <%# Primary nav — desktop %>
+      <%# ── Primary nav — desktop ─────────────────────────────────────────────── %>
+      <% current_path = request.path %>
+      <% is_legal_ops = current_path.start_with?('/legal_ops') %>
+
       <div style="display:flex; align-items:center; gap:4px; flex:1; margin:0 24px;">
-        <% current_path = request.path %>
-        <%# Build nav links; Operations + Templates admin-only. TODO Sprint 3: open Templates to all users. %>
-        <% nav_links = [['Agreements', '/agreements']] %>
-        <% nav_links << ['Operations',        '/admin/workflows']          if current_user.role == User::ADMIN_ROLE %>
-        <% nav_links << ['Templates',         current_user.role == User::ADMIN_ROLE ? '/admin/templates' : '/templates'] %>
-        <% nav_links << ['Approval Matrices', '/admin/approval_matrices']  if current_user.role == User::ADMIN_ROLE %>
-        <% nav_links << ['Contacts',          '/companies'] %>
-        <% nav_links.each do |label, path| %>
-          <% active = current_path.start_with?(path) %>
-          <a href="<%= path %>"
-             style="display:inline-flex; align-items:center; padding:6px 12px 5px; font-size:14px; font-weight:500; text-decoration:none; transition:color 0.15s;
-                    color: <%= active ? '#ffffff' : 'rgba(255,255,255,0.85)' %> !important;
-                    border-bottom: 2px solid <%= active ? '#45AC34' : 'transparent' %>;"
-             onmouseover="this.style.setProperty('color','#fff','important');"
-             onmouseout="this.style.setProperty('color',this.dataset.active==='true'?'#fff':'rgba(255,255,255,0.85)','important');"
-             data-active="<%= active %>">
-            <%= label %>
-          </a>
+
+        <%# Agreements %>
+        <% agreements_active = current_path.start_with?('/agreements') %>
+        <a href="<%= agreements_path %>"
+           style="display:inline-flex; align-items:center; padding:6px 12px 5px; font-size:14px; font-weight:500; text-decoration:none; transition:color 0.15s;
+                  color: <%= agreements_active ? '#ffffff' : 'rgba(255,255,255,0.85)' %> !important;
+                  border-bottom: 2px solid <%= agreements_active ? '#45AC34' : 'transparent' %>;"
+           onmouseover="this.style.setProperty('color','#fff','important');"
+           onmouseout="this.style.setProperty('color',this.dataset.active==='true'?'#fff':'rgba(255,255,255,0.85)','important');"
+           data-active="<%= agreements_active %>">
+          Agreements
+        </a>
+
+        <%# Counterparties %>
+        <% cp_active = current_path.start_with?('/companies') %>
+        <a href="<%= companies_path %>"
+           style="display:inline-flex; align-items:center; padding:6px 12px 5px; font-size:14px; font-weight:500; text-decoration:none; transition:color 0.15s;
+                  color: <%= cp_active ? '#ffffff' : 'rgba(255,255,255,0.85)' %> !important;
+                  border-bottom: 2px solid <%= cp_active ? '#45AC34' : 'transparent' %>;"
+           onmouseover="this.style.setProperty('color','#fff','important');"
+           onmouseout="this.style.setProperty('color',this.dataset.active==='true'?'#fff':'rgba(255,255,255,0.85)','important');"
+           data-active="<%= cp_active %>">
+          Counterparties
+        </a>
+
+        <%# Legal Ops — admin only, with dropdown ─────────────────────────────── %>
+        <% if current_user.role == User::ADMIN_ROLE %>
+          <div class="dropdown dropdown-hover" style="z-index:200;">
+            <label tabindex="0"
+                   style="display:inline-flex; align-items:center; gap:4px; padding:6px 12px 5px; font-size:14px; font-weight:500; cursor:pointer; user-select:none;
+                          color: <%= is_legal_ops ? '#ffffff' : 'rgba(255,255,255,0.85)' %> !important;
+                          border-bottom: 2px solid <%= is_legal_ops ? '#45AC34' : 'transparent' %>;"
+                   onmouseover="this.style.setProperty('color','#fff','important');"
+                   onmouseout="this.style.setProperty('color','<%= is_legal_ops ? '#fff' : 'rgba(255,255,255,0.85)' %>','important');">
+              Legal Ops
+              <svg xmlns="http://www.w3.org/2000/svg" style="width:12px;height:12px;opacity:0.7;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/>
+              </svg>
+            </label>
+            <ul tabindex="0"
+                class="dropdown-content z-50 p-2 mt-0 shadow-xl menu bg-base-100 rounded-xl"
+                style="min-width:210px; border:1px solid #e8ebed; top:100%; left:0;">
+              <li>
+                <%= link_to legal_ops_approval_matrices_path, class: 'flex items-center gap-2 text-sm font-medium' do %>
+                  <%= svg_icon('table', class: 'w-4 h-4 flex-shrink-0 text-gray-400') %>
+                  Approval Matrices
+                <% end %>
+              </li>
+              <li>
+                <%= link_to legal_ops_templates_path, class: 'flex items-center gap-2 text-sm font-medium' do %>
+                  <%= svg_icon('document', class: 'w-4 h-4 flex-shrink-0 text-gray-400') %>
+                  Templates
+                <% end %>
+              </li>
+              <li>
+                <%= link_to legal_ops_signatories_path, class: 'flex items-center gap-2 text-sm font-medium' do %>
+                  <%= svg_icon('users', class: 'w-4 h-4 flex-shrink-0 text-gray-400') %>
+                  Signatory Registry
+                <% end %>
+              </li>
+              <li>
+                <%= link_to legal_ops_workflows_path, class: 'flex items-center gap-2 text-sm font-medium' do %>
+                  <%= svg_icon('collection', class: 'w-4 h-4 flex-shrink-0 text-gray-400') %>
+                  Workflow Log
+                <% end %>
+              </li>
+            </ul>
+          </div>
         <% end %>
+
       </div>
 
-      <%# Right section %>
+      <%# ── Right section ──────────────────────────────────────────────────────── %>
       <div style="display:flex; align-items:center; gap:8px;">
         <%# + New Agreement %>
         <a href="<%= new_agreement_path %>"
@@ -46,7 +100,7 @@
           New Agreement
         </a>
 
-        <%# Settings — desktop: icon + label; mobile: icon only %>
+        <%# Settings %>
         <a href="<%= settings_profile_index_path %>"
            title="Settings"
            aria-label="Settings"
@@ -61,7 +115,7 @@
           <span class="hidden md:inline">Settings</span>
         </a>
 
-        <%# User avatar dropdown — DaisyUI kept for dropdown function %>
+        <%# User avatar dropdown %>
         <div class="dropdown dropdown-end" style="z-index:100;">
           <label tabindex="0"
                  style="cursor:pointer; display:flex; align-items:center; justify-content:center; border-radius:50%; font-weight:700; font-size:13px; width:34px; height:34px; background-color:#45AC34; color:#162B3C; flex-shrink:0;">
@@ -131,27 +185,55 @@
 
   </div>
 
-  <%# Mobile nav drawer — hidden by default, toggled by hamburger %>
+  <%# ── Mobile nav drawer ──────────────────────────────────────────────────────── %>
   <% if signed_in? %>
     <div id="igsign-mobile-nav"
          style="display:none; flex-direction:column; padding:8px 16px 12px; border-top:1px solid rgba(255,255,255,0.1); background-color:#162B3C;">
       <% current_path = request.path %>
-      <%# Mirror desktop nav logic: Operations + Templates admin-only %>
-      <% mobile_links = [['Agreements', agreements_path]] %>
-      <% mobile_links << ['Operations',        admin_workflows_path]                                                    if current_user.role == User::ADMIN_ROLE %>
-      <% mobile_links << ['Templates',         current_user.role == User::ADMIN_ROLE ? admin_templates_path : templates_path] %>
-      <% mobile_links << ['Approval Matrices', admin_approval_matrices_path]                                            if current_user.role == User::ADMIN_ROLE %>
-      <% mobile_links << ['Contacts',          companies_path] %>
-      <% mobile_links.each do |label, path| %>
-        <% active = current_path.start_with?(path) %>
-        <a href="<%= path %>"
-           style="display:block; padding:10px 12px; border-radius:6px; font-size:14px; font-weight:500; text-decoration:none; margin-bottom:2px;
-                  color: <%= active ? '#ffffff' : 'rgba(255,255,255,0.85)' %> !important;
-                  border-left: 3px solid <%= active ? '#45AC34' : 'transparent' %>;
-                  background: <%= active ? 'rgba(255,255,255,0.08)' : 'transparent' %>;">
-          <%= label %>
-        </a>
+
+      <%# Agreements %>
+      <% mob_active = current_path.start_with?('/agreements') %>
+      <a href="<%= agreements_path %>"
+         style="display:block; padding:10px 12px; border-radius:6px; font-size:14px; font-weight:500; text-decoration:none; margin-bottom:2px;
+                color: <%= mob_active ? '#ffffff' : 'rgba(255,255,255,0.85)' %> !important;
+                border-left: 3px solid <%= mob_active ? '#45AC34' : 'transparent' %>;
+                background: <%= mob_active ? 'rgba(255,255,255,0.08)' : 'transparent' %>;">
+        Agreements
+      </a>
+
+      <%# Counterparties %>
+      <% mob_cp = current_path.start_with?('/companies') %>
+      <a href="<%= companies_path %>"
+         style="display:block; padding:10px 12px; border-radius:6px; font-size:14px; font-weight:500; text-decoration:none; margin-bottom:2px;
+                color: <%= mob_cp ? '#ffffff' : 'rgba(255,255,255,0.85)' %> !important;
+                border-left: 3px solid <%= mob_cp ? '#45AC34' : 'transparent' %>;
+                background: <%= mob_cp ? 'rgba(255,255,255,0.08)' : 'transparent' %>;">
+        Counterparties
+      </a>
+
+      <%# Legal Ops (admin only) — section header + sub-links indented %>
+      <% if current_user.role == User::ADMIN_ROLE %>
+        <% mob_lo = current_path.start_with?('/legal_ops') %>
+        <div style="padding:10px 12px 4px; font-size:11px; font-weight:700; color:rgba(255,255,255,0.4); letter-spacing:3px; text-transform:uppercase; margin-top:6px;">
+          Legal Ops
+        </div>
+        <% [
+          ['Approval Matrices', legal_ops_approval_matrices_path],
+          ['Templates',         legal_ops_templates_path],
+          ['Signatory Registry',legal_ops_signatories_path],
+          ['Workflow Log',      legal_ops_workflows_path]
+        ].each do |label, path| %>
+          <% sub_active = current_path.start_with?(path) %>
+          <a href="<%= path %>"
+             style="display:block; padding:8px 12px 8px 24px; border-radius:6px; font-size:13px; font-weight:500; text-decoration:none; margin-bottom:2px;
+                    color: <%= sub_active ? '#ffffff' : 'rgba(255,255,255,0.75)' %> !important;
+                    border-left: 3px solid <%= sub_active ? '#45AC34' : 'transparent' %>;
+                    background: <%= sub_active ? 'rgba(255,255,255,0.08)' : 'transparent' %>;">
+            <%= label %>
+          </a>
+        <% end %>
       <% end %>
+
       <div style="border-top:1px solid rgba(255,255,255,0.1); margin-top:6px; padding-top:8px; display:flex; gap:10px; align-items:center;">
         <%= link_to '+ New Agreement', new_agreement_path,
             style: 'font-size:13px; font-weight:600; color:#45AC34; text-decoration:none;' %>

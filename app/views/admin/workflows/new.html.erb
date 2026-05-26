@@ -18,7 +18,7 @@
 
     <%# Header %>
     <div style="margin-bottom:28px; display:flex; align-items:center; gap:16px;">
-      <%= link_to admin_workflows_path, style: 'color:#7B787F; text-decoration:none; font-size:13px; display:flex; align-items:center; gap:4px;' do %>
+      <%= link_to legal_ops_workflows_path, style: 'color:#7B787F; text-decoration:none; font-size:13px; display:flex; align-items:center; gap:4px;' do %>
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg> Back to CAFs
       <% end %>
     </div>
@@ -44,7 +44,7 @@
       </div>
 
       <%# Form %>
-      <%= form_with model: @caf, url: admin_workflows_path, local: false, id: 'caf-form',
+      <%= form_with model: @caf, url: legal_ops_workflows_path, local: false, id: 'caf-form',
           html: { enctype: 'multipart/form-data' },
           data: { turbo: false } do |f| %>
 
@@ -291,7 +291,7 @@ function onTypeOrEntityChange() {
 }
 
 function loadSignatories(type, entity) {
-  fetch('/admin/workflows/signatories_for?caf_type=' + type + '&entity=' + entity)
+  fetch('/legal_ops/workflows/signatories_for?caf_type=' + type + '&entity=' + entity)
     .then(r => r.json())
     .then(data => {
       signatories = data.map((s, i) => ({ ...s, position: i }));

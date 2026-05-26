@@ -55,7 +55,7 @@ module Admin
       @metadata.template = @template
 
       if @metadata.save
-        redirect_to admin_templates_path,
+        redirect_to legal_ops_templates_path,
                     notice: "Metadata saved for \"#{@template.name}\"."
       else
         @templates = current_account.templates.where(archived_at: nil)
@@ -73,7 +73,7 @@ module Admin
         # Bump version only when content changes on an already-active record
         @metadata.bump_version! if was_active
 
-        redirect_to admin_templates_path,
+        redirect_to legal_ops_templates_path,
                     notice: "\"#{@template.name}\" metadata updated (v#{@metadata.reload.version})."
       else
         render :edit, status: :unprocessable_entity
@@ -82,20 +82,20 @@ module Admin
 
     def activate
       if @metadata.update(status: 'active')
-        redirect_to admin_templates_path,
+        redirect_to legal_ops_templates_path,
                     notice: "\"#{@template.name}\" is now Active."
       else
-        redirect_to admin_templates_path,
+        redirect_to legal_ops_templates_path,
                     alert: "Could not activate \"#{@template.name}\"."
       end
     end
 
     def deprecate
       if @metadata.update(status: 'deprecated')
-        redirect_to admin_templates_path,
+        redirect_to legal_ops_templates_path,
                     notice: "\"#{@template.name}\" marked Deprecated."
       else
-        redirect_to admin_templates_path,
+        redirect_to legal_ops_templates_path,
                     alert: "Could not deprecate \"#{@template.name}\"."
       end
     end

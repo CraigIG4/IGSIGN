@@ -83,7 +83,7 @@
 <% existing = matrix.stages_config.is_a?(Array) ? matrix.stages_config : [] %>
 
 <%= form_with model: matrix,
-              url: matrix.persisted? ? admin_approval_matrix_path(matrix) : admin_approval_matrices_path,
+              url: matrix.persisted? ? legal_ops_approval_matrix_path(matrix) : legal_ops_approval_matrices_path,
               local: true, html: { id: 'matrix-form' } do |f| %>
   <% if matrix.errors.any? %>
     <div class="alert alert-error mb-4">
@@ -184,7 +184,7 @@
     <%= f.submit matrix.new_record? ? 'Create Matrix' : 'Save Changes',
           class: 'btn btn-primary',
           style: 'min-width:160px;' %>
-    <%= link_to 'Cancel', admin_approval_matrices_path,
+    <%= link_to 'Cancel', legal_ops_approval_matrices_path,
           style: 'font-size:14px;color:#7B787F;text-decoration:none;' %>
   </div>
 <% end %>

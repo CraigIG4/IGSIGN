@@ -6,7 +6,7 @@
 <% legal_users = current_account.users.order(:first_name, :last_name) %>
 
 <%= form_with model: metadata,
-              url: metadata.new_record? ? admin_templates_path : admin_template_path(template),
+              url: metadata.new_record? ? legal_ops_templates_path : legal_ops_template_path(template),
               method: metadata.new_record? ? :post : :patch,
               scope: :igsign_template_metadata,
               local: true do |f| %>
@@ -111,7 +111,7 @@
     <%= f.submit metadata.new_record? ? 'Save metadata' : 'Update metadata',
           class: 'btn btn-primary',
           style: 'min-width:160px;' %>
-    <%= link_to 'Cancel', admin_templates_path,
+    <%= link_to 'Cancel', legal_ops_templates_path,
           style: 'font-size:14px;color:#7B787F;text-decoration:none;' %>
   </div>
 <% end %>

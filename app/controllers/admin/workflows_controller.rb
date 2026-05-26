@@ -43,7 +43,7 @@ module Admin
       @caf.signatories = custom if custom
 
       if @caf.save
-        redirect_to admin_workflow_path(@caf), notice: 'CAF created. Review signatories and submit for approval.'
+        redirect_to legal_ops_workflow_path(@caf), notice: 'CAF created. Review signatories and submit for approval.'
       else
         render :new, status: :unprocessable_content
       end
@@ -53,7 +53,7 @@ module Admin
 
     def update
       if @caf.update(caf_params)
-        redirect_to admin_workflow_path(@caf), notice: 'CAF updated.'
+        redirect_to legal_ops_workflow_path(@caf), notice: 'CAF updated.'
       else
         render :edit, status: :unprocessable_content
       end
@@ -61,7 +61,7 @@ module Admin
 
     def destroy
       @caf.update!(status: 'cancelled')
-      redirect_to admin_workflows_path, notice: 'CAF cancelled.'
+      redirect_to legal_ops_workflows_path, notice: 'CAF cancelled.'
     end
 
     # POST /admin/workflows/:id/submit — Finalise draft and create DocuSeal submission
@@ -71,13 +71,13 @@ module Admin
         if result[:success]
           @caf.update!(status: 'pending_ig', caf_submission: result[:submission],
                        status_updated_at: Time.current)
-          redirect_to admin_workflow_path(@caf),
+          redirect_to legal_ops_workflow_path(@caf),
                       notice: 'CAF submitted for internal approval. Signatories have been notified.'
         else
-          redirect_to admin_workflow_path(@caf), alert: "Failed to create submission: #{result[:error]}"
+          redirect_to legal_ops_workflow_path(@caf), alert: "Failed to create submission: #{result[:error]}"
         end
       else
-        redirect_to admin_workflow_path(@caf), alert: 'Only draft CAFs can be submitted.'
+        redirect_to legal_ops_workflow_path(@caf), alert: 'Only draft CAFs can be submitted.'
       end
     end
 
@@ -87,12 +87,12 @@ module Admin
     def resend_invite
       submission = @caf.caf_submission
       unless submission
-        return redirect_to admin_workflow_path(@caf), alert: 'No submission found for this workflow.'
+        return redirect_to legal_ops_workflow_path(@caf), alert: 'No submission found for this workflow.'
       end
 
       active_stage = submission.caf_stages.active.ordered_by_position.first
       unless active_stage
-        return redirect_to admin_workflow_path(@caf),
+        return redirect_to legal_ops_workflow_path(@caf),
                            alert: 'No active stage found — workflow may already be complete.'
       end
 
@@ -109,7 +109,7 @@ module Admin
         count += 1
       end
 
-      redirect_to admin_workflow_path(@caf),
+      redirect_to legal_ops_workflow_path(@caf),
                   notice: "Invitations resent to #{count} pending #{count == 1 ? 'signatory' : 'signatories'}."
     end
 

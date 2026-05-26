@@ -1,0 +1,66 @@
+<% content_for :title, 'Legal Ops' %>
+
+<div class="max-w-4xl mx-auto px-4 py-8">
+
+  <div style="margin-bottom:32px;">
+    <p style="font-size:11px;color:#7B787F;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;">IGSIGN</p>
+    <h1 style="font-size:28px;font-weight:800;color:#162B3C;letter-spacing:-0.03em;margin:0;">Legal Ops</h1>
+    <div style="width:32px;height:3px;background:#45AC34;border-radius:2px;margin-top:8px;"></div>
+    <p style="margin-top:12px;font-size:14px;color:#7B787F;max-width:520px;line-height:1.6;">
+      Manage approval workflows, templates, signatories and matrices. Admin access only.
+    </p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;">
+
+    <%# Workflow Log %>
+    <%= link_to legal_ops_workflows_path,
+          style: 'display:block;background:#fff;border-radius:12px;border:1px solid #edf0f3;padding:24px;text-decoration:none;box-shadow:0 1px 6px rgba(22,43,60,0.06);transition:box-shadow 0.15s,border-color 0.15s;',
+          onmouseover: "this.style.boxShadow='0 4px 18px rgba(22,43,60,0.12)';this.style.borderColor='#45AC34';",
+          onmouseout: "this.style.boxShadow='0 1px 6px rgba(22,43,60,0.06)';this.style.borderColor='#edf0f3';" do %>
+      <div style="width:40px;height:40px;border-radius:10px;background:#f0faf0;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+        <%= svg_icon('collection', class: 'w-5 h-5', style: 'color:#45AC34;') %>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:#162B3C;margin-bottom:4px;">Workflow Log</div>
+      <div style="font-size:12px;color:#7B787F;line-height:1.5;">View and manage all CAF agreement workflows across entities.</div>
+    <% end %>
+
+    <%# Approval Matrices %>
+    <%= link_to legal_ops_approval_matrices_path,
+          style: 'display:block;background:#fff;border-radius:12px;border:1px solid #edf0f3;padding:24px;text-decoration:none;box-shadow:0 1px 6px rgba(22,43,60,0.06);transition:box-shadow 0.15s,border-color 0.15s;',
+          onmouseover: "this.style.boxShadow='0 4px 18px rgba(22,43,60,0.12)';this.style.borderColor='#45AC34';",
+          onmouseout: "this.style.boxShadow='0 1px 6px rgba(22,43,60,0.06)';this.style.borderColor='#edf0f3';" do %>
+      <div style="width:40px;height:40px;border-radius:10px;background:#f0faf0;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+        <%= svg_icon('table', class: 'w-5 h-5', style: 'color:#45AC34;') %>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:#162B3C;margin-bottom:4px;">Approval Matrices</div>
+      <div style="font-size:12px;color:#7B787F;line-height:1.5;">Configure which signatories are required for each agreement type and entity.</div>
+    <% end %>
+
+    <%# Templates %>
+    <%= link_to legal_ops_templates_path,
+          style: 'display:block;background:#fff;border-radius:12px;border:1px solid #edf0f3;padding:24px;text-decoration:none;box-shadow:0 1px 6px rgba(22,43,60,0.06);transition:box-shadow 0.15s,border-color 0.15s;',
+          onmouseover: "this.style.boxShadow='0 4px 18px rgba(22,43,60,0.12)';this.style.borderColor='#45AC34';",
+          onmouseout: "this.style.boxShadow='0 1px 6px rgba(22,43,60,0.06)';this.style.borderColor='#edf0f3';" do %>
+      <div style="width:40px;height:40px;border-radius:10px;background:#f0faf0;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+        <%= svg_icon('document', class: 'w-5 h-5', style: 'color:#45AC34;') %>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:#162B3C;margin-bottom:4px;">Templates</div>
+      <div style="font-size:12px;color:#7B787F;line-height:1.5;">Manage IGSIGN document templates, their metadata and active status.</div>
+    <% end %>
+
+    <%# Signatory Registry %>
+    <%= link_to legal_ops_signatories_path,
+          style: 'display:block;background:#fff;border-radius:12px;border:1px solid #edf0f3;padding:24px;text-decoration:none;box-shadow:0 1px 6px rgba(22,43,60,0.06);transition:box-shadow 0.15s,border-color 0.15s;',
+          onmouseover: "this.style.boxShadow='0 4px 18px rgba(22,43,60,0.12)';this.style.borderColor='#45AC34';",
+          onmouseout: "this.style.boxShadow='0 1px 6px rgba(22,43,60,0.06)';this.style.borderColor='#edf0f3';" do %>
+      <div style="width:40px;height:40px;border-radius:10px;background:#f0faf0;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+        <%= svg_icon('users', class: 'w-5 h-5', style: 'color:#45AC34;') %>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:#162B3C;margin-bottom:4px;">Signatory Registry</div>
+      <div style="font-size:12px;color:#7B787F;line-height:1.5;">View and manage authorised signatories across all Ignition Group entities.</div>
+    <% end %>
+
+  </div>
+
+</div>
