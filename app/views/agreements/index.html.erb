@@ -48,13 +48,41 @@
     </div>
   </div>
 
+  <%# ── Customer / Supplier / NDA filter chips ───────────────────────────── %>
+  <%
+    cur_rel   = params[:relationship].to_s
+    cur_atype = params[:agreement_type].to_s
+  %>
+  <div class="flex items-center gap-2 mb-3 flex-wrap">
+    <span class="text-xs text-gray-400 font-medium mr-1">Filter:</span>
+    <% [
+      ['All',      nil,        nil   ],
+      ['Customer', 'customer', nil   ],
+      ['Supplier', 'supplier', nil   ],
+      ['NDA',      nil,        'nda' ]
+    ].each do |lbl, rel, atype| %>
+      <%
+        chip_on = rel.to_s == cur_rel && atype.to_s == cur_atype
+        chip_on = cur_rel.blank? && cur_atype.blank? if rel.nil? && atype.nil?
+      %>
+      <%= link_to lbl,
+                  agreements_path(status: params[:status].presence,
+                                  relationship: rel,
+                                  agreement_type: atype),
+                  class: "px-3 py-1 rounded-full text-xs font-semibold transition-colors #{chip_on ? '' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}",
+                  style: chip_on ? 'background-color:#162B3C; color:#fff;' : '' %>
+    <% end %>
+  </div>
+
   <%# ── Filter tabs + view toggle ───────────────────────────────────────────── %>
   <div class="flex items-center justify-between mb-4 border-b border-gray-200">
     <div class="flex items-center gap-1">
       <% [['', 'All'], ['draft', 'Draft'], ['pending_ig', 'Pending IG'],
           ['sent_counterparty', 'With Counterparty'], ['complete', 'Complete']].each do |val, label| %>
         <% is_active = params[:status].to_s == val %>
-        <%= link_to agreements_path(status: val.presence),
+        <%= link_to agreements_path(status: val.presence,
+                                    relationship: params[:relationship].presence,
+                                    agreement_type: params[:agreement_type].presence),
                     class: "px-3 py-2 text-sm font-medium border-b-2 transition-colors -mb-px
             #{is_active ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-700'}" do %>
           <%= label %>
@@ -172,28 +200,33 @@
         pipeline_cols = [
           { key: 'draft',             label: 'Draft',            color: '#9ca3af' },
           { key: 'pending_ig',        label: 'IG Approval',      color: '#d97706' },
+          { key: 'group_signer',      label: 'Group Signer',     color: '#8b5cf6' },
           { key: 'sent_counterparty', label: 'With Counterparty', color: '#3b82f6' },
           { key: 'complete',          label: 'Complete',          color: '#16a34a' }
         ]
 
-        # Group all loaded agreements by status (include ig_complete in pending_ig column)
+        # Group all loaded agreements by status.
+        # pending_ig is split: if the active stage is a Group Signer stage → 'group_signer' bucket.
         grouped = @agreements.group_by do |a|
           case a.status
-          when 'ig_complete' then 'pending_ig'
+          when 'ig_complete' then 'group_signer'
+          when 'pending_ig'
+            active_st = a.caf_submission&.caf_stages&.detect { |s| s.status == 'active' }
+            active_st&.name&.include?('Group Signer') ? 'group_signer' : 'pending_ig'
           else a.status
           end
         end
       %>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <% pipeline_cols.each do |col| %>
           <div class="rounded-xl border border-gray-200 bg-gray-50 overflow-hidden">
             <%# Column header %>
             <div class="px-3 py-2.5 border-b border-gray-200 flex items-center justify-between" style="background-color:#f8fafc;">
               <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full" style="background-color:<%= col[:color] %>;"></span>
-                <span class="text-xs font-semibold text-gray-700"><%= col[:label] %></span>
+                <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color:<%= col[:color] %>;"></span>
+                <span class="text-xs font-semibold text-gray-700 leading-tight"><%= col[:label] %></span>
               </div>
-              <span class="text-xs font-bold text-gray-400"><%= (grouped[col[:key]] || []).size %></span>
+              <span class="text-xs font-bold text-gray-400 flex-shrink-0"><%= (grouped[col[:key]] || []).size %></span>
             </div>
 
             <%# Cards %>
@@ -204,21 +237,31 @@
                   a_od     = a.overdue?
                   a_warn   = a.slightly_overdue?
                   a_holder = a.current_holder_name
+                  a_entity = a.entity.to_s.split('_').first.to_s.upcase
                 %>
                 <div class="rounded-lg bg-white border shadow-sm px-3 py-2.5
                             <%= a_od ? 'border-red-200' : a_warn ? 'border-amber-200' : 'border-gray-200' %>">
-                  <div class="flex items-start justify-between gap-1 mb-1">
+                  <%# Top row: type + entity + overdue %>
+                  <div class="flex items-center gap-1 flex-wrap mb-1">
                     <span class="inline-flex px-1.5 py-0.5 rounded text-xs font-semibold text-white"
                           style="background-color:#1a2332;">
                       <%= a.agreement_type_label.split(' — ').first %>
                     </span>
-                    <% if a_od %>
-                      <span class="inline-flex px-1.5 py-0.5 rounded text-xs font-bold text-white bg-red-600 whitespace-nowrap">
-                        OVERDUE
+                    <% if a_entity.present? %>
+                      <span class="inline-flex px-1.5 py-0.5 rounded text-xs font-semibold"
+                            style="background-color:#e8f0fe; color:#1a2332;">
+                        <%= a_entity %>
                       </span>
                     <% end %>
+                    <span class="inline-flex px-1.5 py-0.5 rounded text-xs font-semibold
+                                 <%= a.commercial_supplier? ? 'text-amber-700 bg-amber-100' : 'text-blue-700 bg-blue-100' %>">
+                      <%= a.commercial_supplier? ? 'Supplier' : 'Customer' %>
+                    </span>
+                    <% if a_od %>
+                      <span class="inline-flex px-1.5 py-0.5 rounded text-xs font-bold text-white bg-red-600 whitespace-nowrap ml-auto">!</span>
+                    <% end %>
                   </div>
-                  <p class="text-sm font-semibold text-gray-900 leading-tight truncate mt-1">
+                  <p class="text-sm font-semibold text-gray-900 leading-tight truncate">
                     <%= a.contracting_party.presence || '—' %>
                   </p>
                   <% if a_holder.present? && !a.draft? && !a.complete? %>

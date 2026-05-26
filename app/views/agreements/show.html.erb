@@ -31,77 +31,230 @@
     </div>
   </div>
 
-  <%# ── Status Timeline ─────────────────────────────────────────────────────── %>
-  <%
-    tl_statuses = %w[draft pending_ig sent_counterparty complete]
-    status_order = CafWorkflow::STATUSES - ['cancelled']
-    current_idx  = status_order.index(@agreement.status) || 0
-    days         = @agreement.days_in_current_stage
+  <%# ── Stage Timeline — CafStage-aware ──────────────────────────────────── %>
+  <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4 overflow-x-auto">
+    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-5">Signing Pipeline</p>
 
-    tl_labels = {
-      'draft'             => 'Draft',
-      'pending_ig'        => 'Internal Review',
-      'sent_counterparty' => 'With Counterparty',
-      'complete'          => 'Complete'
-    }
-    tl_order = tl_statuses.map { |s| status_order.index(s) || 0 }
-  %>
-  <div class="rounded-xl border border-gray-200 bg-white p-5 mb-4">
-    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-5">Status Timeline</p>
+    <% if @caf_stages.any? %>
+      <%#
+        Real stage nodes from DB.
+        Prepend a synthetic "Draft" node (complete once submitted),
+        append a synthetic "Complete" node (active/done when last stage done).
+      %>
+      <%
+        days = @agreement.days_in_current_stage
+        all_stages_done = @caf_stages.all? { |s| s.status == 'complete' }
+      %>
 
-    <%# ── Horizontal timeline (desktop) / vertical (mobile) ── %>
-    <div class="relative">
-      <%# Connecting line (desktop only) %>
-      <div class="hidden sm:block absolute top-4 left-8 right-8 h-0.5 bg-gray-200" aria-hidden="true"></div>
+      <%# Horizontal scroll rail on mobile %>
+      <div class="flex items-start gap-0 min-w-max sm:min-w-0">
 
-      <ol class="relative flex flex-col sm:flex-row items-start sm:items-start justify-between gap-6 sm:gap-0">
-        <% tl_statuses.each_with_index do |stage_key, idx| %>
+        <%# ── Synthetic DRAFT node (always complete once stages exist) %>
+        <div class="flex flex-col items-center" style="min-width:80px;">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0"
+               style="background-color:#45AC34;">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
+          </div>
+          <p class="text-xs font-semibold text-gray-600 mt-2 text-center">Draft</p>
+          <p class="text-xs text-green-600 mt-0.5">Done</p>
+        </div>
+
+        <% @caf_stages.each_with_index do |stage, idx| %>
+          <%# Connector arrow %>
+          <div class="flex items-center self-start mt-3.5 mx-1">
+            <div class="w-6 h-0.5 bg-gray-200"></div>
+            <svg class="w-3 h-3 text-gray-300 flex-shrink-0 -ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+          </div>
+
           <%
-            stage_order_idx  = status_order.index(stage_key) || 0
-            is_done    = stage_order_idx < current_idx
-            is_current = stage_order_idx == current_idx
-            is_upcoming = stage_order_idx > current_idx
+            is_cp      = stage.name.include?('Counterparty')
+            is_done    = stage.status == 'complete'
+            is_active  = stage.status == 'active'
+            is_pending = stage.status == 'pending'
+            is_parallel = stage.routing == 'parallel'
+            subs       = stage.caf_stage_submitters
+            signed_ct  = subs.count { |css| css.submitter&.completed_at.present? }
+            total_ct   = subs.size
           %>
-          <li class="flex flex-row sm:flex-col items-center sm:items-center gap-3 sm:gap-2 flex-1 sm:text-center">
-            <%# Node %>
-            <div class="relative z-10 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center
-                        <%= is_done    ? 'text-white'
-                            : is_current ? 'text-white ring-2 ring-offset-2 ring-blue-400'
-                            : 'bg-gray-100 text-gray-400 border border-gray-200' %>"
-                 style="<%= is_done ? 'background-color:#45AC34;' : is_current ? 'background-color:#162B3C;' : '' %>">
+
+          <div class="flex flex-col items-center" style="min-width:<%= is_parallel && total_ct > 0 ? '160px' : '100px' %>;">
+            <%# Stage node %>
+            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
+                        <%= is_done ? 'text-white' : is_active ? 'text-white ring-2 ring-offset-2' : 'bg-gray-100 text-gray-400 border border-gray-200' %>"
+                 style="<%= is_done ? 'background-color:#45AC34;' : is_active ? 'background-color:#162B3C; ring-color:#93c5fd;' : '' %>">
               <% if is_done %>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
-              <% elsif is_current && !@agreement.draft? %>
-                <%# Pulsing dot for active stages %>
+              <% elsif is_active %>
                 <span class="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span>
               <% else %>
-                <span class="text-xs font-bold"><%= idx + 1 %></span>
+                <span class="text-xs font-bold"><%= idx + 2 %></span>
               <% end %>
             </div>
 
-            <%# Label + metadata %>
-            <div class="flex flex-col sm:items-center">
-              <p class="text-xs font-semibold
-                        <%= is_current ? 'text-gray-900' : is_done ? 'text-gray-600' : 'text-gray-400' %>">
-                <%= tl_labels[stage_key] %>
+            <%# Stage label %>
+            <%
+              short_name = case stage.name
+                           when /Internal/i    then 'Internal Approval'
+                           when /Group Signer/i then 'Group Signer'
+                           when /Counterparty/i then 'Counterparty'
+                           else stage.name
+                           end
+            %>
+            <p class="text-xs font-semibold mt-2 text-center leading-tight
+                      <%= is_done ? 'text-gray-600' : is_active ? 'text-gray-900' : 'text-gray-400' %>">
+              <%= short_name %>
+            </p>
+
+            <%# Status sub-label %>
+            <% if is_done %>
+              <p class="text-xs text-green-600 mt-0.5">Done</p>
+            <% elsif is_active && is_parallel && total_ct > 0 %>
+              <p class="text-xs mt-0.5 font-semibold
+                        <%= signed_ct == total_ct ? 'text-green-600' : days > 9 ? 'text-red-600' : days > 5 ? 'text-amber-600' : 'text-gray-500' %>">
+                <%= signed_ct %>/<%= total_ct %> signed
               </p>
-              <% if is_done %>
-                <p class="text-xs text-green-600 mt-0.5">Done</p>
-              <% elsif is_current && !@agreement.draft? %>
-                <p class="text-xs mt-0.5 <%= days > 9 ? 'text-red-600 font-semibold' : days > 5 ? 'text-amber-600' : 'text-gray-400' %>">
-                  <%= days == 0 ? 'Today' : "#{days}d waiting" %>
-                </p>
-              <% end %>
-            </div>
-          </li>
+            <% elsif is_active %>
+              <p class="text-xs mt-0.5 <%= days > 9 ? 'text-red-600 font-semibold' : days > 5 ? 'text-amber-600' : 'text-gray-400' %>">
+                <%= days == 0 ? 'Today' : "#{days}d waiting" %>
+              </p>
+            <% elsif is_pending %>
+              <p class="text-xs text-gray-400 mt-0.5">Pending</p>
+            <% end %>
 
-          <%# Vertical connector (mobile only, not after last item) %>
-          <% unless idx == tl_statuses.length - 1 %>
-            <li class="sm:hidden ml-4 w-0.5 h-4 bg-gray-200" aria-hidden="true"></li>
-          <% end %>
+            <%# Parallel Stage 0 — approver sub-grid %>
+            <% if is_parallel && (is_active || is_done) && subs.any? %>
+              <div class="mt-3 w-full space-y-1">
+                <% subs.sort_by(&:position).each do |css| %>
+                  <% signed = css.submitter&.completed_at.present? %>
+                  <div class="flex items-center gap-1.5 px-2 py-1 rounded-md
+                              <%= signed ? 'bg-green-50' : 'bg-gray-50' %>">
+                    <% if signed %>
+                      <svg class="w-3 h-3 flex-shrink-0 text-green-500" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
+                    <% else %>
+                      <span class="w-3 h-3 flex-shrink-0 rounded-full border border-gray-300 bg-white inline-block"></span>
+                    <% end %>
+                    <span class="text-xs <%= signed ? 'text-green-700 line-through' : 'text-gray-600' %> truncate leading-tight"
+                          style="max-width:110px;" title="<%= css.submitter&.name %>">
+                      <%= css.submitter&.name&.split&.first %>
+                    </span>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
         <% end %>
-      </ol>
-    </div>
+
+        <%# Connector to Complete %>
+        <div class="flex items-center self-start mt-3.5 mx-1">
+          <div class="w-6 h-0.5 bg-gray-200"></div>
+          <svg class="w-3 h-3 text-gray-300 flex-shrink-0 -ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+        </div>
+
+        <%# ── Synthetic COMPLETE node %>
+        <div class="flex flex-col items-center" style="min-width:80px;">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
+                      <%= all_stages_done ? 'text-white' : 'bg-gray-100 text-gray-400 border border-gray-200' %>"
+               style="<%= all_stages_done ? 'background-color:#45AC34;' : '' %>">
+            <% if all_stages_done %>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
+            <% else %>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+            <% end %>
+          </div>
+          <p class="text-xs font-semibold mt-2 text-center <%= all_stages_done ? 'text-gray-900' : 'text-gray-400' %>">Complete</p>
+          <% if all_stages_done && @agreement.status_updated_at.present? %>
+            <p class="text-xs text-green-600 mt-0.5"><%= @agreement.status_updated_at.strftime('%d %b') %></p>
+          <% end %>
+        </div>
+
+      </div>
+
+    <% else %>
+      <%# Draft: no submission yet — simple 4-node skeleton %>
+      <%
+        tl_statuses = %w[draft pending_ig sent_counterparty complete]
+        status_order = CafWorkflow::STATUSES - ['cancelled']
+        current_idx  = status_order.index(@agreement.status) || 0
+        days         = @agreement.days_in_current_stage
+        tl_labels = { 'draft' => 'Draft', 'pending_ig' => 'Internal Review',
+                      'sent_counterparty' => 'With Counterparty', 'complete' => 'Complete' }
+      %>
+      <div class="relative">
+        <div class="hidden sm:block absolute top-4 left-8 right-8 h-0.5 bg-gray-200" aria-hidden="true"></div>
+        <ol class="relative flex flex-col sm:flex-row items-start sm:items-start justify-between gap-6 sm:gap-0">
+          <% tl_statuses.each_with_index do |stage_key, idx| %>
+            <%
+              s_idx      = status_order.index(stage_key) || 0
+              is_done    = s_idx < current_idx
+              is_current = s_idx == current_idx
+            %>
+            <li class="flex flex-row sm:flex-col items-center sm:items-center gap-3 sm:gap-2 flex-1 sm:text-center">
+              <div class="relative z-10 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center
+                          <%= is_done ? 'text-white' : is_current ? 'text-white' : 'bg-gray-100 text-gray-400 border border-gray-200' %>"
+                   style="<%= is_done ? 'background-color:#45AC34;' : is_current ? 'background-color:#162B3C;' : '' %>">
+                <% if is_done %>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
+                <% else %>
+                  <span class="text-xs font-bold"><%= idx + 1 %></span>
+                <% end %>
+              </div>
+              <div class="flex flex-col sm:items-center">
+                <p class="text-xs font-semibold <%= is_current ? 'text-gray-900' : is_done ? 'text-gray-600' : 'text-gray-400' %>">
+                  <%= tl_labels[stage_key] %>
+                </p>
+                <p class="text-xs mt-0.5 <%= is_done ? 'text-green-600' : 'text-gray-400' %>">
+                  <%= is_done ? 'Done' : (is_current ? 'Current' : 'Pending') %>
+                </p>
+              </div>
+            </li>
+            <% unless idx == tl_statuses.length - 1 %>
+              <li class="sm:hidden ml-4 w-0.5 h-4 bg-gray-200" aria-hidden="true"></li>
+            <% end %>
+          <% end %>
+        </ol>
+      </div>
+    <% end %>
+  </div>
+
+  <%# ── Entity + Relationship card ────────────────────────────────────────── %>
+  <div class="rounded-xl border border-gray-200 bg-white px-5 py-3 mb-4 flex items-center gap-3 flex-wrap">
+    <%# Entity badge %>
+    <% if @entity_record %>
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold text-white"
+            style="background-color:#162B3C;">
+        <%= @entity_record.short_name || @entity_record.name %>
+      </span>
+    <% elsif @agreement.entity.present? %>
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold text-white"
+            style="background-color:#162B3C;">
+        <%= @agreement.entity.to_s.upcase %>
+      </span>
+    <% end %>
+
+    <%# Customer / Supplier chip %>
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
+                 <%= @agreement.commercial_supplier? ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700' %>">
+      <%= @agreement.commercial_supplier? ? '↑ Supplier' : '↓ Customer' %>
+    </span>
+
+    <%# Counterparty name %>
+    <% if @agreement.contracting_party.present? %>
+      <span class="text-sm text-gray-700 font-medium"><%= @agreement.contracting_party %></span>
+    <% end %>
+
+    <%# Separator %>
+    <span class="text-gray-200 hidden sm:inline">|</span>
+
+    <%# Days in current stage %>
+    <% unless @agreement.draft? || @agreement.complete? || @agreement.cancelled? %>
+      <%
+        d = @agreement.days_in_current_stage
+        day_cls = d > 9 ? 'text-red-600 font-semibold' : d > 5 ? 'text-amber-600 font-semibold' : 'text-gray-500'
+      %>
+      <span class="text-xs <%= day_cls %>">
+        <%= d == 0 ? 'In progress today' : "#{d} #{d == 1 ? 'day' : 'days'} in current stage" %>
+      </span>
+    <% end %>
   </div>
 
   <%# ── Current Status Card ─────────────────────────────────────────────────── %>

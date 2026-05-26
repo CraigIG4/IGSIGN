@@ -19,6 +19,15 @@ class AgreementsController < ApplicationController
     sf = params[:status].to_s.strip
     scope = scope.where(status: sf) if sf.present? && CafWorkflow::STATUSES.include?(sf)
 
+    # Customer / Supplier filter
+    cr = params[:relationship].to_s.strip
+    scope = scope.commercial_customer if cr == 'customer'
+    scope = scope.commercial_supplier if cr == 'supplier'
+
+    # Agreement-type filter (e.g. nda)
+    at_filter = params[:agreement_type].to_s.strip
+    scope = scope.where(agreement_type: at_filter) if at_filter.present? && CafWorkflow::AGREEMENT_TYPES.key?(at_filter)
+
     @agreements = scope
     @stats = {
       total:   current_account.caf_workflows.count,
@@ -36,6 +45,12 @@ class AgreementsController < ApplicationController
     @submitter_statuses     = build_submitter_statuses(@agreement)
     @counterparty_signatory = load_counterparty_signatory
     @current_holder         = load_current_holder
+    @caf_stages             = @agreement.caf_submission
+                                &.caf_stages
+                                &.includes(caf_stage_submitters: :submitter)
+                                &.ordered_by_position
+                                &.to_a || []
+    @entity_record = IgEntity.find_by(key: @agreement.entity)
   end
 
   # ── Signing Journey fragment (Turbo Frame polling endpoint) ────────────
