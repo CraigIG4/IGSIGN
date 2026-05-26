@@ -11,10 +11,11 @@ Rails.application.routes.draw do
 
   # Authenticated users land on /agreements; unauthenticated see the sign-in page.
   # /dashboard remains accessible for admins who need the DocuSeal submission view.
+  # Bare / redirects to sign-in — sessions#new via Devise is unreachable as a root route.
   authenticated :user do
     root to: 'agreements#index', as: :authenticated_root
   end
-  root to: 'sessions#new'
+  root to: redirect('/sign_in')
 
   get 'up', to: 'health#show'
 
