@@ -87,6 +87,10 @@ class CafWorkflow < ApplicationRecord
 
   STATUSES = %w[draft pending_ig ig_complete sent_counterparty complete cancelled].freeze
 
+  # :customer (0) — counterparty is a customer of Ignition (default)
+  # :supplier (1) — counterparty is a supplier; adds Procurement approver to Stage 0
+  enum :commercial_relationship, { customer: 0, supplier: 1 }, prefix: :commercial
+
   belongs_to :account
   belongs_to :created_by_user, class_name: 'User'
   belongs_to :company, optional: true
@@ -157,7 +161,7 @@ class CafWorkflow < ApplicationRecord
   end
 
   def auto_assign_signatories!
-    chain = IgSignatories.chain_for(entity, derived_caf_type)[:stage1]
+    chain = IgSignatories.chain_for(entity, derived_caf_type, is_supplier: commercial_supplier?)[:stage1]
     self.signatories = chain.map.with_index do |entry, idx|
       {
         'position'    => idx,

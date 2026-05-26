@@ -11,6 +11,14 @@ class CafWebhookHandler
   # Called after a submitter signs.
   # Checks whether the current active stage is now fully signed and fires
   # the correct handler.
+  #
+  # Stage routing convention (set by CafSubmissionCreator#build_default_stages):
+  #   - Last stage by position  = Counterparty Signing
+  #   - Second-to-last stage    = last internal stage (fires CafCompletionHandler)
+  #   - Any earlier stage       = intermediate internal stage (advance quietly)
+  #
+  # This is position-count-agnostic: works for 2-stage (NDA), 3-stage (standard),
+  # and 4-stage (Spot Connect: Stage 0 → Siddeek → Sean → Counterparty) flows.
   def call
     caf = find_caf_workflow
     return unless caf
@@ -20,16 +28,25 @@ class CafWebhookHandler
 
     return unless active_stage.all_submitters_complete?
 
-    case active_stage.position
-    when 0
-      # Internal IG stage complete → strip CAF, send to counterparty
-      CafCompletionHandler.new(caf).call
-    when 1
+    stages = caf.caf_submission&.caf_stages&.ordered_by_position&.to_a
+    return unless stages&.any?
+
+    last_stage          = stages.last
+    last_internal_stage = stages[-2]  # nil only when there is a single stage (misconfiguration)
+
+    if active_stage.id == last_stage&.id
       # Counterparty stage complete → record signatory memory, then send audit bundle
       record_counterparty_signatories!(caf, active_stage)
       CafAuditBundleSender.new(caf).call
+    elsif active_stage.id == last_internal_stage&.id
+      # Last internal stage (parallel-approval or final group signer) complete →
+      # strip internal docs, populate counterparty submitter, update workflow status.
+      CafCompletionHandler.new(caf).call
     else
-      Rails.logger.warn("[CafWebhookHandler] Unknown stage position #{active_stage.position} for CAF #{caf.id}")
+      # Intermediate internal stage (e.g. Stage 0 parallel when group-signer stages follow).
+      # CafStage#complete! already called advance_to_next_stage! inside the submitter
+      # completion callback — we just mark the stage complete here so that call is idempotent.
+      active_stage.complete!
     end
   end
 

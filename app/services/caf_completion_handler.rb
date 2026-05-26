@@ -39,7 +39,9 @@ class CafCompletionHandler
       end
 
       # ── 3. Record stage-transition audit event ───────────────────────────────
-      record_stage_transition_event
+      # Pass stage1 directly — internal_stage queries for status:'active', which
+      # would return nil here because stage1.complete! already changed it to 'complete'.
+      record_stage_transition_event(from_stage: stage1, to_stage: stage2)
 
       # ── 4. Update workflow status ─────────────────────────────────────────────
       @caf.update!(status: 'sent_counterparty', status_updated_at: Time.current)
@@ -57,18 +59,29 @@ class CafCompletionHandler
 
   private
 
+  # Returns the currently active internal stage.
+  # In multi-stage flows (parallel approval → group signer(s) → counterparty),
+  # CafCompletionHandler is fired for the LAST internal stage — which may be at
+  # position 0 (NDA / no group signers) or position N-1 (final group signer).
+  # Using the active stage rather than `.first` makes this position-agnostic.
   def internal_stage
-    @caf.caf_submission&.caf_stages&.ordered_by_position&.first
+    @caf.caf_submission&.caf_stages&.where(status: 'active')&.ordered_by_position&.first
   end
 
+  # Returns the counterparty stage.
+  # By CafSubmissionCreator convention the counterparty stage is always the last
+  # one by position, regardless of how many internal stages precede it.
   def counterparty_stage
-    @caf.caf_submission&.caf_stages&.ordered_by_position&.second
+    @caf.caf_submission&.caf_stages&.ordered_by_position&.last
   end
 
-  # Creates a SubmissionEvent documenting the Stage 1 → Stage 2 transition,
+  # Creates a SubmissionEvent documenting the last-internal → counterparty transition,
   # recording which document UUIDs are visible to the counterparty and which
   # remain concealed (internal_only: true).
-  def record_stage_transition_event
+  #
+  # from_stage and to_stage are passed explicitly because internal_stage queries
+  # for status:'active' — by call time stage1 is already 'complete'.
+  def record_stage_transition_event(from_stage:, to_stage:)
     submission = @caf.caf_submission
     return unless submission
 
@@ -81,8 +94,8 @@ class CafCompletionHandler
       event_type:      'stage_transition_to_counterparty',
       event_timestamp: Time.current,
       data: {
-        stage_from:               0,
-        stage_to:                 1,
+        stage_from:               from_stage&.position,
+        stage_to:                 to_stage&.position,
         caf_workflow_id:          @caf.id,
         visible_document_uuids:   visible_uuids,
         concealed_document_uuids: concealed_uuids

@@ -79,7 +79,11 @@ class CafApprovalMatrix < ApplicationRecord
   #   entity:         (String, optional) — e.g. "iti"
   #   value:          (Numeric, optional) — contract value in ZAR
   #
-  def self.resolve_for(account, agreement_type:, entity: nil, value: nil)
+  # commercial_relationship: accepted for forward compatibility (e.g. "customer", "supplier")
+  # but not yet used in matrix selection — the caf_approval_matrices table has no
+  # corresponding column.  When supplier-specific matrix overrides are needed,
+  # add a :commercial_relationship column here and extend covers_commercial_relationship?.
+  def self.resolve_for(account, agreement_type:, entity: nil, value: nil, commercial_relationship: nil) # rubocop:disable Lint/UnusedMethodArgument
     candidates = active
       .for_account(account)
       .select { |m| m.covers_agreement_type?(agreement_type) }

@@ -31,6 +31,15 @@ class CafSubmissionCreator
     'COO'              => 'CEO'   # COO signs in the CEO block when the CEO is absent
   }.freeze
 
+  # IgEntitySignatory positions that belong to the parallel Stage 0 internal-approval phase.
+  INTERNAL_POSITIONS = %w[
+    bu_head bu_cfo bu_cfo_alternate group_clo group_cfo procurement approver_only
+  ].freeze
+
+  # IgEntitySignatory positions that run as sequential group-signer stages (Stage 1+).
+  # Order matters: group_signer is always invited before group_signer_alt.
+  SEQUENTIAL_POSITIONS = %w[group_signer group_signer_alt].freeze
+
   def initialize(caf, initiated_by_user)
     @caf  = caf
     @user = initiated_by_user
@@ -110,13 +119,24 @@ class CafSubmissionCreator
         email:    sig['email'],
         uuid:     uuid,
         slug:     SecureRandom.base58(14),
-        metadata: { 'caf_role' => sig['role'], 'caf_position' => idx }
+        metadata: {
+          'caf_role'       => sig['role'],
+          'caf_position'   => idx,
+          'chain_position' => sig['chain_position'].to_s
+        }
       )
     end
   end
 
   def attach_stages(submission)
-    matrix = CafApprovalMatrix.for(@caf.account, caf_type_for_matrix)
+    # resolve_for is the preferred lookup; fall back to legacy document_type lookup.
+    matrix = CafApprovalMatrix.resolve_for(
+      @caf.account,
+      agreement_type:          @caf.agreement_type,
+      entity:                  @caf.entity,
+      commercial_relationship: @caf.commercial_relationship
+    ) || CafApprovalMatrix.for(@caf.account, caf_type_for_matrix)
+
     if matrix
       matrix.build_stages_for(submission).each(&:save!)
     else
@@ -373,42 +393,79 @@ class CafSubmissionCreator
             "Create it in the Templates editor (#{@caf.account.id}) first.")
   end
 
+  # Builds the default stage chain based on the agreement type and entity.
+  #
+  # Stage layout:
+  #   Position 0      — "Internal CAF Approval"  (parallel, all internal approvers)
+  #   Position 1 … N-1 — "Group Signer Approval"  (ordered, one stage per group signer)
+  #                       [absent for NDAs; 2 stages for Spot Connect: Siddeek → Sean]
+  #   Position N       — "Counterparty Signing"   (parallel, populated at hand-off)
+  #
+  # strip_internal_on_complete is set on whichever stage is the last before Counterparty
+  # so that the CAF summary PDF is marked as stripped at the correct transition point.
   def build_default_stages(submission)
-    stage1 = create_internal_stage(submission)
-    assign_submitters_to_stage(submission, stage1)
-    create_counterparty_stage(submission)
-  end
+    is_nda     = @caf.agreement_type == 'nda'
+    group_subs = is_nda ? [] : submitters_by_chain_positions(submission, SEQUENTIAL_POSITIONS)
 
-  def create_internal_stage(submission)
-    submission.caf_stages.create!(
-      name: 'Internal CAF Approval',
-      position: 0,
-      routing: 'ordered',
-      strip_internal_on_complete: true,
-      status: 'active',
-      activated_at: Time.current
+    # Stage 0: parallel internal approval
+    # strip: true when this is also the last internal stage (NDA, or no group signers configured).
+    stage0 = submission.caf_stages.create!(
+      name:                       'Internal CAF Approval',
+      position:                   0,
+      routing:                    'parallel',
+      strip_internal_on_complete: group_subs.empty?,
+      status:                     'pending'
     )
-  end
+    assign_stage_submitters(stage0, submitters_by_chain_positions(submission, INTERNAL_POSITIONS))
 
-  def assign_submitters_to_stage(submission, stage)
-    submission.submitters.order(created_at: :asc).each_with_index do |submitter, idx|
+    # Stage 1 … N-1: sequential group signer(s) (skipped for NDAs)
+    stage_pos = 1
+    group_subs.each_with_index do |sub, i|
+      is_last_group_signer = (i == group_subs.size - 1)
+      stage = submission.caf_stages.create!(
+        name:                       'Group Signer Approval',
+        position:                   stage_pos,
+        routing:                    'ordered',
+        strip_internal_on_complete: is_last_group_signer,
+        status:                     'pending'
+      )
       CafStageSubmitter.create!(
         caf_stage: stage,
-        submitter: submitter,
-        role: submitter.metadata&.dig('caf_role') || 'Approver',
-        position: idx
+        submitter: sub,
+        role:      sub.metadata&.dig('caf_role') || 'Group Signer',
+        position:  0
       )
+      stage_pos += 1
     end
+
+    # Final stage: counterparty (always last; submitters populated at hand-off)
+    submission.caf_stages.create!(
+      name:                       'Counterparty Signing',
+      position:                   stage_pos,
+      routing:                    'parallel',
+      strip_internal_on_complete: false,
+      status:                     'pending'
+    )
   end
 
-  def create_counterparty_stage(submission)
-    submission.caf_stages.create!(
-      name: 'Counterparty Signing',
-      position: 1,
-      routing: 'parallel',
-      strip_internal_on_complete: false,
-      status: 'pending'
-    )
+  # Returns submission submitters whose chain_position falls in +positions+,
+  # ordered by the prescribed position index so signing order is deterministic.
+  def submitters_by_chain_positions(submission, positions)
+    submission.submitters
+              .select { |s| positions.include?(s.metadata&.dig('chain_position').to_s) }
+              .sort_by { |s| positions.index(s.metadata&.dig('chain_position').to_s) || 999 }
+  end
+
+  # Assigns +subs+ to +stage+ as CafStageSubmitters, preserving supplied order.
+  def assign_stage_submitters(stage, subs)
+    subs.each_with_index do |sub, idx|
+      CafStageSubmitter.create!(
+        caf_stage: stage,
+        submitter: sub,
+        role:      sub.metadata&.dig('caf_role') || 'Approver',
+        position:  idx
+      )
+    end
   end
 
   def process_document_async(attachment)
