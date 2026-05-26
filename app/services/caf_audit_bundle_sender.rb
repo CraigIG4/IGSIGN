@@ -39,10 +39,11 @@ class CafAuditBundleSender
 
   private
 
+  # Returns the counterparty stage, which is always the LAST stage by position.
+  # (Mirrors CafCompletionHandler#counterparty_stage — do not use .second here
+  # as that breaks for 3-stage and 4-stage flows; .second only works for 2-stage NDA.)
   def counterparty_stage
-    caf_submission = @caf.caf_submission
-    caf_stages = caf_submission&.caf_stages
-    caf_stages&.ordered_by_position&.second
+    @caf.caf_submission&.caf_stages&.ordered_by_position&.last
   end
 
   def deliver_audit_bundle
@@ -62,26 +63,43 @@ class CafAuditBundleSender
   end
 
   # Returns the ActiveStorage::Attachment objects for all counterparty-visible
-  # (internal_only: false) documents attached to the CAF submission.
-  # Works for both NDA (dynamically generated agreement PDF) and non-NDA
-  # (uploaded contract blobs).
+  # documents attached to the CAF submission.
   #
-  # Falls back gracefully to an empty array if the submission is missing or
-  # has no CafStageDocument records (e.g., workflow created before this fix).
+  # Primary path: use CafStageDocument records (internal_only: false) to
+  # identify which blobs should accompany the audit bundle.
+  #
+  # Fallback A: all stage docs are internal-only (e.g. LibreOffice failed
+  # during NDA PDF generation so no external CafStageDocument was created).
+  # In this case return submission documents that are NOT in the internal list.
+  #
+  # Fallback B: no CafStageDocument records at all (workflow created before
+  # this feature existed). Return all submission documents.
   def collect_signed_documents
     submission = @caf.caf_submission
     return [] unless submission
 
-    visible_uuids = submission.caf_stage_documents
-                              .where(internal_only: false)
-                              .pluck(:document_uuid)
-                              .to_set
-    return [] if visible_uuids.empty?
+    stage_docs = submission.caf_stage_documents
+    if stage_docs.exists?
+      visible_uuids = stage_docs.where(internal_only: false).pluck(:document_uuid).to_set
 
-    submission.documents
-              .attachments
-              .includes(:blob)
-              .select { |att| visible_uuids.include?(att.uuid) }
+      unless visible_uuids.empty?
+        return submission.documents.attachments.includes(:blob)
+                         .select { |att| visible_uuids.include?(att.uuid) }
+      end
+
+      # All stage docs are internal-only — fall back to non-internal attachments
+      Rails.logger.warn(
+        "[CafAuditBundleSender] No external stage docs for caf #{@caf.id} " \
+        '— falling back to non-internal submission docs'
+      )
+      internal_uuids = stage_docs.pluck(:document_uuid).to_set
+      return submission.documents.attachments.includes(:blob)
+                       .reject { |att| internal_uuids.include?(att.uuid) }
+    end
+
+    # No stage doc records at all — return everything on the submission
+    Rails.logger.warn("[CafAuditBundleSender] No stage docs for caf #{@caf.id} — attaching all submission docs")
+    submission.documents.attachments.includes(:blob).to_a
   rescue StandardError => e
     Rails.logger.warn("[CafAuditBundleSender] collect_signed_documents failed for caf #{@caf.id}: #{e.message}")
     []

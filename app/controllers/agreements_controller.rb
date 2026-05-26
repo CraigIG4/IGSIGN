@@ -167,7 +167,13 @@ class AgreementsController < ApplicationController
     end
 
     sync_template_submitters!
-    auto_place_fields! if @agreement.template.fields.blank?
+    if @agreement.template.fields.blank?
+      placed = auto_place_fields!
+      if placed.zero?
+        flash.now[:alert] = 'Signature fields could not be auto-placed — ' \
+                            'please drag fields onto the document manually.'
+      end
+    end
 
     template = @agreement.template
     ActiveRecord::Associations::Preloader.new(
@@ -421,19 +427,33 @@ class AgreementsController < ApplicationController
   # Populates the agreement template with auto-placed signature / name / date
   # blocks for each signatory party — one row per party stacked vertically.
   # Only runs when the template has no fields yet, so manual edits are preserved.
+  #
+  # Returns the number of fields placed (0 on any failure path so callers can
+  # detect and surface a user-facing warning).
   def auto_place_fields!
     template = @agreement.template
-    return if (template.fields || []).any?
+    return 0 if (template.fields || []).any?
 
     att_uuid = template.schema_documents.first&.uuid
-    return unless att_uuid
+    unless att_uuid
+      Rails.logger.warn("[IGSIGN] auto_place_fields!: no schema document for template #{template.id}")
+      return 0
+    end
 
-    subs   = template.submitters || []
+    subs = template.submitters || []
+    if subs.empty?
+      Rails.logger.warn("[IGSIGN] auto_place_fields!: no submitters for template #{template.id}")
+      return 0
+    end
+
     fields = subs.each_with_index.flat_map do |sub, idx|
       build_auto_fields(sub['uuid'], sub['name'], att_uuid, idx)
     end
 
-    template.update!(fields: fields) if fields.any?
+    return 0 unless fields.any?
+
+    template.update!(fields: fields)
+    fields.length
   end
 
   # Builds three auto-placed fields (signature, full-name, date) for one party.
