@@ -61,15 +61,54 @@
       </p>
       <%= form_for current_user, url: update_password_settings_profile_index_path, method: :patch, html: { autocomplete: 'off' } do |f| %>
         <%= f.label :password, t('new_password'), class: 'label' %>
-        <%= f.password_field :password, autocomplete: 'off', class: 'base-input peer w-full', required: true %>
+        <password-input class="block relative">
+          <%= f.password_field :password, autocomplete: 'off', class: 'base-input peer w-full pr-10', required: true,
+                               data: { target: 'password-input.passwordInput' } %>
+          <button type="button" tabindex="-1"
+                  class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                  data-target="password-input.togglePasswordVisibility">
+            <span data-target="password-input.hiddenPasswordIcon">
+              <%= svg_icon('eye', class: 'w-5 h-5') %>
+            </span>
+            <span data-target="password-input.visiblePasswordIcon" class="hidden">
+              <%= svg_icon('eye_off', class: 'w-5 h-5') %>
+            </span>
+          </button>
+        </password-input>
         <div class="<%= 'peer-invalid:hidden' if current_user.errors.blank? %> space-y-4 mt-4">
           <div class="form-control">
             <%= f.label :password_confirmation, t('confirm_password'), class: 'label' %>
-            <%= f.password_field :password_confirmation, autocomplete: 'off', class: 'base-input' %>
+            <password-input class="block relative">
+              <%= f.password_field :password_confirmation, autocomplete: 'off', class: 'base-input pr-10',
+                                   data: { target: 'password-input.passwordInput' } %>
+              <button type="button" tabindex="-1"
+                      class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                      data-target="password-input.togglePasswordVisibility">
+                <span data-target="password-input.hiddenPasswordIcon">
+                  <%= svg_icon('eye', class: 'w-5 h-5') %>
+                </span>
+                <span data-target="password-input.visiblePasswordIcon" class="hidden">
+                  <%= svg_icon('eye_off', class: 'w-5 h-5') %>
+                </span>
+              </button>
+            </password-input>
           </div>
           <div class="form-control">
             <%= f.label :current_password, t('current_password'), class: 'label' %>
-            <%= f.password_field :current_password, autocomplete: 'current-password', class: 'base-input' %>
+            <password-input class="block relative">
+              <%= f.password_field :current_password, autocomplete: 'current-password', class: 'base-input pr-10',
+                                   data: { target: 'password-input.passwordInput' } %>
+              <button type="button" tabindex="-1"
+                      class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                      data-target="password-input.togglePasswordVisibility">
+                <span data-target="password-input.hiddenPasswordIcon">
+                  <%= svg_icon('eye', class: 'w-5 h-5') %>
+                </span>
+                <span data-target="password-input.visiblePasswordIcon" class="hidden">
+                  <%= svg_icon('eye_off', class: 'w-5 h-5') %>
+                </span>
+              </button>
+            </password-input>
             <% if Accounts.can_send_emails?(current_account) %>
               <span class="label-text-alt mt-1">
                 <%= t('dont_remember_your_current_password_click_here_to_reset_it_html') %>

@@ -280,7 +280,6 @@ Rails.application.routes.draw do
       collection do
         patch :update_contact
         patch :update_password
-        patch :update_app_url
         patch :complete_tour
       end
     end

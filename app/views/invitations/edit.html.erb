@@ -21,18 +21,44 @@
         <%= f.hidden_field :reset_password_token %>
         <div style="margin-bottom:14px;">
           <label style="font-size:12px;font-weight:600;color:#162B3C;margin-bottom:5px;display:block;letter-spacing:0.2px;">New password</label>
-          <%= f.password_field :password, autofocus: true, autocomplete: 'new-password',
-              style: 'width:100%;padding:10px 13px;border:1.5px solid #e2e6ea;border-radius:7px;font-size:14px;color:#162B3C;background:#f9fbfc;outline:none;box-sizing:border-box;',
-              placeholder: 'Choose a strong password' %>
+          <password-input style="display:block;position:relative;">
+            <%= f.password_field :password, autofocus: true, autocomplete: 'new-password',
+                style: 'width:100%;padding:10px 40px 10px 13px;border:1.5px solid #e2e6ea;border-radius:7px;font-size:14px;color:#162B3C;background:#f9fbfc;outline:none;box-sizing:border-box;',
+                placeholder: 'Choose a strong password',
+                data: { target: 'password-input.passwordInput' } %>
+            <button type="button" tabindex="-1"
+                    style="position:absolute;top:0;right:0;bottom:0;display:flex;align-items:center;padding-right:12px;color:#9aa3ae;background:none;border:none;cursor:pointer;"
+                    data-target="password-input.togglePasswordVisibility">
+              <span data-target="password-input.hiddenPasswordIcon">
+                <%= svg_icon('eye', class: 'w-5 h-5') %>
+              </span>
+              <span data-target="password-input.visiblePasswordIcon" class="hidden">
+                <%= svg_icon('eye_off', class: 'w-5 h-5') %>
+              </span>
+            </button>
+          </password-input>
           <% if @minimum_password_length %>
             <p style="font-size:11px;color:#9aa3ae;margin:4px 0 0;">Minimum <%= @minimum_password_length %> characters</p>
           <% end %>
         </div>
         <div style="margin-bottom:20px;">
           <label style="font-size:12px;font-weight:600;color:#162B3C;margin-bottom:5px;display:block;letter-spacing:0.2px;">Confirm password</label>
-          <%= f.password_field :password_confirmation, autocomplete: 'new-password',
-              style: 'width:100%;padding:10px 13px;border:1.5px solid #e2e6ea;border-radius:7px;font-size:14px;color:#162B3C;background:#f9fbfc;outline:none;box-sizing:border-box;',
-              placeholder: 'Re-enter your password' %>
+          <password-input style="display:block;position:relative;">
+            <%= f.password_field :password_confirmation, autocomplete: 'new-password',
+                style: 'width:100%;padding:10px 40px 10px 13px;border:1.5px solid #e2e6ea;border-radius:7px;font-size:14px;color:#162B3C;background:#f9fbfc;outline:none;box-sizing:border-box;',
+                placeholder: 'Re-enter your password',
+                data: { target: 'password-input.passwordInput' } %>
+            <button type="button" tabindex="-1"
+                    style="position:absolute;top:0;right:0;bottom:0;display:flex;align-items:center;padding-right:12px;color:#9aa3ae;background:none;border:none;cursor:pointer;"
+                    data-target="password-input.togglePasswordVisibility">
+              <span data-target="password-input.hiddenPasswordIcon">
+                <%= svg_icon('eye', class: 'w-5 h-5') %>
+              </span>
+              <span data-target="password-input.visiblePasswordIcon" class="hidden">
+                <%= svg_icon('eye_off', class: 'w-5 h-5') %>
+              </span>
+            </button>
+          </password-input>
         </div>
         <%= f.button button_title(title: 'Activate account', disabled_with: 'Activating…'),
             style: 'width:100%;padding:12px;background:#162B3C;color:#fff;border:none;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:0.2px;' %>

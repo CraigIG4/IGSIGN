@@ -8,7 +8,20 @@
       <%= f.hidden_field :reset_password_token %>
       <div class="form-control">
         <%= f.label :password, t('new_password'), class: 'label' %>
-        <%= f.password_field :password, autofocus: true, autocomplete: 'new-password', class: 'base-input' %>
+        <password-input class="block relative">
+          <%= f.password_field :password, autofocus: true, autocomplete: 'new-password', class: 'base-input pr-10',
+                               data: { target: 'password-input.passwordInput' } %>
+          <button type="button" tabindex="-1"
+                  class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                  data-target="password-input.togglePasswordVisibility">
+            <span data-target="password-input.hiddenPasswordIcon">
+              <%= svg_icon('eye', class: 'w-5 h-5') %>
+            </span>
+            <span data-target="password-input.visiblePasswordIcon" class="hidden">
+              <%= svg_icon('eye_off', class: 'w-5 h-5') %>
+            </span>
+          </button>
+        </password-input>
         <% if @minimum_password_length %>
           <label class="label">
             <span class="label-text">(<%= t('minimum_password_length_characters_minimum', minimum_password_length: @minimum_password_length) %>)</span>
@@ -17,7 +30,20 @@
       </div>
       <div class="form-control">
         <%= f.label :password_confirmation, t('confirm_new_password'), class: 'label' %>
-        <%= f.password_field :password_confirmation, autocomplete: 'new-password', class: 'base-input' %>
+        <password-input class="block relative">
+          <%= f.password_field :password_confirmation, autocomplete: 'new-password', class: 'base-input pr-10',
+                               data: { target: 'password-input.passwordInput' } %>
+          <button type="button" tabindex="-1"
+                  class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                  data-target="password-input.togglePasswordVisibility">
+            <span data-target="password-input.hiddenPasswordIcon">
+              <%= svg_icon('eye', class: 'w-5 h-5') %>
+            </span>
+            <span data-target="password-input.visiblePasswordIcon" class="hidden">
+              <%= svg_icon('eye_off', class: 'w-5 h-5') %>
+            </span>
+          </button>
+        </password-input>
       </div>
     </div>
     <div class="form-control">

@@ -145,8 +145,9 @@
                 </td>
                 <td class="px-4 py-3 text-right">
                   <% if a.draft? %>
+                    <% draft_step = a.next_draft_step %>
                     <%= link_to 'Continue →',
-                                send(:"#{a.next_draft_step}_agreement_path", a),
+                                (draft_step.present? ? send(:"#{draft_step}_agreement_path", a) : agreement_path(a)),
                                 class: 'text-xs font-medium text-blue-600 hover:text-blue-800' %>
                   <% elsif a_overdue && (a.pending_ig? || a.sent_counterparty?) %>
                     <%= button_to remind_agreement_path(a), method: :post,
