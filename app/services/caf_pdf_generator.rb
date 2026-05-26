@@ -23,20 +23,20 @@ class CafPdfGenerator
   private
 
   def caf_data
-    entity_key = @agreement.entity.to_sym
-    entity     = IgSignatories::ENTITIES[entity_key] || {}
-    chain      = IgSignatories.chain_for(@agreement.caf_type, entity_key)
-    finance    = IgSignatories.person(:laren_farquharson) || {}
-    group_keys = %i[laren_farquharson sean_bergsma donovan_bergsma]
-    bu_heads   = chain[:stage1].reject { |p| group_keys.include?(p[:key]) }
+    entity_key = @agreement.entity.to_s
+    entity     = IgSignatories.entity_details(entity_key)
+    chain      = IgSignatories.chain_for(entity_key, @agreement.caf_type)
+    finance    = IgSignatories.person_by_email('Laren.Farquharson@ignitiongroup.co.za') || {}
+    group_positions = %w[group_clo group_cfo group_ceo group_coo group_signer group_signer_alt]
+    bu_heads   = chain[:stage1].reject { |p| group_positions.include?(p[:position].to_s) }
     {
       agreement_id: @agreement.id,
       agreement_type_label: @agreement.agreement_type_label,
       caf_type: @agreement.caf_type,
       date_prepared: Time.current.strftime('%d %B %Y'),
-      entity_name: entity[:name] || @agreement.entity.to_s.humanize,
-      entity_registration: entity[:registration] || 'To be verified',
-      entity_address: entity[:address] || IgSignatories::REGISTERED_ADDRESS,
+      entity_name: entity&.name || @agreement.entity.to_s.humanize,
+      entity_registration: entity&.registration_number || 'To be verified',
+      entity_address: entity&.registered_address || IgSignatories::REGISTERED_ADDRESS,
       counterparty_company: (@agreement.contracting_party.presence || @agreement.company&.name).to_s,
       counterparty_registration: @agreement.company&.registration_number.to_s,
       counterparty_address: @agreement.company&.address.to_s,

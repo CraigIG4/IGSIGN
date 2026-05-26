@@ -118,10 +118,10 @@ module Admin
       raw = params.require(:igsign_template_metadata).permit(:kind, :owner_id, :status, :notes,
                                                              :entity_scope_csv)
       # Convert entity_scope_csv ("iti, comit") → entity_scope array (["iti", "comit"]).
-      # Strip whitespace, reject blanks, and filter to valid IgSignatories entity keys.
+      # Strip whitespace, reject blanks, and filter to valid entity keys.
       if raw.key?(:entity_scope_csv)
         csv = raw.delete(:entity_scope_csv).to_s
-        valid_keys = IgSignatories::ENTITIES.keys.to_set(&:to_s)
+        valid_keys = IgEntity.active.pluck(:key).to_set
         raw[:entity_scope] = csv.split(',').map(&:strip).select { |k| valid_keys.include?(k) }
       end
       raw

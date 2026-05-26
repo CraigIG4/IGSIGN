@@ -92,6 +92,15 @@ Rails.application.routes.draw do
     end
   end
 
+  # Legal Ops namespace — signatory registry + workflow admin (admin only)
+  namespace :legal_ops do
+    resources :signatories, only: %i[index edit update] do
+      member do
+        patch :toggle_active
+      end
+    end
+  end
+
   # Admin-only CAF workflow management (previously /cafs).
   namespace :admin do
     resources :workflows, only: %i[index new create show edit update destroy] do

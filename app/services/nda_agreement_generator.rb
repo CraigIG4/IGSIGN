@@ -33,17 +33,17 @@ class NdaAgreementGenerator
   private
 
   def nda_data
-    entity_key = @agreement.entity.to_sym
-    entity     = IgSignatories::ENTITIES[entity_key] || {}
+    entity_key = @agreement.entity.to_s
+    entity     = IgSignatories.entity_details(entity_key)
     company    = @agreement.company
 
     {
       agreement_id:             @agreement.id,
       date_prepared:            Time.current.strftime('%d %B %Y'),
       # IG entity
-      entity_name:              entity[:name] || @agreement.entity.to_s.humanize,
-      entity_registration:      entity[:registration] || 'To be verified',
-      entity_address:           entity[:address] || IgSignatories::REGISTERED_ADDRESS,
+      entity_name:              entity&.name || @agreement.entity.to_s.humanize,
+      entity_registration:      entity&.registration_number || 'To be verified',
+      entity_address:           entity&.registered_address || IgSignatories::REGISTERED_ADDRESS,
       # Counterparty
       counterparty_company:     (@agreement.contracting_party.presence || company&.name).to_s,
       counterparty_registration: company&.registration_number.to_s,

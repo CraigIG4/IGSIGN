@@ -6,9 +6,9 @@
 # Admins are redirected to /admin/templates (the management view).
 # Senders see two sections:
 #
-#   1. NDA — one card per IG entity (13 cards), linking to new_agreement with
+#   1. NDA — one card per IG entity, linking to new_agreement with
 #      agreement_type=nda&entity=<key> pre-set.  Cards are shown for every
-#      IgSignatories entity regardless of whether an active metadata record
+#      IgEntity regardless of whether an active metadata record
 #      exists — the NDA can still proceed via dynamic generation.
 #
 #   2. Upload Agreement — single entry point to start an agreement from an
@@ -26,7 +26,7 @@ class TemplatesLibraryController < ApplicationController
       redirect_to(admin_templates_path) && return
     end
 
-    # Build the 13 entity cards for the NDA section.
+    # Build entity cards for the NDA section.
     # Each card carries the entity key, display name, short name, and whether
     # an active NDA metadata record exists for this account + entity.
     active_entity_keys = IgsignTemplateMetadata
@@ -38,12 +38,12 @@ class TemplatesLibraryController < ApplicationController
                            .flatten
                            .to_set
 
-    @nda_entities = IgSignatories::ENTITIES.map do |key, details|
+    @nda_entities = IgEntity.active.ordered.map do |entity|
       {
-        key:        key.to_s,
-        name:       details[:name],
-        short_name: details[:short_name],
-        active:     active_entity_keys.include?(key.to_s)
+        key:        entity.key,
+        name:       entity.name,
+        short_name: entity.short_name,
+        active:     active_entity_keys.include?(entity.key)
       }
     end
   end

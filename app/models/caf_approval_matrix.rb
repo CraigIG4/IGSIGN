@@ -168,8 +168,8 @@ class CafApprovalMatrix < ApplicationRecord
       'All entities'
     else
       entity_scope.map { |e|
-        entry = IgSignatories::ENTITIES[e.to_sym]
-        entry ? (entry[:short_name] || entry[:name]) : e
+        entity = IgEntity.find_by(key: e)
+        entity ? entity.short_name : e
       }.join(', ')
     end
   end
@@ -204,7 +204,7 @@ class CafApprovalMatrix < ApplicationRecord
     return if entity_scope.nil?
     return unless entity_scope.is_a?(Array)
 
-    valid_keys = IgSignatories::ENTITIES.keys.map(&:to_s)
+    valid_keys = IgSignatories.all_entity_keys
     invalid    = entity_scope - valid_keys
     errors.add(:entity_scope, "contains unknown entities: #{invalid.join(', ')}") if invalid.any?
   end

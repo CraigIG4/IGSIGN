@@ -91,9 +91,9 @@
              placeholder="e.g. iti, comit  (leave blank for all entities)"
              style="width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:13px;box-sizing:border-box;">
       <p style="font-size:11px;color:#7B787F;margin-top:4px;">
-        Comma-separated entity keys from IgSignatories::ENTITIES (e.g. <code>iti</code>, <code>comit</code>).
+        Comma-separated entity keys (e.g. <code>iti</code>, <code>comit</code>).
         Leave blank for a generic template that applies to all entities.
-        Valid keys: <code><%= IgSignatories::ENTITIES.keys.map(&:to_s).join(', ') %></code>
+        Valid keys: <code><%= IgEntity.active.pluck(:key).join(', ') %></code>
       </p>
     </div>
 

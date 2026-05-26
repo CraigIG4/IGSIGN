@@ -64,8 +64,8 @@
         <select id="ag_entity_nda" name="agreement[entity]"
                 style="width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:14px;background:white;">
           <option value="">-- Select entity --</option>
-          <% IgSignatories::ENTITIES.each do |k, v| %>
-            <option value="<%= k %>" <%= 'selected' if preselect_entity == k.to_s %>><%= v[:name] %></option>
+          <% IgEntity.active.ordered.each do |entity| %>
+            <option value="<%= entity.key %>" <%= 'selected' if preselect_entity == entity.key %>><%= entity.name %></option>
           <% end %>
         </select>
       </div>
@@ -85,7 +85,7 @@
           </div>
           <div>
             <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">IG Entity <span style="color:#ef4444">*</span></label>
-            <%= f.select :entity, IgSignatories::ENTITIES.map { |k, v| [v[:name], k.to_s] },
+            <%= f.select :entity, IgEntity.active.ordered.map { |e| [e.name, e.key] },
                   { include_blank: '-- Select entity --' },
                   id: 'ag_entity',
                   style: 'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:14px;background:white;',
@@ -291,9 +291,9 @@
 
 <%
   _ig_chains = {}
-  IgSignatories::ENTITIES.each_key do |key|
-    %w[nda short_form long_form].each do |ct|
-      _ig_chains["#{key}_#{ct}"] = IgSignatories.chain_for(ct, key)[:stage1]
+  IgEntity.active.pluck(:key).each do |key|
+    %w[nda msa addendum].each do |ct|
+      _ig_chains["#{key}_#{ct}"] = IgSignatories.chain_for(key, ct)[:stage1]
     end
   end
 %>

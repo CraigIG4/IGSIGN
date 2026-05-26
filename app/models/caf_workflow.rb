@@ -99,7 +99,7 @@ class CafWorkflow < ApplicationRecord
   before_validation :derive_caf_type_from_agreement_type
 
   validates :entity, presence: true,
-                     inclusion: { in: IgSignatories::ENTITIES.keys.map(&:to_s) }
+                     inclusion: { in: -> { IgSignatories.all_entity_keys } }
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :counterparty_email,
             format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
@@ -157,15 +157,15 @@ class CafWorkflow < ApplicationRecord
   end
 
   def auto_assign_signatories!
-    chain = IgSignatories.chain_for(derived_caf_type, entity)[:stage1]
+    chain = IgSignatories.chain_for(entity, derived_caf_type)[:stage1]
     self.signatories = chain.map.with_index do |entry, idx|
       {
-        'position' => idx,
-        'role'     => entry[:title],    # chain_for returns :title, not :role
-        'name'     => entry[:name],
-        'email'    => entry[:email],
-        'placeholder' => false,         # IG signatories are always named people
-        'key'      => entry[:key].to_s
+        'position'    => idx,
+        'role'        => entry[:title],
+        'name'        => entry[:name],
+        'email'       => entry[:email],
+        'chain_position' => entry[:position].to_s,
+        'placeholder' => false
       }
     end
   end

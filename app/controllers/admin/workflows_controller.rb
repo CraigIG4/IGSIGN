@@ -117,7 +117,7 @@ module Admin
     def signatories_for
       entity   = params[:entity]
       caf_type = params[:caf_type]
-      chain    = IgSignatories.chain_for(caf_type, entity)
+      chain    = IgSignatories.chain_for(entity, caf_type)
       render json: chain
     end
 

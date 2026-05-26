@@ -65,8 +65,8 @@
               <label class="field-label">Ignition Entity <span style="color:#e53e3e;">*</span></label>
               <select name="caf_workflow[entity]" id="entity" class="field-input" required onchange="onTypeOrEntityChange()">
                 <option value="">— Select entity —</option>
-                <% IgSignatories::ENTITIES.each do |key, data| %>
-                  <option value="<%= key %>"><%= data[:name] %></option>
+                <% IgEntity.active.ordered.each do |entity| %>
+                  <option value="<%= entity.key %>"><%= entity.name %></option>
                 <% end %>
               </select>
             </div>
@@ -244,12 +244,12 @@ const ENTITY_NAMES = {
   iti: 'Ignition Telecoms Investments',
   comit: 'Comit Technologies',
   mvnx: 'MVNX',
-  uconnect: 'UConnect Mobile',
+  spot_connect: 'Spot Connect',
   ignition_digital: 'Ignition Digital LLC',
+  ignition_cx_us: 'Ignition CX (US)',
   ifs: 'IFS (Viva Cover / Viva Life)',
   gumtree: 'Gumtree',
-  spot: 'Spot',
-  ig_group: 'Ignition Group (General)',
+  spot_money: 'Spot Money',
 };
 
 let currentStep = 1;

@@ -3,8 +3,8 @@
   Locals: matrix (CafApprovalMatrix instance)
 %>
 
-<% all_roles = (IgSignatories::PEOPLE.values.map { |p| p[:name] } + ['counterparty']).uniq %>
-<% all_entities = IgSignatories::ENTITIES.map { |key, val| [val[:short_name] || val[:name], key.to_s] }.sort_by(&:first) %>
+<% all_roles = (IgSignatory.active.ordered.map(&:full_name) + ['counterparty']).uniq %>
+<% all_entities = IgEntity.active.ordered.map { |e| [e.short_name, e.key] } %>
 <% agreement_types = CafApprovalMatrix::AGREEMENT_TYPES %>
 
 <style>

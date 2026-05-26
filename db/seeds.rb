@@ -70,17 +70,10 @@ end
 end
 
 # ---------------------------------------------------------------------------
-# IG Entities and People
+# IG Signatory Registry (entities + people)
 # ---------------------------------------------------------------------------
-# IgSignatories::ENTITIES and IgSignatories::PEOPLE are Ruby constants defined
-# in lib/ig_signatories.rb — they require no database seed.
-#
-# Deactivation is managed via config/ig_signatory_overrides.yml:
-#   bundle exec rake "igsign:people:deactivate[email@ignitiongroup.co.za]"
-#
-# For v2, these will be migrated to managed DB models (IgPerson, IgEntity).
-# See docs/todo/v2-people-management.md
-puts 'IG entities/people: managed as Ruby constants (no DB seed required)'
+# Seeded from db/seeds/igsign_registry.rb — canonical data lives there.
+require_relative 'seeds/igsign_registry'
 
 # ---------------------------------------------------------------------------
 # IGSIGN CAF Template — signing-page PDF + field definitions
@@ -271,11 +264,12 @@ if caf_account.nil?
 elsif nda_base_template.nil?
   puts 'Per-entity NDA metadata: skipped — IGSIGN NDA Template not found (run template setup first)'
 else
-  IgSignatories::ENTITIES.each_key do |entity_key|
+  IgEntity.active.each do |entity|
+    entity_key = entity.key
     # Find by template + matching entity_scope (JSONB contains check via SQL fallback)
     existing = IgsignTemplateMetadata
                  .where(template: nda_base_template, kind: 'nda')
-                 .find { |m| m.entity_scope == [entity_key.to_s] }
+                 .find { |m| m.entity_scope == [entity_key] }
 
     if existing
       puts "NDA metadata: already exists for #{entity_key}"
@@ -285,8 +279,8 @@ else
         kind:         'nda',
         status:       'draft',
         version:      1,
-        entity_scope: [entity_key.to_s],
-        notes:        "Standard IG NDA for #{IgSignatories.entity_name(entity_key)}. " \
+        entity_scope: [entity_key],
+        notes:        "Standard IG NDA for #{entity.name}. " \
                       'Activate once legal has reviewed the NDA signing-page template.'
       )
       puts "NDA metadata: created (draft) for #{entity_key}"

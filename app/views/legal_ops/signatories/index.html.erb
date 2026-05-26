@@ -1,0 +1,111 @@
+<% content_for :title, 'Signatory Registry' %>
+
+<div class="max-w-5xl mx-auto px-4 py-8">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Signatory Registry</h1>
+      <p class="text-sm text-slate-500 mt-1">
+        <%= @signatories.count %> people · <%= @entities.count %> entities ·
+        Source of truth: <code class="text-xs bg-slate-100 px-1 py-0.5 rounded">db/seeds/igsign_registry.rb</code>
+      </p>
+    </div>
+  </div>
+
+  <%# ── Flash ── %>
+  <% if notice.present? %>
+    <div class="mb-4 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-800">
+      <%= notice %>
+    </div>
+  <% end %>
+  <% if alert.present? %>
+    <div class="mb-4 px-4 py-3 bg-rose-50 border border-rose-200 rounded-lg text-sm text-rose-800">
+      <%= alert %>
+    </div>
+  <% end %>
+
+  <%# ── Signatories table ── %>
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+    <div class="px-4 py-3 border-b border-slate-200 bg-slate-50">
+      <h2 class="text-sm font-semibold text-slate-700">People</h2>
+    </div>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-slate-200">
+          <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Name</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Email</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Role Title</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Seniority</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Entities</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
+          <th class="px-4 py-2"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @signatories.each do |sig| %>
+          <tr class="border-b border-slate-100 hover:bg-slate-50 <%= 'opacity-50' unless sig.active? %>">
+            <td class="px-4 py-3 font-medium text-slate-900"><%= sig.full_name %></td>
+            <td class="px-4 py-3 text-slate-500"><%= sig.email %></td>
+            <td class="px-4 py-3 text-slate-700"><%= sig.role_title %></td>
+            <td class="px-4 py-3">
+              <span class="rounded-md text-xs font-medium px-2 py-0.5
+                <%= sig.seniority == 'Executive' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-100 text-slate-600' %>">
+                <%= sig.seniority %>
+              </span>
+            </td>
+            <td class="px-4 py-3 text-slate-500 text-xs">
+              <%= sig.ig_entities.map(&:short_name).join(', ') %>
+            </td>
+            <td class="px-4 py-3">
+              <span class="rounded-md text-xs font-medium px-2 py-0.5
+                <%= sig.active? ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500' %>">
+                <%= sig.active? ? 'Active' : 'Inactive' %>
+              </span>
+            </td>
+            <td class="px-4 py-3 text-right space-x-2">
+              <%= link_to 'Edit', edit_legal_ops_signatory_path(sig),
+                    class: 'text-xs text-blue-600 hover:underline' %>
+              <%= button_to sig.active? ? 'Deactivate' : 'Activate',
+                    toggle_active_legal_ops_signatory_path(sig),
+                    method: :patch,
+                    class: "text-xs #{sig.active? ? 'text-rose-600' : 'text-emerald-600'} hover:underline",
+                    form: { style: 'display:inline' },
+                    data: { confirm: "#{sig.active? ? 'Deactivate' : 'Activate'} #{sig.full_name}?" } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%# ── Entity chains summary ── %>
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="px-4 py-3 border-b border-slate-200 bg-slate-50">
+      <h2 class="text-sm font-semibold text-slate-700">Entity Signing Chains</h2>
+    </div>
+    <% @entities.each do |entity| %>
+      <div class="px-4 py-4 border-b border-slate-100 last:border-0">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="font-semibold text-slate-900"><%= entity.name %></span>
+          <span class="rounded-md text-xs font-medium px-2 py-0.5 bg-slate-100 text-slate-600">
+            <%= entity.key %>
+          </span>
+          <% unless entity.active? %>
+            <span class="rounded-md text-xs font-medium px-2 py-0.5 bg-rose-50 text-rose-600">Inactive</span>
+          <% end %>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <% entity.ig_entity_signatories.sort_by(&:position).each do |jes| %>
+            <span class="rounded-md text-xs px-2 py-0.5 border
+              <%= jes.active? ? 'bg-white border-slate-200 text-slate-700' : 'bg-slate-50 border-slate-200 text-slate-400 line-through' %>">
+              <span class="font-medium text-slate-400 text-xs"><%= jes.position %></span>
+              <%= jes.ig_signatory.full_name %>
+            </span>
+          <% end %>
+        </div>
+        <% if entity.registration_number.present? %>
+          <p class="text-xs text-slate-400 mt-1">Reg: <%= entity.registration_number %></p>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
