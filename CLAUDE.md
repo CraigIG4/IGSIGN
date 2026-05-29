@@ -1,8 +1,8 @@
 # IGSIGN — Project Context
 
 Internal e-signature platform for Ignition Group built on a DocuSeal fork.
-Rails 8.1.3, PostgreSQL, Redis (Upstash), Sidekiq, ActionMailer (Resend SMTP).
-Deployed to Render. Working tree on Windows at C:\Users\Clawre969\Dev\docuseal.
+Rails 8.1.3, PostgreSQL, Redis (embedded), Sidekiq (embedded in Puma), ActionMailer (Postmark/SES pending).
+Deployed on-prem POC server at 172.30.0.30 via Docker Compose. Working tree on Windows at C:\Users\Clawre969\Dev\docuseal.
 
 ## What IGSIGN does
 
