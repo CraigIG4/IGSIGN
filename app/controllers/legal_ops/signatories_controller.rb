@@ -6,6 +6,7 @@ module LegalOps
   # Admins can toggle active status or update role_title.
   # Email and full_name are read-only (too high-risk to rename via UI).
   class SignatoriesController < ApplicationController
+    skip_authorization_check
     before_action :authenticate_user!
     before_action :require_admin!
     before_action :set_signatory, only: %i[edit update toggle_active]
