@@ -52,6 +52,7 @@ WORKDIR /app
 RUN apt-get update -qq && apt-get install -y --no-install-recommends \
     libpq5 libvips42 libheif1 fontconfig curl \
     libreoffice-writer default-jre-headless \
+    redis-server \
     && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd -g 2000 docuseal && useradd -u 2000 -g docuseal -s /bin/sh -m -d /home/docuseal docuseal
