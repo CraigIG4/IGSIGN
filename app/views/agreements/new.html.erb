@@ -310,7 +310,7 @@
 <%
   _ig_chains = {}
   IgEntity.active.pluck(:key).each do |key|
-    %w[nda msa addendum].each do |ct|
+    %w[nda long_form short_form].each do |ct|
       _ig_chains["#{key}_#{ct}"] = IgSignatories.chain_for(key, ct)[:stage1]
     end
   end
