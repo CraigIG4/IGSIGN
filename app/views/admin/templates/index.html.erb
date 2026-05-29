@@ -100,20 +100,20 @@
                     data: { turbo: false } %>
               <%# IGSIGN metadata %>
               <%= link_to meta ? 'Metadata' : '+ Tag',
-                    edit_admin_template_path(tmpl),
+                    edit_legal_ops_template_path(tmpl),
                     class: 'btn btn-sm',
                     style: 'background:#162B3C;color:#fff;border:none;margin-right:4px;font-size:11px;' %>
               <%# Status transitions %>
               <% if meta&.active? %>
                 <%= button_to 'Deprecate',
-                      deprecate_admin_template_path(tmpl),
+                      deprecate_legal_ops_template_path(tmpl),
                       method: :patch,
                       class: 'btn btn-sm',
                       style: 'background:#7B787F;color:#fff;border:none;font-size:11px;',
                       data: { confirm: "Deprecate \"#{tmpl.name}\"? Senders will no longer see it in the library." } %>
               <% elsif meta && !meta.active? %>
                 <%= button_to 'Activate',
-                      activate_admin_template_path(tmpl),
+                      activate_legal_ops_template_path(tmpl),
                       method: :patch,
                       class: 'btn btn-sm',
                       style: 'background:#45AC34;color:#fff;border:none;font-size:11px;' %>

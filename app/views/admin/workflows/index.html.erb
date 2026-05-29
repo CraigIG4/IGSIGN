@@ -26,7 +26,7 @@
         <div style="font-size:26px;font-weight:800;color:#45AC34;line-height:1;"><%= @stats[:complete] %></div>
         <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:5px;">Complete</div>
       </div>
-      <%= link_to new_admin_workflow_path, style: 'background:#45AC34;color:#fff;border-radius:8px;padding:12px 20px;font-weight:700;font-size:14px;text-decoration:none;display:flex;align-items:center;gap:8px;white-space:nowrap;' do %>
+      <%= link_to new_legal_ops_workflow_path, style: 'background:#45AC34;color:#fff;border-radius:8px;padding:12px 20px;font-weight:700;font-size:14px;text-decoration:none;display:flex;align-items:center;gap:8px;white-space:nowrap;' do %>
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
         New CAF
       <% end %>
@@ -43,7 +43,7 @@
       </div>
       <div style="font-size:16px;font-weight:700;color:#162B3C;margin-bottom:8px;">No CAFs yet</div>
       <div style="font-size:13px;color:#7B787F;margin-bottom:24px;">Create your first Contract Approval Form to get started.</div>
-      <%= link_to 'Create CAF', new_admin_workflow_path, style: 'background:#162B3C;color:#fff;border-radius:8px;padding:10px 20px;font-weight:700;font-size:14px;text-decoration:none;' %>
+      <%= link_to 'Create CAF', new_legal_ops_workflow_path, style: 'background:#162B3C;color:#fff;border-radius:8px;padding:10px 20px;font-weight:700;font-size:14px;text-decoration:none;' %>
     </div>
   <% else %>
     <table style="width:100%;border-collapse:collapse;">
@@ -60,7 +60,7 @@
       </thead>
       <tbody>
         <% @cafs.each do |caf| %>
-          <tr class="caf-row" style="border-bottom:1px solid #f5f7f9;cursor:pointer;" onclick="location.href='<%= admin_workflow_path(caf) %>'">
+          <tr class="caf-row" style="border-bottom:1px solid #f5f7f9;cursor:pointer;" onclick="location.href='<%= legal_ops_workflow_path(caf) %>'">
             <td style="padding:14px 20px;">
               <div style="font-size:14px;font-weight:700;color:#162B3C;"><%= caf.contracting_party.presence || '—' %></div>
               <div style="font-size:12px;color:#7B787F;margin-top:2px;"><%= caf.counterparty_email.presence || '' %></div>
@@ -75,7 +75,7 @@
             <td style="padding:14px 12px;font-size:12px;color:#7B787F;"><%= caf.created_at.strftime('%d %b %Y') %></td>
             <td style="padding:14px 12px;font-size:12px;color:#7B787F;"><%= caf.created_by_user&.full_name %></td>
             <td style="padding:14px 12px;text-align:right;">
-              <%= link_to 'View', admin_workflow_path(caf), style: 'font-size:12px;color:#45AC34;font-weight:600;text-decoration:none;' %>
+              <%= link_to 'View', legal_ops_workflow_path(caf), style: 'font-size:12px;color:#45AC34;font-weight:600;text-decoration:none;' %>
             </td>
           </tr>
         <% end %>

@@ -10,7 +10,7 @@
       <div style="width:36px;height:3px;background:#45AC34;border-radius:2px;margin-top:10px;"></div>
       <div style="font-size:13px;color:rgba(255,255,255,0.55);margin-top:8px;">Define which internal signatories must approve each agreement type before it goes to the counterparty.</div>
     </div>
-    <%= link_to new_admin_approval_matrix_path,
+    <%= link_to new_legal_ops_approval_matrix_path,
           style: 'background:#45AC34;color:#fff;border-radius:8px;padding:12px 20px;font-weight:700;font-size:14px;text-decoration:none;display:flex;align-items:center;gap:8px;white-space:nowrap;align-self:flex-start;' do %>
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
       New Matrix
@@ -35,7 +35,7 @@
       </svg>
       <p style="font-size:16px;font-weight:700;color:#162B3C;">No matrices yet</p>
       <p style="font-size:14px;color:#7B787F;margin-top:4px;">Create your first approval matrix to define signing chains for agreement types.</p>
-      <%= link_to '+ New Matrix', new_admin_approval_matrix_path, class: 'btn btn-primary mt-4' %>
+      <%= link_to '+ New Matrix', new_legal_ops_approval_matrix_path, class: 'btn btn-primary mt-4' %>
     </div>
 
   <% else %>
@@ -83,12 +83,12 @@
               <% end %>
             </td>
             <td style="padding:12px 16px;text-align:right;white-space:nowrap;">
-              <%= link_to 'Edit', edit_admin_approval_matrix_path(matrix),
+              <%= link_to 'Edit', edit_legal_ops_approval_matrix_path(matrix),
                     class: 'btn btn-sm btn-outline',
                     style: 'margin-right:6px;' %>
               <% if matrix.active? %>
                 <%= button_to 'Deactivate',
-                      deactivate_admin_approval_matrix_path(matrix),
+                      deactivate_legal_ops_approval_matrix_path(matrix),
                       method: :patch,
                       class: 'btn btn-sm',
                       style: 'background:#7B787F;color:#fff;border:none;',
