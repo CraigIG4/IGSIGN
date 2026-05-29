@@ -104,7 +104,7 @@ Rails.application.routes.draw do
     end
 
     resources :workflows, only: %i[index new create show edit update destroy],
-              controller: 'admin/workflows' do
+              controller: '/admin/workflows' do
       member do
         post :submit
         post :resend_invite
@@ -115,7 +115,7 @@ Rails.application.routes.draw do
     end
 
     resources :approval_matrices, only: %i[index new create edit update],
-              controller: 'admin/approval_matrices' do
+              controller: '/admin/approval_matrices' do
       member do
         patch :deactivate
       end
@@ -123,7 +123,7 @@ Rails.application.routes.draw do
 
     # IGSIGN template metadata management (admin only)
     resources :templates, only: %i[index new create edit update],
-              controller: 'admin/templates' do
+              controller: '/admin/templates' do
       member do
         patch :activate
         patch :deprecate
