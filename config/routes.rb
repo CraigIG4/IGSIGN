@@ -74,7 +74,7 @@ Rails.application.routes.draw do
   resources :companies, only: %i[index new create show edit update]
   resources :company_signatories, only: %i[update]
 
-  resources :agreements, only: %i[index new create show] do
+  resources :agreements, only: %i[index new create show destroy] do
     member do
       get  :upload
       post :upload, action: :process_upload
@@ -82,6 +82,7 @@ Rails.application.routes.draw do
       post :position, action: :save_fields
       get  :review
       post :send_agreement
+      get  :sent
       get  :caf_preview
       get  :signing_journey
       post :remind
@@ -108,6 +109,9 @@ Rails.application.routes.draw do
       member do
         post :submit
         post :resend_invite
+        get  :contract_data
+        patch :contract_data, action: :update_contract_data
+        post :reparse
       end
       collection do
         get :signatories_for

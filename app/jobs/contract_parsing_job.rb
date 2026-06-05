@@ -2,13 +2,14 @@
 
 # IGSIGN — Background job to extract contract metadata via OpenRouter.
 #
-# Enqueued after a document is uploaded to an agreement. Extracts text from
-# the uploaded PDF using the existing Pdfium library, calls ContractParser,
-# and saves the result to caf_workflow.parsed_contract_data (jsonb).
+# Enqueued after a document is uploaded to an agreement (AgreementsController#process_upload).
+# Extracts text from the uploaded PDF using Pdfium, calls ContractParser (two-pass extraction
+# driven by CafFieldSchema), and saves the result to both:
+#   - caf_workflow.parsed_contract_data (jsonb) — full extraction result
+#   - individual native columns (driven by CafFieldSchema.caf_column_fields) — for dashboard queries
 #
 # Failure is intentionally silent — an error key is saved to parsed_contract_data
-# so the review page can show a degraded state, but the upload/signing flow
-# is never blocked.
+# so the review page can show a degraded state, but the upload/signing flow is never blocked.
 class ContractParsingJob < ApplicationJob
   queue_as :default
 
@@ -25,7 +26,6 @@ class ContractParsingJob < ApplicationJob
       return
     end
 
-    # Preload blob so metadata and download work without N+1
     ActiveRecord::Associations::Preloader.new(records: [document], associations: [:blob]).call
 
     text = extract_text(document)
@@ -38,17 +38,17 @@ class ContractParsingJob < ApplicationJob
     result = ContractParser.extract(text)
     agreement.update_columns(parsed_contract_data: result)
 
+    unless result['error']
+      write_native_columns(agreement, result)
+    end
+
     Rails.logger.info("[IGSIGN] ContractParsingJob: complete for #{caf_workflow_id}, keys=#{result.keys.join(',')}")
   rescue StandardError => e
     Rails.logger.error("[IGSIGN] ContractParsingJob error for #{caf_workflow_id}: #{e.message}")
-    # Do not re-raise — parsing failure must never block the signing workflow
   end
 
   private
 
-  # Extracts all text from a PDF attachment using the Pdfium library.
-  # Returns a plain string with all text objects joined by spaces.
-  # Falls back to empty string on error (scanned/image PDFs, corrupt files, etc.)
   def extract_text(document)
     text_runs = DocumentMetadatas.build_text_runs(document)
     return '' if text_runs.blank?
@@ -59,5 +59,33 @@ class ContractParsingJob < ApplicationJob
   rescue StandardError => e
     Rails.logger.warn("[IGSIGN] ContractParsingJob text extraction error: #{e.message}")
     ''
+  end
+
+  # Writes AI-extracted values to native columns for dashboard queries.
+  # Only writes fields where the result has a non-nil value AND the field has a caf_column.
+  # Preserves any field with existing 'manual' provenance — AI re-runs must not overwrite manual entries.
+  def write_native_columns(agreement, result)
+    existing_provenance = agreement.parsed_data_provenance.presence || {}
+    native_updates = {}
+    provenance_updates = {}
+
+    CafFieldSchema.caf_column_fields.each do |field|
+      value = result[field[:key].to_s]
+      next if value.nil?
+
+      # Preserve manual entries — never overwrite what legal ops has entered by hand
+      next if existing_provenance[field[:key].to_s] == 'manual'
+
+      # Arrays (e.g. material_risks) are joined to a string for text columns
+      col_value = field[:type] == :array ? Array(value).join('; ') : value
+
+      native_updates[field[:caf_column]] = col_value
+      provenance_updates[field[:key].to_s] = 'ai'
+    end
+
+    return if native_updates.empty?
+
+    native_updates[:parsed_data_provenance] = existing_provenance.merge(provenance_updates)
+    agreement.update_columns(native_updates)
   end
 end

@@ -92,6 +92,9 @@ class CafWorkflow < ApplicationRecord
   # :supplier (1) — counterparty is a supplier; adds Procurement approver to Stage 0
   enum :commercial_relationship, { customer: 0, supplier: 1 }, prefix: :commercial
 
+  # CafFieldSchema uses :contract_type as the schema key; the DB column is agreement_type.
+  alias_attribute :contract_type, :agreement_type
+
   belongs_to :account
   belongs_to :created_by_user, class_name: 'User'
   belongs_to :company, optional: true

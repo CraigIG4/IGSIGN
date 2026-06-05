@@ -8,7 +8,7 @@ module Admin
     skip_authorization_check
     before_action :authenticate_user!
     before_action :require_admin!
-    before_action :set_caf, only: %i[show edit update destroy submit resend_invite]
+    before_action :set_caf, only: %i[show edit update destroy submit resend_invite contract_data update_contract_data reparse]
 
     def index
       @cafs = current_account.caf_workflows.recent
@@ -113,6 +113,50 @@ module Admin
                   notice: "Invitations resent to #{count} pending #{count == 1 ? 'signatory' : 'signatories'}."
     end
 
+    # GET  /legal_ops/workflows/:id/contract_data — review and correct AI-extracted contract data
+    # PATCH /legal_ops/workflows/:id/contract_data — save corrections
+    def contract_data
+      @fields = CafFieldSchema.active_fields_for(@caf)
+      @provenance = @caf.parsed_data_provenance.presence || {}
+      @data = @caf.parsed_contract_data.presence || {}
+    end
+
+    def update_contract_data
+      provenance = @caf.parsed_data_provenance.presence || {}
+      native_updates = {}
+      provenance_updates = {}
+      data_updates = (@caf.parsed_contract_data.presence || {}).dup
+
+      contract_data_params.each do |key, raw_value|
+        field = CafFieldSchema.field(key.to_sym)
+        next unless field
+
+        value = coerce_field_value(field, raw_value)
+        data_updates[key] = value
+        provenance_updates[key] = 'manual'
+
+        if field[:caf_column]
+          col_value = field[:type] == :array ? Array(value).join('; ') : value
+          native_updates[field[:caf_column]] = col_value
+        end
+      end
+
+      native_updates[:parsed_contract_data] = data_updates
+      native_updates[:parsed_data_provenance] = provenance.merge(provenance_updates)
+
+      @caf.update_columns(native_updates)
+      redirect_to contract_data_legal_ops_workflow_path(@caf),
+                  notice: 'Contract data saved. Dashboard will reflect these values.'
+    end
+
+    # POST /legal_ops/workflows/:id/reparse — re-enqueue ContractParsingJob
+    # AI fields are overwritten; manual fields are preserved (handled in the job).
+    def reparse
+      ContractParsingJob.perform_later(@caf.id)
+      redirect_to contract_data_legal_ops_workflow_path(@caf),
+                  notice: 'Re-parsing queued. AI-extracted fields will be updated shortly.'
+    end
+
     # GET /admin/workflows/signatories_for — AJAX: return signatories for entity + type
     def signatories_for
       entity   = params[:entity]
@@ -154,6 +198,28 @@ module Admin
         else
           s
         end
+      end
+    end
+
+    def contract_data_params
+      permitted = CafFieldSchema::FIELDS.map { |f| f[:key].to_s }
+      params.permit(*permitted).to_h
+    end
+
+    def coerce_field_value(field, raw)
+      return nil if raw.blank?
+
+      case field[:type]
+      when :boolean then ActiveModel::Type::Boolean.new.cast(raw)
+      when :integer then raw.to_i
+      when :date
+        begin
+          Date.parse(raw)
+        rescue ArgumentError, TypeError
+          nil
+        end
+      when :array   then raw.split(/\r?\n/).map(&:strip).reject(&:blank?)
+      else               raw.to_s.strip
       end
     end
 

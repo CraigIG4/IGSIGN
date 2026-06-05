@@ -2,53 +2,33 @@
 
 # IGSIGN — OpenRouter-based contract metadata extraction.
 #
-# Uses Faraday against the OpenAI-compatible endpoint at AI_BASE_URL.
-# Model is set by AI_MODEL (default: meta-llama/llama-3.3-70b-instruct:free).
+# Generates its extraction prompt dynamically from CafFieldSchema — adding a field
+# to the schema automatically adds it to the prompt. Uses two-pass extraction:
+# pass 1 identifies contract_type; pass 2 runs the full extraction with only the
+# fields active for that contract type (prevents hallucination of conditional fields).
 #
 # PRIVACY NOTE: Contract text is sent to OpenRouter, which routes to a
-# third-party hosted model (e.g. Meta Llama). This is acceptable for the
-# IGSIGN POC phase. For production with live client contracts, switch to a
-# self-hosted model or a provider with a zero-data-retention agreement.
-# See CLAUDE.md for env var documentation.
+# third-party hosted model (e.g. Meta Llama). Acceptable for POC.
+# For production, switch to Azure OpenAI (Sprint 6). See CLAUDE.md.
 class ContractParser
-  SYSTEM_PROMPT_PATH = Rails.root.join('config/prompts/extract_contract_v1.md')
   # 24 000 chars ≈ 6 000 tokens — well within Llama-3.3-70b's 128k window.
-  # Truncating avoids accidental overruns on large contracts.
   MAX_CHARS = 24_000
 
   class << self
     # Extracts structured metadata from contract_text.
     # Returns a Hash on success. On any failure returns { 'error' => <message> }.
-    # Never raises — callers (ContractParsingJob) log errors and continue.
+    # Never raises — ContractParsingJob logs errors and continues.
     def extract(contract_text)
-      return { 'error' => 'AI_API_KEY not configured' } if ENV['AI_API_KEY'].blank?
-      return { 'error' => 'AI_BASE_URL not configured' }  if ENV['AI_BASE_URL'].blank?
+      return { 'error' => 'AI_API_KEY not configured' } unless IgsignLlmClient.configured?
 
       truncated = contract_text.to_s.slice(0, MAX_CHARS)
 
-      client = build_client
-      response = client.post('chat/completions', {
-        model:           ENV.fetch('AI_MODEL', 'meta-llama/llama-3.3-70b-instruct:free'),
-        messages:        [
-          { role: 'system', content: system_prompt },
-          { role: 'user',   content: truncated }
-        ],
-        response_format: { type: 'json_object' },
-        temperature:     0.1
-      })
+      # Pass 1 — identify contract_type only (fast, minimal prompt)
+      contract_type = extract_contract_type(truncated)
 
-      raise "OpenRouter returned HTTP #{response.status}" unless response.success?
-
-      content = response.body.dig('choices', 0, 'message', 'content')
-      raise 'Empty response from model' if content.blank?
-
-      JSON.parse(content)
-    rescue JSON::ParserError => e
-      Rails.logger.error("[IGSIGN] ContractParser JSON parse error: #{e.message}")
-      { 'error' => "JSON parse error: #{e.message}" }
-    rescue Faraday::Error => e
-      Rails.logger.error("[IGSIGN] ContractParser network error: #{e.message}")
-      { 'error' => "Network error: #{e.message}" }
+      # Pass 2 — full extraction with fields active for this contract type
+      active_fields = CafFieldSchema.active_fields_for_type(contract_type)
+      extract_fields(truncated, active_fields)
     rescue StandardError => e
       Rails.logger.error("[IGSIGN] ContractParser failed: #{e.message}")
       { 'error' => e.message }
@@ -56,19 +36,70 @@ class ContractParser
 
     private
 
-    def build_client
-      Faraday.new(url: ENV['AI_BASE_URL']) do |f|
-        f.request  :json
-        f.response :json
-        f.adapter  Faraday.default_adapter
-        f.headers['Authorization'] = "Bearer #{ENV['AI_API_KEY']}"
-        f.headers['HTTP-Referer']  = 'https://igsign.ignitiongroup.co.za'
-        f.headers['X-Title']       = 'IGSIGN Contract Parser'
-      end
+    def extract_contract_type(text)
+      type_field = CafFieldSchema.field(:contract_type)
+      prompt = <<~PROMPT
+        Extract only the contract_type from this agreement. Return a JSON object with a single key "contract_type".
+        #{type_field[:prompt_guide]}
+        Return ONLY valid JSON. No markdown, no preamble.
+      PROMPT
+
+      raw = IgsignLlmClient.chat(
+        [{ role: 'system', content: prompt }, { role: 'user', content: text }],
+        temperature: 0.1,
+        json_mode: true
+      )
+      JSON.parse(raw)['contract_type'].to_s
+    rescue StandardError
+      ''
     end
 
-    def system_prompt
-      @system_prompt ||= File.read(SYSTEM_PROMPT_PATH)
+    def extract_fields(text, fields)
+      system_prompt = build_prompt(fields)
+      raw = IgsignLlmClient.chat(
+        [{ role: 'system', content: system_prompt }, { role: 'user', content: text }],
+        temperature: 0.1,
+        json_mode: true
+      )
+      JSON.parse(raw)
+    rescue JSON::ParserError => e
+      Rails.logger.error("[IGSIGN] ContractParser JSON parse error: #{e.message}")
+      { 'error' => "JSON parse error: #{e.message}" }
+    rescue StandardError => e
+      Rails.logger.error("[IGSIGN] ContractParser network error: #{e.message}")
+      { 'error' => e.message }
+    end
+
+    def build_prompt(fields)
+      field_instructions = fields.map do |f|
+        type_hint = type_hint_for(f)
+        "#{f[:key]}: #{f[:prompt_guide].strip}#{type_hint}"
+      end.join("\n\n")
+
+      <<~PROMPT
+        You are a legal contract analyst for Ignition Group, a South African technology conglomerate.
+        Extract structured metadata from the contract text provided.
+
+        For each field below, follow the specific instruction exactly.
+        CRITICAL RULE: Summarise — never copy clause text verbatim. Write values in plain English
+        as if briefing an executive who has not read the contract.
+
+        #{field_instructions}
+
+        Return ONLY valid JSON with keys matching the field names above.
+        No markdown, no preamble, no explanation — only the JSON object.
+      PROMPT
+    end
+
+    def type_hint_for(field)
+      case field[:type]
+      when :date    then ' (format: YYYY-MM-DD or null)'
+      when :boolean then ' (true/false/null)'
+      when :integer then ' (integer or null)'
+      when :array   then ' (JSON array of strings)'
+      when :enum    then " (one of: #{field[:options].join(', ')})"
+      else               ''
+      end
     end
   end
 end

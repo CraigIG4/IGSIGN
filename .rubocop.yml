@@ -80,6 +80,7 @@ Naming/PredicateMethod:
 Layout/LineLength:
   AllowedPatterns: ['\A\s*#']
   Exclude:
+    - 'app/lib/caf_field_schema.rb'
     - 'app/controllers/accounts_controller.rb'
     - 'app/controllers/embed_scripts_controller.rb'
     - 'lib/search_entries.rb'
