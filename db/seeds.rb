@@ -21,14 +21,14 @@ else
 end
 
 # ---------------------------------------------------------------------------
-# Admin user — Craig Doidge
+# Admin user — Craig Lawrence (CLO)
 # ---------------------------------------------------------------------------
-user = User.find_or_initialize_by(email: 'craig@ignitiongroup.co.za')
+user = User.find_or_initialize_by(email: 'Craig.Lawrence@ignitiongroup.co.za')
 
 if user.new_record?
   user.assign_attributes(
     first_name:    'Craig',
-    last_name:     'Doidge',
+    last_name:     'Lawrence',
     password:      'IgSign2026!',
     role:          User::ADMIN_ROLE,
     account:       account,
@@ -47,9 +47,9 @@ end
 # See docs/operations/pilot-launch-checklist.md for the full handover checklist.
 # ---------------------------------------------------------------------------
 [
-  { first_name: 'Sean',   last_name: 'Bergsma',     email: 'sean@ignitiongroup.co.za' },
-  { first_name: 'Donovan', last_name: 'Bergsma',    email: 'donovan@ignitiongroup.co.za' },
-  { first_name: 'Laren',  last_name: 'Farquharson', email: 'laren@ignitiongroup.co.za' }
+  { first_name: 'Sean',    last_name: 'Bergsma',     email: 'Sean.Bergsma@ignitiongroup.co.za' },
+  { first_name: 'Donovan', last_name: 'Bergsma',    email: 'Donovan.Bergsma@ignitiongroup.co.za' },
+  { first_name: 'Laren',  last_name: 'Farquharson', email: 'Laren.Farquharson@ignitiongroup.co.za' }
 ].each do |attrs|
   pilot_user = User.find_or_initialize_by(email: attrs[:email])
 
