@@ -24,21 +24,16 @@ end
 # Admin user — Craig Lawrence (CLO)
 # ---------------------------------------------------------------------------
 user = User.find_or_initialize_by(email: 'Craig.Lawrence@ignitiongroup.co.za')
-
-if user.new_record?
-  user.assign_attributes(
-    first_name:    'Craig',
-    last_name:     'Lawrence',
-    password:      'IgSign2026!',
-    role:          User::ADMIN_ROLE,
-    account:       account,
-    confirmed_at:  Time.current   # skip email confirmation on seed
-  )
-  user.save!
-  puts "Created admin user: #{user.email}"
-else
-  puts "Admin user already exists: #{user.email}"
-end
+user.assign_attributes(
+  first_name:   'Craig',
+  last_name:    'Lawrence',
+  role:         User::ADMIN_ROLE,
+  account:      account,
+  confirmed_at: Time.current
+)
+user.password = 'IgSign2026!' if user.new_record?
+user.save!
+puts "#{user.previously_new_record? ? 'Created' : 'Updated'} admin user: #{user.email}"
 
 # ---------------------------------------------------------------------------
 # Pilot admin users
