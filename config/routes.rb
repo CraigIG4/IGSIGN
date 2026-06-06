@@ -116,6 +116,14 @@ Rails.application.routes.draw do
       collection do
         get :signatories_for
       end
+
+      resources :contract_family_members,
+                controller: 'legal_ops/contract_family_members',
+                only: %i[create destroy] do
+        collection do
+          get :search
+        end
+      end
     end
 
     resources :approval_matrices, only: %i[index new create edit update],

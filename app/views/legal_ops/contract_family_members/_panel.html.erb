@@ -1,0 +1,103 @@
+<%# Related Agreements panel — embedded in legal_ops/workflows/show.html.erb %>
+<%# workflow = the CafWorkflow this panel belongs to %>
+
+<div style="background:#fff;border-radius:12px;border:1px solid #edf0f3;padding:20px;margin-top:20px;">
+  <details open>
+    <summary style="font-size:12px;font-weight:700;color:#7B787F;letter-spacing:2px;text-transform:uppercase;cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;">
+      <span>Related Agreements</span>
+      <span style="font-size:11px;font-weight:400;color:#9ca3af;">GCinmyPOCKET context · <%= workflow.contract_family_members.count %> linked</span>
+    </summary>
+
+    <%# Auto-suggestion from AI extraction %>
+    <% suggestions = Array(workflow.parsed_contract_data&.dig('amends_or_relates_to')).reject(&:blank?) %>
+    <% if suggestions.any? %>
+      <div style="margin-top:14px;padding:10px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:12px;color:#1e40af;">
+        <strong>Extraction suggests this document relates to:</strong>
+        <%= suggestions.join(', ') %>
+        — link it below to enable GCinmyPOCKET cross-agreement context.
+      </div>
+    <% end %>
+
+    <%# Existing members list %>
+    <% members = workflow.contract_family_members.ordered.includes(:linked_workflow) %>
+    <% if members.any? %>
+      <div style="margin-top:14px;">
+        <% members.each do |member| %>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f5f7f9;">
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:600;color:#0B1722;"><%= member.document_name %></div>
+              <div style="font-size:11px;color:#6b7280;">
+                <% if member.role.present? %>
+                  <span style="background:#f3f4f6;padding:1px 6px;border-radius:8px;text-transform:uppercase;font-size:10px;font-weight:700;"><%= member.role %></span>
+                <% end %>
+                <% if member.linked_workflow %>
+                  &nbsp;·&nbsp; Linked to <%= member.linked_workflow.contracting_party.presence || member.linked_workflow.agreement_type_label %>
+                <% end %>
+              </div>
+            </div>
+            <%= button_to legal_ops_workflow_contract_family_member_path(workflow, member),
+                  method: :delete,
+                  data: { confirm: "Remove #{member.document_name}?" },
+                  form: { data: { turbo: false } },
+                  style: "background:none;border:none;color:#dc2626;font-size:11px;cursor:pointer;padding:4px 8px;" do %>
+              Remove
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p style="margin-top:12px;font-size:12px;color:#9ca3af;font-style:italic;">No related agreements linked yet. Add one below to enable cross-agreement context in GCinmyPOCKET.</p>
+    <% end %>
+
+    <%# Add new member form %>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid #f0f0f0;">
+      <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:10px;">Link a related agreement</div>
+      <%= form_with url: legal_ops_workflow_contract_family_members_path(workflow),
+            method: :post, data: { turbo: false },
+            style: "display:flex;flex-direction:column;gap:10px;" do |f| %>
+
+        <%# Live search %>
+        <div style="position:relative;">
+          <input id="cfm_q" type="text" placeholder="Search by counterparty or agreement name…"
+            autocomplete="off"
+            oninput="
+              const q = this.value;
+              if (q.length < 2) { document.getElementById('cfm_search_results').innerHTML = ''; return; }
+              fetch('<%= search_legal_ops_workflow_contract_family_members_path(workflow) %>?q=' + encodeURIComponent(q))
+                .then(r => r.text())
+                .then(html => document.getElementById('cfm_search_results').innerHTML = html);
+            "
+            style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:7px 10px;font-size:13px;color:#111827;">
+          <div id="cfm_search_results"
+               style="position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 6px 6px;z-index:50;max-height:200px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+          </div>
+        </div>
+
+        <%# Hidden linked workflow id — filled by search result click %>
+        <input id="cfm_linked_workflow_id" type="hidden" name="contract_family_member[linked_workflow_id]">
+
+        <%# Document name (auto-filled by search, editable) %>
+        <input id="cfm_document_name" type="text" name="contract_family_member[document_name]"
+          placeholder="Document name (e.g. ITI–Acme MSA 2024)"
+          style="border:1px solid #d1d5db;border-radius:6px;padding:7px 10px;font-size:13px;color:#111827;width:100%;">
+
+        <%# Role %>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <select name="contract_family_member[role]"
+            style="border:1px solid #d1d5db;border-radius:6px;padding:7px 10px;font-size:13px;color:#111827;flex:1;">
+            <option value="">— Role (optional) —</option>
+            <% ContractFamilyMember::ROLES.each do |role| %>
+              <option value="<%= role %>"><%= role.capitalize %></option>
+            <% end %>
+          </select>
+
+          <button type="submit"
+            style="background:#0B1722;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">
+            Add link
+          </button>
+        </div>
+      <% end %>
+    </div>
+
+  </details>
+</div>

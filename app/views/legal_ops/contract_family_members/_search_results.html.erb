@@ -1,0 +1,15 @@
+<%# Search results for the Related Agreements live-search dropdown %>
+<% if results.any? %>
+  <% results.each do |wf| %>
+    <div style="padding:8px 12px;border-bottom:1px solid #f3f4f6;cursor:pointer;"
+         onclick="document.getElementById('cfm_linked_workflow_id').value='<%= wf.id %>';
+                  document.getElementById('cfm_document_name').value='<%= j(wf.contracting_party.presence || wf.agreement_type_label) %>';
+                  document.getElementById('cfm_search_results').innerHTML='';
+                  document.getElementById('cfm_q').value='<%= j(wf.contracting_party.presence || wf.agreement_type_label) %>';">
+      <div style="font-size:13px;font-weight:600;color:#0B1722;"><%= wf.contracting_party.presence || '—' %></div>
+      <div style="font-size:11px;color:#6b7280;"><%= wf.agreement_type_label %> · <%= wf.entity_name %> · <%= wf.created_at.strftime('%b %Y') %></div>
+    </div>
+  <% end %>
+<% else %>
+  <div style="padding:10px 12px;font-size:12px;color:#9ca3af;">No matching agreements found.</div>
+<% end %>

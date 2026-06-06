@@ -102,6 +102,10 @@ class CafWorkflow < ApplicationRecord
   belongs_to :caf_submission, class_name: 'Submission', optional: true
   belongs_to :contract_submission, class_name: 'Submission', optional: true
 
+  # Contract Family — related agreements for GCinmyPOCKET context assembly (Sprint 2.5)
+  has_many :contract_family_members, dependent: :destroy
+  has_many :linked_workflows, through: :contract_family_members
+
   has_one_attached :contract_document
 
   before_validation :derive_caf_type_from_agreement_type
