@@ -140,12 +140,12 @@ class AgreementsController < ApplicationController
       template.update!(schema: schema)
       @agreement.update!(template_id: template.id)
 
-      # Kick off background AI parsing — silent failure, never blocks the upload flow
+      # Kick off background AI parsing and field detection — silent failure, never blocks upload
       ContractParsingJob.perform_later(@agreement.id)
+      FieldDetectionJob.perform_later(template.id)
 
-      field_count = template.reload.fields&.length || 0
-      notice = build_field_detection_notice(field_count)
-      redirect_to position_agreement_path(@agreement), notice: notice
+      redirect_to position_agreement_path(@agreement),
+                  notice: 'Document uploaded. Detecting signing fields — review placements below.'
     rescue StandardError => e
       template.destroy
       Rails.logger.error "[IGSIGN] Upload failed agreement=#{@agreement.id}: #{e.message}"
@@ -170,14 +170,19 @@ class AgreementsController < ApplicationController
 
     sync_template_submitters!
     if @agreement.template.fields.blank?
-      placed = auto_place_fields!
+      # Field detection job may still be running — attempt sync detection as fallback,
+      # then fall back to hardcoded auto-placement if model is absent or detection fails.
+      placed = ai_detect_fields! || auto_place_fields!
       if placed.zero?
-        flash.now[:alert] = 'Signature fields could not be auto-placed — ' \
-                            'please drag fields onto the document manually.'
+        flash.now[:alert] = 'No signature fields were auto-detected. ' \
+                            'Please drag fields onto the document manually.'
       end
     end
 
     template = @agreement.template
+    @detected_fields  = template.fields || []
+    @field_counts     = @detected_fields.group_by { |f| f['type'] }.transform_values(&:count)
+    @onnx_available   = File.exist?(Templates::ImageToFields::MODEL_PATH)
     ActiveRecord::Associations::Preloader.new(
       records: [template],
       associations: [{ schema_documents: [:blob, { preview_images_attachments: :blob }] }]
@@ -456,6 +461,24 @@ class AgreementsController < ApplicationController
   #
   # Returns the number of fields placed (0 on any failure path so callers can
   # detect and surface a user-facing warning).
+  # Attempts AI field detection synchronously as a fallback for when the
+  # background FieldDetectionJob has not completed by the time the user
+  # arrives at the position step.  Returns the number of fields detected,
+  # or nil if the ONNX model is absent (caller falls back to auto_place_fields!).
+  def ai_detect_fields!
+    return nil unless File.exist?(Templates::ImageToFields::MODEL_PATH)
+
+    template = @agreement.template
+    return nil if template.fields.present?
+
+    FieldDetectionJob.new.perform(template.id)
+    template.reload
+    (template.fields || []).length
+  rescue StandardError => e
+    Rails.logger.warn("[IGSIGN] ai_detect_fields! error: #{e.message}")
+    nil
+  end
+
   def auto_place_fields!
     template = @agreement.template
     return 0 if (template.fields || []).any?

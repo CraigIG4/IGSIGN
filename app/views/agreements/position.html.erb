@@ -38,25 +38,50 @@
         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium text-white shrink-0"
               style="background-color: <%= colors[idx % colors.length] %>;">
           <span class="w-1.5 h-1.5 rounded-full bg-white" style="opacity:0.65;"></span>
-          <%= sub['name'] %>
+          <%= sub['name'] == 'Counterparty' ? (@agreement.counterparty_name.presence || @agreement.company&.name.presence || 'Counterparty') : sub['name'] %>
         </span>
       <% end %>
     </div>
 
-    <%# Right: continue button — posts to save_fields for coverage validation %>
-    <%= form_with url: position_agreement_path(@agreement), method: :post, class: 'shrink-0' do |f| %>
-      <%= f.submit 'Continue to Review →',
-                   class: 'px-5 py-2 rounded-lg text-sm font-semibold text-white cursor-pointer transition-opacity hover:opacity-90',
-                   style: 'background-color:#45AC34;' %>
-    <% end %>
+    <%# Right: action buttons %>
+    <div class="flex items-center gap-2 shrink-0">
+      <%# "Looks correct — proceed" skips the builder and goes straight to review %>
+      <%= form_with url: position_agreement_path(@agreement), method: :post, class: 'contents' do |f| %>
+        <%= f.submit @detected_fields.any? ? 'Looks correct — proceed →' : 'Continue to Review →',
+                     class: 'px-5 py-2 rounded-lg text-sm font-semibold text-white cursor-pointer transition-opacity hover:opacity-90',
+                     style: 'background-color:#00C853;' %>
+      <% end %>
+    </div>
   </div>
 
-  <%# ── Flash (validation errors from save_fields) ──────────────────────────── %>
+  <%# ── Field detection summary banner ─────────────────────────────────────────── %>
+  <% if @detected_fields.any? %>
+    <div class="shrink-0 flex items-center justify-between gap-4 px-5 py-2.5 border-b text-sm" style="background:#f0fdf4;border-color:#bbf7d0;">
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:#00C853;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+        </svg>
+        <span class="text-green-700 font-medium">
+          <%= @detected_fields.count %> fields auto-detected:
+          <% @field_counts.sort.each_with_index do |(type, count), i| %>
+            <span class="font-semibold"><%= count %> <%= type %></span><%= i < @field_counts.length - 1 ? ', ' : '' %>
+          <% end %>
+        </span>
+      </div>
+      <span class="text-xs text-green-600">Assignments shown in editor — adjust if needed before proceeding.</span>
+    </div>
+  <% elsif !@onnx_available %>
+    <div class="shrink-0 flex items-center gap-2 px-5 py-2.5 border-b text-sm" style="background:#fffbeb;border-color:#fde68a;">
+      <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:#d97706;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+      <span class="text-amber-700">Automatic field detection is not available — model not loaded. Fields have been auto-placed. Drag to reposition.</span>
+    </div>
+  <% end %>
+
+  <%# ── Flash (validation errors / scanned PDF warning) ─────────────────────────── %>
   <% if flash[:alert].present? %>
-    <div class="shrink-0 flex items-center gap-2 px-5 py-2.5 bg-red-50 border-b border-red-200 text-sm text-red-700">
+    <div class="shrink-0 flex items-center gap-2 px-5 py-2.5 border-b text-sm" style="background:#fef2f2;border-color:#fecaca;color:#dc2626;">
       <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round"
-              d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
       </svg>
       <%= flash[:alert] %>
     </div>
