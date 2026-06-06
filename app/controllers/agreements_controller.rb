@@ -217,6 +217,12 @@ class AgreementsController < ApplicationController
     @template_docs = @agreement.template&.documents&.attachments&.includes(:blob) || []
 
     @counterparty_signatory = load_counterparty_signatory
+
+    # Sprint 1 pre-fill support
+    @parsed     = @agreement.parsed_contract_data.to_h
+    @provenance = @agreement.parsed_data_provenance.to_h
+    @prefill_present   = @provenance.any? { |_, v| v == 'ai' }
+    @amends_suggestion = @parsed['amends_or_relates_to'].presence
   end
 
   # ── Send ───────────────────────────────────────────────────────────────────
