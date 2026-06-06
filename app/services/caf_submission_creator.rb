@@ -33,16 +33,35 @@ class CafSubmissionCreator
 
   # IgEntitySignatory positions that belong to the parallel Stage 0 internal-approval phase.
   INTERNAL_POSITIONS = %w[
-    bu_head bu_cfo bu_cfo_alternate group_clo group_cfo procurement approver_only
+    bu_head bu_cfo bu_cfo_alternate group_clo group_cfo group_coo procurement approver_only
   ].freeze
 
   # IgEntitySignatory positions that run as sequential group-signer stages (Stage 1+).
   # Order matters: group_signer is always invited before group_signer_alt.
   SEQUENTIAL_POSITIONS = %w[group_signer group_signer_alt].freeze
 
+  # Canonical chain order — must match IgSignatories.chain_for position ordering
+  # so that place_caf_signature_fields! row index aligns with the signing page HTML.
+  CHAIN_ORDER = (INTERNAL_POSITIONS + SEQUENTIAL_POSITIONS).freeze
+
+  # Signing-page layout constants (fractions of A4 297mm page height / 210mm width).
+  # These match the .sp-page CSS in the CAF HTML templates:
+  #   - 22mm top margin + ~25mm header block → first row at y ≈ 57mm
+  #   - Each row: height:32mm → stride ≈ 0.108
+  SIG_PAGE_ROW_FIRST_Y = (57.0 / 297.0).freeze  # ≈ 0.192
+  SIG_PAGE_ROW_STRIDE  = (32.0 / 297.0).freeze  # ≈ 0.108
+  SIG_FIELD_X  = 0.35
+  SIG_FIELD_W  = 0.335
+  SIG_FIELD_H  = 0.075
+  DATE_FIELD_X = 0.69
+  DATE_FIELD_W = 0.195
+  DATE_FIELD_H = 0.055
+
   def initialize(caf, initiated_by_user)
-    @caf  = caf
-    @user = initiated_by_user
+    @caf                  = caf
+    @user                 = initiated_by_user
+    @caf_attachment_uuid  = nil
+    @caf_sig_page_index   = 0
   end
 
   def call
@@ -66,6 +85,7 @@ class CafSubmissionCreator
     end
 
     extend_submission_schema(submission)
+    place_caf_signature_fields!(submission)
 
     submission.caf_stages.ordered_by_position.first&.activate!
 
@@ -159,10 +179,13 @@ class CafSubmissionCreator
   # signing flow proceeds even if LibreOffice is unavailable.
   def attach_caf_pdf_document(submission)
     pdf_path = nil
-    pdf_path = CafPdfGenerator.new(@caf).generate
+    pdf_data = CafPdfGenerator.new(@caf).generate
+
+    # Count pages so field placement targets the last (signing) page.
+    page_count = count_pdf_pages_from_data(pdf_data)
 
     blob = ActiveStorage::Blob.create_and_upload!(
-      io:           File.open(pdf_path),
+      io:           StringIO.new(pdf_data),
       filename:     "caf_#{@caf.id}_summary.pdf",
       content_type: 'application/pdf'
     )
@@ -178,6 +201,10 @@ class CafSubmissionCreator
       document_name: blob.filename.to_s,
       internal_only: true
     )
+
+    # Store for place_caf_signature_fields! — called after schema is extended.
+    @caf_attachment_uuid = attachment.uuid
+    @caf_sig_page_index  = [page_count - 1, 0].max
 
     process_document_async(attachment)
   rescue StandardError => e
@@ -466,6 +493,89 @@ class CafSubmissionCreator
         position:  idx
       )
     end
+  end
+
+  # Places signature + date fields on the CAF signing page for every internal
+  # approver and group signer.  Field y-positions match the fixed-height rows
+  # in the .sp-page section of the CAF HTML templates (SIG_PAGE_ROW_* constants).
+  #
+  # Skips silently if @caf_attachment_uuid is blank (CAF PDF generation failed).
+  def place_caf_signature_fields!(submission)
+    return unless @caf_attachment_uuid
+
+    # Collect all signable submitters in canonical chain order.
+    # Skip the Counterparty — they only sign the agreement, not the CAF.
+    ordered_subs = submission.submitters
+                             .reject { |s| s.metadata&.dig('caf_role') == 'Counterparty Signatory' }
+                             .sort_by do |s|
+                               pos = s.metadata&.dig('chain_position').to_s
+                               CHAIN_ORDER.index(pos) || 999
+                             end
+
+    return if ordered_subs.empty?
+
+    new_fields = ordered_subs.each_with_index.flat_map do |sub, idx|
+      row_y = SIG_PAGE_ROW_FIRST_Y + (idx * SIG_PAGE_ROW_STRIDE)
+      [
+        {
+          'uuid'           => SecureRandom.uuid,
+          'submitter_uuid' => sub.uuid,
+          'name'           => "#{sub.name} Signature",
+          'type'           => 'signature',
+          'required'       => true,
+          'preferences'    => {},
+          'areas'          => [{
+            'x'               => SIG_FIELD_X,
+            'y'               => row_y,
+            'w'               => SIG_FIELD_W,
+            'h'               => SIG_FIELD_H,
+            'page'            => @caf_sig_page_index,
+            'attachment_uuid' => @caf_attachment_uuid
+          }]
+        },
+        {
+          'uuid'           => SecureRandom.uuid,
+          'submitter_uuid' => sub.uuid,
+          'name'           => "#{sub.name} Date",
+          'type'           => 'date',
+          'required'       => true,
+          'preferences'    => { 'format' => 'DD/MM/YYYY' },
+          'areas'          => [{
+            'x'               => DATE_FIELD_X,
+            'y'               => row_y + 0.015,
+            'w'               => DATE_FIELD_W,
+            'h'               => DATE_FIELD_H,
+            'page'            => @caf_sig_page_index,
+            'attachment_uuid' => @caf_attachment_uuid
+          }]
+        }
+      ]
+    end
+
+    existing = submission.template_fields || []
+    submission.update!(template_fields: existing + new_fields)
+
+    Rails.logger.info(
+      "[CafSubmissionCreator] Placed #{new_fields.size} CAF signature fields " \
+      "on page #{@caf_sig_page_index} for CAF #{@caf.id}"
+    )
+  rescue StandardError => e
+    Rails.logger.error("[CafSubmissionCreator] place_caf_signature_fields! failed: #{e.message}")
+  end
+
+  # Returns the number of pages in the PDF at +pdf_path+ using HexaPDF.
+  # Falls back to 1 so that field placement defaults to page 0 on any error.
+  def count_pdf_pages_from_data(pdf_data)
+    doc = HexaPDF::Document.new(io: StringIO.new(pdf_data))
+    doc.pages.count
+  rescue StandardError => e
+    Rails.logger.warn("[CafSubmissionCreator] Could not count PDF pages for CAF #{@caf.id}: #{e.message}")
+    1
+  end
+
+  # Kept for any remaining callers using a file path.
+  def count_pdf_pages(pdf_path)
+    count_pdf_pages_from_data(File.binread(pdf_path))
   end
 
   def process_document_async(attachment)

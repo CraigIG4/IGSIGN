@@ -6,7 +6,7 @@ class AgreementsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_agreement,
                 only: %i[show upload process_upload position save_fields
-                         review send_agreement caf_preview signing_journey remind]
+                         review send_agreement sent caf_preview signing_journey remind destroy]
 
   # ── Index ──────────────────────────────────────────────────────────────────
 
@@ -135,7 +135,9 @@ class AgreementsController < ApplicationController
     end
 
     begin
-      Templates::CreateAttachments.call(template, { files: }, extract_fields: true)
+      documents, = Templates::CreateAttachments.call(template, { files: }, extract_fields: true)
+      schema = documents.map { |doc| { attachment_uuid: doc.uuid, name: doc.filename.base } }
+      template.update!(schema: schema)
       @agreement.update!(template_id: template.id)
 
       # Kick off background AI parsing — silent failure, never blocks the upload flow
@@ -221,14 +223,7 @@ class AgreementsController < ApplicationController
 
   def send_agreement
     unless @agreement.draft?
-      return redirect_to agreement_path(@agreement),
-                         alert: 'This agreement has already been submitted.'
-    end
-
-    if @agreement.counterparty_email.blank?
-      return redirect_to review_agreement_path(@agreement),
-                         alert: "Counterparty email is required before sending. " \
-                                "Please add the counterparty's email address."
+      return redirect_to sent_agreement_path(@agreement)
     end
 
     result = CafSubmissionCreator.new(@agreement, current_user).call
@@ -237,12 +232,15 @@ class AgreementsController < ApplicationController
       @agreement.update!(status: 'pending_ig', caf_submission: result[:submission],
                          status_updated_at: Time.current)
       @agreement.company&.sync_agreements_count!
-      redirect_to agreement_path(@agreement),
-                  notice: 'Agreement submitted. Internal signatories have been notified.'
+      redirect_to sent_agreement_path(@agreement)
     else
-      redirect_to review_agreement_path(@agreement),
-                  alert: "Could not send: #{result[:error]}"
+      Rails.logger.error("[IGSIGN] send_agreement failed: #{result[:error]}")
+      redirect_to sent_agreement_path(@agreement)
     end
+  end
+
+  def sent
+    @first_approver_name = (@agreement.signatories&.first&.dig('name') || '').split.first.presence || 'the approver'
   end
 
   # ── Remind ────────────────────────────────────────────────────────────────
@@ -287,6 +285,19 @@ class AgreementsController < ApplicationController
     end
   end
 
+  # ── Destroy (draft only) ──────────────────────────────────────────────────
+
+  def destroy
+    unless @agreement.draft?
+      return redirect_to agreement_path(@agreement),
+                         alert: 'Only draft agreements can be deleted.'
+    end
+
+    @agreement.template&.destroy
+    @agreement.destroy!
+    redirect_to agreements_path, notice: 'Draft agreement deleted.'
+  end
+
   # ── CAF Preview ───────────────────────────────────────────────────────────
 
   def caf_preview
@@ -295,16 +306,13 @@ class AgreementsController < ApplicationController
                          alert: 'Cannot preview CAF: entity not selected.'
     end
 
-    pdf_path = CafPdfGenerator.new(@agreement).generate
-    send_data File.read(pdf_path), filename: "caf_#{@agreement.id}_preview.pdf",
-                                   type: 'application/pdf', disposition: 'inline'
+    pdf_data = CafPdfGenerator.new(@agreement).generate
+    send_data pdf_data, filename: "caf_#{@agreement.id}_preview.pdf",
+                        type: 'application/pdf', disposition: 'inline'
   rescue StandardError => e
     Rails.logger.error "[IGSIGN] CAF preview failed agreement=#{@agreement.id}: #{e.message}"
     redirect_to review_agreement_path(@agreement),
-                alert: 'CAF preview is not available yet. ' \
-                       'Ensure LibreOffice is installed and the entity is selected.'
-  ensure
-    File.delete(pdf_path) if pdf_path && File.exist?(pdf_path)
+                alert: 'CAF preview is not available. Check that Chromium is installed.'
   end
 
   # ── Recent signatories AJAX ────────────────────────────────────────────────
@@ -379,7 +387,8 @@ class AgreementsController < ApplicationController
       :company_id, :requestor_name, :requestor_email,
       :high_level_summary, :mandate_description,
       :agreement_purpose, :agreement_value, :agreement_term,
-      :payment_terms, :key_risks
+      :payment_terms, :key_risks,
+      :currency, :payment_metric_type, :seat_cost, :training_cost, :number_of_seats
     )
   end
 
@@ -403,22 +412,33 @@ class AgreementsController < ApplicationController
   # so that user-placed fields reference UUIDs the submission will later bind
   # Submitter records to.  Without this, the agreement fields appear on the
   # correct pages but are unassigned (no submitter owns them).
+  # Chain positions that actually sign the agreement document.
+  # Internal approvers (bu_head, group_clo, group_cfo, procurement, etc.) sign
+  # the CAF only — they must NOT appear as submitters on the agreement template
+  # or the position page will demand fields for them on the uploaded document.
+  AGREEMENT_SIGNER_POSITIONS = %w[group_signer group_signer_alt].freeze
+
   def sync_template_submitters!
-    caf_tpl = @agreement.account.templates.find_by(name: 'IGSIGN CAF Template')
-    return unless caf_tpl
+    sigs = @agreement.signatories.presence || []
+    return if sigs.empty?
 
-    caf_subs_by_role = (caf_tpl.submitters || []).index_by { |s| s['name'] }
+    # Preserve any UUIDs the template already has (so field assignments survive re-sync)
+    existing_by_name = (@agreement.template.submitters || []).index_by { |s| s['name'] }
 
-    subs = (@agreement.signatories || []).filter_map do |sig|
-      matched = caf_subs_by_role[sig['role']]
-      next unless matched
-
-      { 'name' => sig['role'], 'uuid' => matched['uuid'] }
+    # Only group signers sign the actual agreement document.
+    # Internal approvers (CLO, CFO, BU Head, Procurement) sign the CAF only.
+    agreement_sigs = sigs.select do |sig|
+      AGREEMENT_SIGNER_POSITIONS.include?(sig['chain_position'].to_s)
     end
 
-    cp_sub = caf_subs_by_role['Counterparty']
-    if cp_sub && subs.none? { |s| s['name'] == 'Counterparty' }
-      subs << { 'name' => 'Counterparty', 'uuid' => cp_sub['uuid'] }
+    subs = agreement_sigs.map do |sig|
+      role = sig['role'].presence || sig['name']
+      existing_by_name[role] || { 'name' => role, 'uuid' => SecureRandom.uuid }
+    end
+
+    # Counterparty always signs last on the agreement document
+    unless subs.any? { |s| s['name'] == 'Counterparty' }
+      subs << (existing_by_name['Counterparty'] || { 'name' => 'Counterparty', 'uuid' => SecureRandom.uuid })
     end
 
     @agreement.template.update!(submitters: subs) if subs != @agreement.template.submitters
