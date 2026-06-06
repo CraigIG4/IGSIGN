@@ -23,6 +23,11 @@ Rails.application.routes.draw do
   # own job pipeline. Protected by X-Internal-Webhook-Secret header.
   namespace :internal do
     resources :caf_webhooks, only: %i[create]
+
+    # GCinmyPOCKET chat endpoint — authenticated by submitter token
+    namespace :gcip do
+      resources :chats, only: %i[create]
+    end
   end
   get 'manifest' => 'pwa#manifest'
 
