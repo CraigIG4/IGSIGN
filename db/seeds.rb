@@ -23,7 +23,7 @@ end
 # ---------------------------------------------------------------------------
 # Admin user — Craig Lawrence (CLO)
 # ---------------------------------------------------------------------------
-user = User.find_or_initialize_by(email: 'Craig.Lawrence@ignitiongroup.co.za')
+user = User.find_or_initialize_by(email: 'craig.lawrence@ignitiongroup.co.za')
 user.assign_attributes(
   first_name:   'Craig',
   last_name:    'Lawrence',
@@ -42,9 +42,9 @@ puts "#{user.previously_new_record? ? 'Created' : 'Updated'} admin user: #{user.
 # See docs/operations/pilot-launch-checklist.md for the full handover checklist.
 # ---------------------------------------------------------------------------
 [
-  { first_name: 'Sean',    last_name: 'Bergsma',     email: 'Sean.Bergsma@ignitiongroup.co.za' },
-  { first_name: 'Donovan', last_name: 'Bergsma',    email: 'Donovan.Bergsma@ignitiongroup.co.za' },
-  { first_name: 'Laren',  last_name: 'Farquharson', email: 'Laren.Farquharson@ignitiongroup.co.za' }
+  { first_name: 'Sean',    last_name: 'Bergsma',     email: 'sean.bergsma@ignitiongroup.co.za' },
+  { first_name: 'Donovan', last_name: 'Bergsma',    email: 'donovan.bergsma@ignitiongroup.co.za' },
+  { first_name: 'Laren',  last_name: 'Farquharson', email: 'laren.farquharson@ignitiongroup.co.za' }
 ].each do |attrs|
   pilot_user = User.find_or_initialize_by(email: attrs[:email])
 
@@ -105,7 +105,7 @@ def igsign_blank_a4_pdf
 end
 
 caf_account = Account.find_by(name: 'Ignition Group')
-caf_user    = User.find_by(email: 'craig@ignitiongroup.co.za')
+caf_user    = User.find_by(email: 'craig.lawrence@ignitiongroup.co.za')
 
 if caf_account.nil? || caf_user.nil?
   puts 'IGSIGN CAF Template: skipped — account or admin user not found'
