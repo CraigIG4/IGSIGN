@@ -191,11 +191,11 @@ module CafFieldSchema
     {
       key: :pricing_structure,
       label: 'Pricing in Contract',
-      type: :enum,
-      options: ['$/sale', '$/hr', '$/head', 'Fixed fee', 'Retainer', 'Milestone', 'Mixed', 'Not Included'],
+      type: :array,
+      options: ['$/sale', '$/hr', '$/head', 'Fixed fee', 'Retainer', 'Milestone', 'Not Included'],
       dashboard: true,
       caf_column: :pricing_structure,
-      prompt_guide: 'Classify the pricing structure using the most accurate option: "$/sale" (per transaction/unit sold), "$/hr" (time and materials, hourly), "$/head" (per person/seat/user), "Fixed fee" (lump sum), "Retainer" (monthly fixed), "Milestone" (payment on deliverables), "Mixed" (combination). Return "Not Included" if the agreement contains no pricing terms.'
+      prompt_guide: 'List ALL applicable pricing structures as a JSON array — agreements often combine multiple types. Options: "$/sale" (per transaction/unit sold), "$/hr" (time and materials, hourly), "$/head" (per person/seat/user), "Fixed fee" (lump sum), "Retainer" (monthly fixed), "Milestone" (payment on deliverables). Return ["Not Included"] if the agreement contains no pricing terms. Example: ["Fixed fee", "$/head"] for a combined model.'
     },
     {
       key: :payment_terms_days,

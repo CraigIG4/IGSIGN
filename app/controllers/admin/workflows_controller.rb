@@ -202,8 +202,15 @@ module Admin
     end
 
     def contract_data_params
-      permitted = CafFieldSchema::FIELDS.map { |f| f[:key].to_s }
-      params.permit(*permitted).to_h
+      # Array fields with options submit as key[] (checkbox groups)
+      array_keys = CafFieldSchema::FIELDS
+                     .select { |f| f[:type] == :array && f[:options].present? }
+                     .map { |f| f[:key].to_s }
+      scalar_keys = CafFieldSchema::FIELDS.map { |f| f[:key].to_s } - array_keys
+
+      permitted_scalar = scalar_keys
+      permitted_array  = array_keys.map { |k| { k => [] } }
+      params.permit(*permitted_scalar, *permitted_array).to_h
     end
 
     def coerce_field_value(field, raw)
@@ -218,7 +225,9 @@ module Admin
         rescue ArgumentError, TypeError
           nil
         end
-      when :array   then raw.split(/\r?\n/).map(&:strip).reject(&:blank?)
+      when :array
+        # Checkbox arrays arrive as Array; textarea arrays arrive as newline-separated string
+        raw.is_a?(Array) ? raw.reject(&:blank?) : raw.split(/\r?\n/).map(&:strip).reject(&:blank?)
       else               raw.to_s.strip
       end
     end

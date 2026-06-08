@@ -99,9 +99,25 @@
             style="width:100%;border:1px solid #D1D5DB;border-radius:6px;padding:8px 10px;font-size:13px;color:#111827;resize:vertical;"><%= current_value %></textarea>
 
         <% when :array %>
-          <textarea id="field_<%= key %>" name="<%= key %>" rows="3"
-            style="width:100%;border:1px solid #D1D5DB;border-radius:6px;padding:8px 10px;font-size:13px;color:#111827;resize:vertical;"
-            placeholder="One item per line"><%= Array(current_value).join("\n") %></textarea>
+          <% if field[:options].present? %>
+            <%# Array with predefined options — render as checkboxes (multi-select) %>
+            <% selected_values = Array(current_value).map(&:to_s) %>
+            <div style="display:flex;flex-wrap:wrap;gap:8px 16px;">
+              <% field[:options].each do |opt| %>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#374151;cursor:pointer;">
+                  <input type="checkbox" name="<%= key %>[]" value="<%= opt %>"
+                    <%= 'checked' if selected_values.include?(opt.to_s) %>
+                    style="width:14px;height:14px;">
+                  <%= opt %>
+                </label>
+              <% end %>
+            </div>
+          <% else %>
+            <%# Free-form array — one item per line textarea %>
+            <textarea id="field_<%= key %>" name="<%= key %>" rows="3"
+              style="width:100%;border:1px solid #D1D5DB;border-radius:6px;padding:8px 10px;font-size:13px;color:#111827;resize:vertical;"
+              placeholder="One item per line"><%= Array(current_value).join("\n") %></textarea>
+          <% end %>
 
         <% else %>
           <input id="field_<%= key %>" name="<%= key %>" type="text"
