@@ -225,6 +225,9 @@ module Admin
         rescue ArgumentError, TypeError
           nil
         end
+      when :payment_terms
+        # Stored as JSON string from the hidden field; parse to array of hashes
+        raw.is_a?(String) ? (JSON.parse(raw) rescue []) : Array(raw)
       when :array
         # Checkbox arrays arrive as Array; textarea arrays arrive as newline-separated string
         raw.is_a?(Array) ? raw.reject(&:blank?) : raw.split(/\r?\n/).map(&:strip).reject(&:blank?)

@@ -98,6 +98,48 @@
           <textarea id="field_<%= key %>" name="<%= key %>" rows="4"
             style="width:100%;border:1px solid #D1D5DB;border-radius:6px;padding:8px 10px;font-size:13px;color:#111827;resize:vertical;"><%= current_value %></textarea>
 
+        <% when :payment_terms %>
+          <%# Structured payment terms builder — each row: direction, type, amount, frequency, notes %>
+          <% pt_rows = Array(current_value).is_a?(Array) ? Array(current_value) : [] %>
+          <div id="pt_builder_<%= key %>" style="display:flex;flex-direction:column;gap:8px;">
+
+            <%# Hidden field — stores JSON array, updated by JS %>
+            <input type="hidden" id="pt_json_<%= key %>" name="<%= key %>" value="<%= pt_rows.to_json.html_safe %>">
+
+            <%# Existing rows (rendered server-side on load) %>
+            <% pt_rows.each_with_index do |row, idx| %>
+              <div class="pt-row" style="display:grid;grid-template-columns:140px 140px 120px 120px 1fr auto;gap:6px;align-items:center;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:8px;">
+                <select class="pt-dir" style="border:1px solid #D1D5DB;border-radius:6px;padding:6px 8px;font-size:12px;">
+                  <option value="cp_pays" <%= 'selected' if row['direction'] == 'cp_pays' %>>CP pays IG →</option>
+                  <option value="ig_pays" <%= 'selected' if row['direction'] == 'ig_pays' %>>IG pays CP →</option>
+                </select>
+                <select class="pt-type" style="border:1px solid #D1D5DB;border-radius:6px;padding:6px 8px;font-size:12px;">
+                  <% ['$/sale','$/hr','$/head','Fixed fee','Retainer','Milestone','Revenue share %','Other'].each do |t| %>
+                    <option value="<%= t %>" <%= 'selected' if row['type'] == t %>><%= t %></option>
+                  <% end %>
+                </select>
+                <input class="pt-amount" type="text" placeholder="Amount/Rate" value="<%= row['amount'] %>"
+                  style="border:1px solid #D1D5DB;border-radius:6px;padding:6px 8px;font-size:12px;">
+                <input class="pt-freq" type="text" placeholder="Frequency" value="<%= row['frequency'] %>"
+                  style="border:1px solid #D1D5DB;border-radius:6px;padding:6px 8px;font-size:12px;">
+                <input class="pt-notes" type="text" placeholder="Notes (optional)" value="<%= row['notes'] %>"
+                  style="border:1px solid #D1D5DB;border-radius:6px;padding:6px 8px;font-size:12px;">
+                <button type="button" onclick="ptRemoveRow(this, '<%= key %>')"
+                  style="color:#ef4444;background:none;border:none;cursor:pointer;font-size:18px;line-height:1;padding:2px 4px;">&times;</button>
+              </div>
+            <% end %>
+
+            <%# Empty state %>
+            <% if pt_rows.empty? %>
+              <p id="pt_empty_<%= key %>" style="font-size:12px;color:#9ca3af;font-style:italic;">No payment terms added. Use the button below to add one.</p>
+            <% end %>
+          </div>
+
+          <button type="button" onclick="ptAddRow('<%= key %>')"
+            style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#0B1722;background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;padding:6px 12px;cursor:pointer;">
+            + Add payment term
+          </button>
+
         <% when :array %>
           <% if field[:options].present? %>
             <%# Array with predefined options — render as checkboxes (multi-select) %>
@@ -128,7 +170,7 @@
     <% end %>
 
     <div style="margin-top:24px;display:flex;justify-content:flex-end;">
-      <button type="submit"
+      <button type="submit" onclick="ptSyncAllBeforeSubmit()"
         style="background:#00C853;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;">
         Save contract data
       </button>
@@ -136,3 +178,80 @@
   <% end %>
 
 </div>
+
+<script>
+// ── Payment Terms Builder ──────────────────────────────────────────────────
+var PT_TYPES = ['$/sale','$/hr','$/head','Fixed fee','Retainer','Milestone','Revenue share %','Other'];
+
+function ptRowHtml(key) {
+  var typeOpts = PT_TYPES.map(function(t) {
+    return '<option value="' + t + '">' + t + '</option>';
+  }).join('');
+  return '<div class="pt-row" style="display:grid;grid-template-columns:140px 140px 120px 120px 1fr auto;gap:6px;align-items:center;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:8px;">' +
+    '<select class="pt-dir" style="border:1px solid #D1D5DB;border-radius:6px;padding:6px 8px;font-size:12px;">' +
+      '<option value="cp_pays">CP pays IG &rarr;</option>' +
+      '<option value="ig_pays">IG pays CP &rarr;</option>' +
+    '</select>' +
+    '<select class="pt-type" style="border:1px solid #D1D5DB;border-radius:6px;padding:6px 8px;font-size:12px;">' + typeOpts + '</select>' +
+    '<input class="pt-amount" type="text" placeholder="Amount/Rate" style="border:1px solid #D1D5DB;border-radius:6px;padding:6px 8px;font-size:12px;">' +
+    '<input class="pt-freq"   type="text" placeholder="Frequency"   style="border:1px solid #D1D5DB;border-radius:6px;padding:6px 8px;font-size:12px;">' +
+    '<input class="pt-notes"  type="text" placeholder="Notes (optional)" style="border:1px solid #D1D5DB;border-radius:6px;padding:6px 8px;font-size:12px;">' +
+    '<button type="button" onclick="ptRemoveRow(this,\'' + key + '\')" style="color:#ef4444;background:none;border:none;cursor:pointer;font-size:18px;line-height:1;padding:2px 4px;">&times;</button>' +
+  '</div>';
+}
+
+window.ptAddRow = function(key) {
+  var builder = document.getElementById('pt_builder_' + key);
+  var empty   = document.getElementById('pt_empty_' + key);
+  if (empty) empty.remove();
+  var div = document.createElement('div');
+  div.innerHTML = ptRowHtml(key);
+  builder.insertBefore(div.firstChild, builder.lastElementChild);
+  // lastElementChild is the hidden input — keep it at the bottom
+  ptSync(key);
+};
+
+window.ptRemoveRow = function(btn, key) {
+  btn.closest('.pt-row').remove();
+  ptSync(key);
+};
+
+function ptSync(key) {
+  var builder = document.getElementById('pt_builder_' + key);
+  var hidden  = document.getElementById('pt_json_' + key);
+  if (!builder || !hidden) return;
+  var rows = Array.from(builder.querySelectorAll('.pt-row')).map(function(row) {
+    return {
+      direction: row.querySelector('.pt-dir').value,
+      type:      row.querySelector('.pt-type').value,
+      amount:    row.querySelector('.pt-amount').value.trim(),
+      frequency: row.querySelector('.pt-freq').value.trim(),
+      notes:     row.querySelector('.pt-notes').value.trim()
+    };
+  });
+  hidden.value = JSON.stringify(rows);
+}
+
+window.ptSyncAllBeforeSubmit = function() {
+  document.querySelectorAll('[id^="pt_builder_"]').forEach(function(el) {
+    var key = el.id.replace('pt_builder_', '');
+    ptSync(key);
+  });
+};
+
+// Auto-sync on any change within a builder
+document.addEventListener('change', function(e) {
+  var row = e.target.closest && e.target.closest('.pt-row');
+  if (!row) return;
+  var builder = row.closest('[id^="pt_builder_"]');
+  if (!builder) return;
+  ptSync(builder.id.replace('pt_builder_', ''));
+});
+document.addEventListener('input', function(e) {
+  var row = e.target.closest && e.target.closest('.pt-row');
+  if (!row) return;
+  var builder = row.closest('[id^="pt_builder_"]');
+  if (!builder) return;
+  ptSync(builder.id.replace('pt_builder_', ''));
+});
+</script>

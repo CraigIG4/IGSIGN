@@ -214,6 +214,31 @@ module CafFieldSchema
       prompt_guide: 'Return the ISO 4217 currency code (ZAR, USD, EUR, GBP). Default to ZAR for South African agreements where currency is not explicitly stated.'
     },
 
+    # ── STRUCTURED PAYMENT TERMS ─────────────────────────────────────────────
+    {
+      key: :payment_terms_structured,
+      label: 'Payment Terms (Detailed)',
+      type: :payment_terms,
+      dashboard: false,
+      caf_column: :payment_terms_structured,
+      prompt_guide: <<~GUIDE
+        List ALL payment obligations as a JSON array. Payments may flow in either
+        direction — IG paying the counterparty, the counterparty paying IG, or both.
+        Each entry must have:
+          direction: "ig_pays" (IG pays counterparty) or "cp_pays" (counterparty pays IG)
+          type: one of $/sale | $/hr | $/head | Fixed fee | Retainer | Milestone | Revenue share % | Other
+          amount: the rate/value as a string including currency (e.g. "ZAR 450", "15%", "USD 100k")
+          frequency: e.g. "per seat per month", "per transaction", "per annum", "one-off"
+          notes: any important qualifier (optional, blank string if none)
+        Example for a two-way arrangement:
+        [
+          {"direction":"cp_pays","type":"$/head","amount":"ZAR 450","frequency":"per seat per month","notes":"minimum 50 seats"},
+          {"direction":"ig_pays","type":"Revenue share %","amount":"2%","frequency":"per transaction","notes":"on net revenue"}
+        ]
+        Return [] if no payment terms are stated.
+      GUIDE
+    },
+
     # ── COMMERCIAL TERMS (CONTINUED) ─────────────────────────────────────────
     {
       key: :price_escalation,
