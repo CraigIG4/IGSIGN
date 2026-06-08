@@ -50,7 +50,7 @@ module IgSignatories
     end
 
     # All other agreement types: build full chain in prescribed order
-    positions = %w[bu_head bu_cfo bu_cfo_alternate group_clo group_cfo]
+    positions = %w[bu_head bu_cfo bu_cfo_alternate group_clo group_cfo group_coo]
     positions << 'procurement' if is_supplier
     positions += %w[approver_only group_signer group_signer_alt]
 

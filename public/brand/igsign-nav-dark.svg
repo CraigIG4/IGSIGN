@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 112">
   <!-- Hexagon: clean IG only, no dot/tick -->
   <polygon points="56,6 99,31 99,81 56,106 13,81 13,31" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2"/>
-  <text x="56" y="56" text-anchor="middle" dominant-baseline="central"
+  <text x="56" y="61" text-anchor="middle" dominant-baseline="central" alignment-baseline="central"
         font-family="Avenir,'DM Sans',Arial,sans-serif" font-weight="800" font-size="40" fill="#FFFFFF" letter-spacing="2">IG</text>
   <!-- Separator -->
   <line x1="115" y1="16" x2="115" y2="96" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>

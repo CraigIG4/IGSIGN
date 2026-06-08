@@ -7,6 +7,7 @@ class AgreementsController < ApplicationController
   before_action :set_agreement,
                 only: %i[show upload process_upload position save_fields
                          review send_agreement sent caf_preview signing_journey remind destroy]
+  before_action :set_gcip_state, only: :show  # Sprint 4: GCinmyPOCKET
 
   # ── Index ──────────────────────────────────────────────────────────────────
 
@@ -170,8 +171,6 @@ class AgreementsController < ApplicationController
 
     sync_template_submitters!
     if @agreement.template.fields.blank?
-      # Field detection job may still be running — attempt sync detection as fallback,
-      # then fall back to hardcoded auto-placement if model is absent or detection fails.
       placed = ai_detect_fields! || auto_place_fields!
       if placed.zero?
         flash.now[:alert] = 'No signature fields were auto-detected. ' \
@@ -317,13 +316,16 @@ class AgreementsController < ApplicationController
                          alert: 'Cannot preview CAF: entity not selected.'
     end
 
-    pdf_data = CafPdfGenerator.new(@agreement).generate
-    send_data pdf_data, filename: "caf_#{@agreement.id}_preview.pdf",
-                        type: 'application/pdf', disposition: 'inline'
+    pdf_path = CafPdfGenerator.new(@agreement).generate
+    send_data File.read(pdf_path), filename: "caf_#{@agreement.id}_preview.pdf",
+                                   type: 'application/pdf', disposition: 'inline'
   rescue StandardError => e
     Rails.logger.error "[IGSIGN] CAF preview failed agreement=#{@agreement.id}: #{e.message}"
     redirect_to review_agreement_path(@agreement),
-                alert: 'CAF preview is not available. Check that Chromium is installed.'
+                alert: 'CAF preview is not available yet. ' \
+                       'Ensure LibreOffice is installed and the entity is selected.'
+  ensure
+    File.delete(pdf_path) if pdf_path && File.exist?(pdf_path)
   end
 
   # ── Recent signatories AJAX ────────────────────────────────────────────────
@@ -461,10 +463,9 @@ class AgreementsController < ApplicationController
   #
   # Returns the number of fields placed (0 on any failure path so callers can
   # detect and surface a user-facing warning).
-  # Attempts AI field detection synchronously as a fallback for when the
-  # background FieldDetectionJob has not completed by the time the user
-  # arrives at the position step.  Returns the number of fields detected,
-  # or nil if the ONNX model is absent (caller falls back to auto_place_fields!).
+  # Sprint 2: AI field detection synchronous fallback (runs in position action
+  # if FieldDetectionJob hasn't completed yet). Returns field count or nil if
+  # ONNX model absent (caller falls back to auto_place_fields!).
   def ai_detect_fields!
     return nil unless File.exist?(Templates::ImageToFields::MODEL_PATH)
 
@@ -477,6 +478,25 @@ class AgreementsController < ApplicationController
   rescue StandardError => e
     Rails.logger.warn("[IGSIGN] ai_detect_fields! error: #{e.message}")
     nil
+  end
+
+  # Sprint 4: GCinmyPOCKET — expose @gcip_enabled and @gcip_workflow_id.
+  # Panel shown only for Stage 0/1 signers when AI_API_KEY is set.
+  def set_gcip_state
+    @gcip_enabled    = false
+    @gcip_workflow_id = nil
+    return unless ENV['AI_API_KEY'].present?
+    return unless @agreement&.caf_submission
+
+    stage = CafStage.joins(:caf_stage_submitters)
+                    .find_by(submission: @agreement.caf_submission,
+                             caf_stage_submitters: { submitter_id: nil })
+    # Stage gate is enforced in ContractChatService; this just pre-checks
+    @gcip_enabled     = true
+    @gcip_workflow_id = @agreement.id
+  rescue StandardError => e
+    Rails.logger.warn("[IGSIGN] set_gcip_state failed: #{e.message}")
+    @gcip_enabled = false
   end
 
   def auto_place_fields!

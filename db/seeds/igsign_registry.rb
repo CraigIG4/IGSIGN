@@ -123,7 +123,8 @@ ENTITY_DATA = [
     signatories: [
       ['Mark.Mitchell@ignitioncx.com',             'bu_head',      nil],
       ['Verona.Naidoo@ignitiongroup.co.za',        'bu_cfo',       nil],
-      ['Donovan.Bergsma@ignitiongroup.co.za',      'group_signer', nil]
+      ['Donovan.Bergsma@ignitiongroup.co.za',      'group_coo',    'CAF approver only — does not sign agreement'],
+      ['Sean.Bergsma@ignitiongroup.co.za',         'group_signer', nil]
     ]
   },
   {

@@ -31,11 +31,29 @@
     <span class="text-sm text-gray-500"><%= @agreement.entity_name %></span>
   </div>
 
+  <%# Inline error/notice — visible regardless of nav layout %>
+  <% if flash[:alert].present? %>
+    <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 mb-4 flex items-start gap-3">
+      <svg class="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+      </svg>
+      <p class="text-sm text-red-700 font-medium"><%= flash[:alert] %></p>
+    </div>
+  <% end %>
+  <% if flash[:notice].present? %>
+    <div class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 mb-4 flex items-start gap-3">
+      <svg class="w-5 h-5 text-green-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+      </svg>
+      <p class="text-sm text-green-700 font-medium"><%= flash[:notice] %></p>
+    </div>
+  <% end %>
+
   <h1 class="text-xl font-bold text-gray-900 mb-1">Upload Agreement Documents</h1>
   <p class="text-sm text-gray-500 mb-6">Upload one or more documents. IGSIGN will automatically detect signature, date, and initial fields.</p>
 
   <%= form_with url: upload_agreement_path(@agreement), method: :post,
-                multipart: true, id: 'upload_form' do |f| %>
+                multipart: true, id: 'upload_form', data: { turbo: false } do |f| %>
 
     <%# Drop zone %>
     <div id="dropzone"
@@ -207,9 +225,12 @@
   // ── Event wiring ──────────────────────────────────────────────────────────
 
   input.addEventListener('change', function () {
-    if (this.files.length) addFiles(this.files);
-    // Reset so selecting the same file again after removing still fires change
+    // Capture into a plain array BEFORE resetting — resetting clears FileList
+    var captured = Array.prototype.slice.call(this.files);
+    // Reset the input value so selecting the same file again still fires change
     this.value = '';
+    // Now add and sync — DataTransfer assignment is no longer overwritten
+    if (captured.length) addFiles(captured);
   });
 
   ['dragenter', 'dragover'].forEach(function (evt) {
@@ -233,10 +254,33 @@
     if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
   });
 
-  form.addEventListener('submit', function () {
+  form.addEventListener('submit', function (e) {
+    // Diagnostic: log file count and names to console
+    console.log('[IGSIGN upload] submitting', selectedFiles.length, 'file(s):', selectedFiles.map(function(f){ return f.file.name; }));
+    console.log('[IGSIGN upload] input.files.length =', input.files.length);
+    console.log('[IGSIGN upload] form data-turbo =', form.getAttribute('data-turbo'));
     var label = document.getElementById('submit_label');
-    if (label) label.textContent = 'Processing… this may take a moment';
+    if (label) {
+      label.innerHTML =
+        '<svg class="inline-block animate-spin w-4 h-4 mr-2 -mt-0.5" fill="none" viewBox="0 0 24 24">' +
+          '<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>' +
+          '<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>' +
+        '</svg>' +
+        'Detecting fields… this may take a moment';
+    }
     btn.disabled = true;
+    btn.classList.add('opacity-70');
+    // Dim the drop zone so the user knows the page is busy
+    var dz = document.getElementById('dropzone');
+    if (dz) { dz.style.opacity = '0.4'; dz.style.pointerEvents = 'none'; }
+    // Show a progress note below the button
+    var actions = document.getElementById('upload_actions');
+    if (actions) {
+      var note = document.createElement('p');
+      note.className = 'text-xs text-gray-400 text-center mt-3 w-full';
+      note.textContent = 'Uploading and analysing your document — please do not close this tab.';
+      actions.parentNode.insertBefore(note, actions.nextSibling);
+    }
   });
 }());
 </script>
