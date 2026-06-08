@@ -11,6 +11,7 @@ class SubmitFormController < ApplicationController
   before_action :maybe_redirect_delegated, only: %i[show completed]
   before_action :maybe_render_locked_page, only: :show
   before_action :maybe_require_link_2fa, only: %i[show]
+  before_action :set_gcip_state, only: :show
 
   CONFIG_KEYS = [].freeze
 
@@ -145,6 +146,27 @@ class SubmitFormController < ApplicationController
   # Mutates submission.template_schema in memory (does NOT persist) to remove
   # internal-only document entries for counterparty (Stage 2+) submitters.
   # No-ops for non-CAF submissions and Stage 1 submitters.
+  # IGSIGN GCinmyPOCKET — sets @gcip_enabled and @gcip_workflow_id.
+  # Panel is shown only for Stage 0/1 signers (position < 2) when AI_API_KEY is set.
+  # Stage 2 (counterparty) gets a clean signing form with no chatbot.
+  def set_gcip_state
+    @gcip_enabled    = false
+    @gcip_workflow_id = nil
+    return unless ENV['AI_API_KEY'].present?
+    return unless @submitter&.submission
+
+    stage = CafStage.joins(:caf_stage_submitters)
+                    .find_by(submission: @submitter.submission,
+                             caf_stage_submitters: { submitter_id: @submitter.id })
+    return unless stage&.position&.< 2
+
+    @gcip_enabled     = true
+    @gcip_workflow_id = CafWorkflow.find_by(caf_submission_id: @submitter.submission_id)&.id
+  rescue StandardError => e
+    Rails.logger.warn("[IGSIGN] set_gcip_state failed: #{e.message}")
+    @gcip_enabled = false
+  end
+
   def maybe_filter_caf_schema_for_counterparty(submitter, submission)
     stage = CafStage.joins(:caf_stage_submitters)
                     .find_by(submission: submission,

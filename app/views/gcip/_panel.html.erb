@@ -1,0 +1,223 @@
+<%#
+  GCinmyPOCKET floating chat panel.
+  Only rendered when @gcip_enabled is true (Stage 0/1 signers, AI_API_KEY set).
+  Stage 2 (counterparty) signers never see this — zero elements, zero exposure.
+  Self-contained vanilla JS — no Stimulus compilation required.
+%>
+
+<%# ── Toggle button (bottom-right, always visible when panel is closed) ── %>
+<button id="gcip-toggle"
+        aria-label="Ask GCinmyPOCKET"
+        title="GCinmyPOCKET — AI Legal Assistant"
+        style="
+          position:fixed; bottom:24px; right:24px; z-index:1200;
+          width:52px; height:52px; border-radius:50%;
+          background:#0B1722; color:#fff;
+          border:2px solid #00C853;
+          box-shadow:0 4px 16px rgba(11,23,34,0.35);
+          cursor:pointer; display:flex; align-items:center; justify-content:center;
+          font-size:20px; line-height:1; transition:transform 0.15s;
+        "
+        onmouseover="this.style.transform='scale(1.08)'"
+        onmouseout="this.style.transform='scale(1)'">
+  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+       stroke="#00C853" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+</button>
+
+<%# ── Chat panel ─────────────────────────────────────────────────────────── %>
+<div id="gcip-panel"
+     role="dialog"
+     aria-modal="true"
+     aria-label="GCinmyPOCKET AI Legal Assistant"
+     style="
+       position:fixed; bottom:24px; right:24px; z-index:1200;
+       width:360px; max-width:calc(100vw - 32px); height:520px; max-height:calc(100dvh - 48px);
+       background:#fff; border-radius:16px;
+       box-shadow:0 8px 40px rgba(11,23,34,0.28);
+       display:none; flex-direction:column; overflow:hidden;
+     ">
+
+  <%# Header %>
+  <div style="background:#0B1722; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+    <div>
+      <div style="font-size:14px; font-weight:700; color:#fff; letter-spacing:0.3px;">GCinmyPOCKET</div>
+      <div style="font-size:11px; color:rgba(255,255,255,0.5); margin-top:1px;">IG AI Legal Assistant · Internal signers only</div>
+    </div>
+    <button id="gcip-close" aria-label="Close" style="background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;padding:4px;line-height:1;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <%# Message thread %>
+  <div id="gcip-messages" style="flex:1; overflow-y:auto; padding:14px 14px 8px; display:flex; flex-direction:column; gap:10px;">
+    <div style="font-size:12px; color:#9ca3af; text-align:center; padding:8px 0;">
+      Ask about this agreement — clauses, obligations, risks, or the signing process.
+    </div>
+  </div>
+
+  <%# Footer %>
+  <div style="border-top:1px solid #e5e7eb; padding:10px 12px; flex-shrink:0;">
+    <div style="display:flex; gap:8px; align-items:flex-end;">
+      <textarea id="gcip-input"
+                placeholder="Ask a question…"
+                rows="1"
+                aria-label="Ask GCinmyPOCKET"
+                style="
+                  flex:1; border:1px solid #d1d5db; border-radius:8px;
+                  padding:8px 10px; font-size:13px; font-family:inherit;
+                  resize:none; line-height:1.4; max-height:100px; overflow-y:auto;
+                  outline:none;
+                "
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();document.getElementById('gcip-send').click();}"></textarea>
+      <button id="gcip-send"
+              aria-label="Send"
+              style="
+                background:#00C853; border:none; border-radius:8px;
+                width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+                cursor:pointer; flex-shrink:0; transition:opacity 0.15s;
+              "
+              onmouseover="this.style.opacity='0.85'"
+              onmouseout="this.style.opacity='1'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+    <p style="font-size:10px; color:#9ca3af; margin-top:6px; text-align:center;">
+      For legal interpretation advice, consult your legal team.
+    </p>
+  </div>
+</div>
+
+<script nonce="<%= content_security_policy_nonce %>">
+(function () {
+  var SUBMITTER_SLUG = '<%= j(@submitter.slug) %>';
+  var WORKFLOW_ID    = '<%= @gcip_workflow_id.to_i %>';
+  var CHAT_URL       = '<%= internal_gcip_chats_path %>';
+
+  var panel    = document.getElementById('gcip-panel');
+  var toggle   = document.getElementById('gcip-toggle');
+  var closeBtn = document.getElementById('gcip-close');
+  var messages = document.getElementById('gcip-messages');
+  var input    = document.getElementById('gcip-input');
+  var sendBtn  = document.getElementById('gcip-send');
+
+  if (!panel) return;
+
+  var history = [];
+  var loading = false;
+
+  function openPanel() {
+    panel.style.display = 'flex';
+    toggle.style.display = 'none';
+    input.focus();
+  }
+
+  function closePanel() {
+    panel.style.display = 'none';
+    toggle.style.display = 'flex';
+  }
+
+  function appendMessage(role, text) {
+    var isUser  = role === 'user';
+    var bubble  = document.createElement('div');
+    bubble.style.cssText = [
+      'max-width:85%;',
+      'padding:9px 12px;',
+      'border-radius:' + (isUser ? '12px 12px 2px 12px' : '12px 12px 12px 2px') + ';',
+      'font-size:13px;',
+      'line-height:1.5;',
+      'white-space:pre-wrap;',
+      isUser
+        ? 'background:#0B1722;color:#fff;align-self:flex-end;'
+        : 'background:#f3f4f6;color:#111827;align-self:flex-start;'
+    ].join('');
+    bubble.textContent = text;
+    messages.appendChild(bubble);
+    messages.scrollTop = messages.scrollHeight;
+    return bubble;
+  }
+
+  function appendSpinner() {
+    var spinner = document.createElement('div');
+    spinner.id  = 'gcip-spinner';
+    spinner.style.cssText = 'align-self:flex-start;font-size:20px;line-height:1;color:#9ca3af;';
+    spinner.textContent = '…';
+    messages.appendChild(spinner);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function removeSpinner() {
+    var s = document.getElementById('gcip-spinner');
+    if (s) s.remove();
+  }
+
+  function send() {
+    if (loading) return;
+    var q = input.value.trim();
+    if (!q) return;
+
+    appendMessage('user', q);
+    input.value = '';
+    input.style.height = 'auto';
+    appendSpinner();
+    loading  = true;
+    sendBtn.disabled = true;
+
+    fetch(CHAT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+      },
+      body: JSON.stringify({
+        submitter_slug:  SUBMITTER_SLUG,
+        caf_workflow_id: WORKFLOW_ID,
+        question:        q,
+        history:         history
+      })
+    })
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      removeSpinner();
+      if (data.error) {
+        appendMessage('assistant', '⚠ ' + data.error);
+      } else {
+        appendMessage('assistant', data.answer);
+        history.push({ role: 'user',      content: q });
+        history.push({ role: 'assistant', content: data.answer });
+        // Keep last 6 turns (12 messages) in memory
+        if (history.length > 12) history = history.slice(-12);
+      }
+    })
+    .catch(function (err) {
+      removeSpinner();
+      appendMessage('assistant', '⚠ Network error. Please try again.');
+    })
+    .finally(function () {
+      loading = false;
+      sendBtn.disabled = false;
+      input.focus();
+    });
+  }
+
+  toggle.addEventListener('click', openPanel);
+  closeBtn.addEventListener('click', closePanel);
+  sendBtn.addEventListener('click', send);
+
+  // ESC closes the panel
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && panel.style.display !== 'none') closePanel();
+  });
+
+  // Auto-resize textarea
+  input.addEventListener('input', function () {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+  });
+})();
+</script>

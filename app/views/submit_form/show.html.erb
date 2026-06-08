@@ -348,3 +348,13 @@
   <% end %>
 <% end %>
 <%= render 'scripts/autosize_field' %>
+
+<%#
+  GCinmyPOCKET — AI legal assistant for INTERNAL signers only.
+  Stage 2 (counterparty) signers: @gcip_enabled is false, nothing is rendered.
+  The panel is not conditionally hidden — it is not rendered at all.
+  Counterparty signing experience is identical to stock DocuSeal.
+%>
+<% if @gcip_enabled && @gcip_workflow_id.present? %>
+  <%= render 'gcip/panel' %>
+<% end %>
