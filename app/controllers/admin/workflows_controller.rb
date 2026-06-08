@@ -141,12 +141,26 @@ module Admin
         end
       end
 
+      # :payment_terms fields store as jsonb directly (not joined string)
+      contract_data_params.each do |key, raw_value|
+        field = CafFieldSchema.field(key.to_sym)
+        next unless field&.dig(:type) == :payment_terms
+        next unless field[:caf_column]
+
+        native_updates[field[:caf_column]] = coerce_field_value(field, raw_value)
+        provenance_updates[key] = 'manual'
+      end
+
       native_updates[:parsed_contract_data] = data_updates
       native_updates[:parsed_data_provenance] = provenance.merge(provenance_updates)
 
       @caf.update_columns(native_updates)
       redirect_to contract_data_legal_ops_workflow_path(@caf),
                   notice: 'Contract data saved. Dashboard will reflect these values.'
+    rescue StandardError => e
+      Rails.logger.error("[IGSIGN] update_contract_data failed for #{@caf.id}: #{e.message}")
+      redirect_to contract_data_legal_ops_workflow_path(@caf),
+                  alert: "Save failed: #{e.message.truncate(120)}. Please try again or contact support."
     end
 
     # POST /legal_ops/workflows/:id/reparse — re-enqueue ContractParsingJob

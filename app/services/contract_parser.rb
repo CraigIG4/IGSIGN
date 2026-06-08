@@ -98,7 +98,13 @@ class ContractParser
 
         #{field_instructions}
 
-        Return ONLY valid JSON with keys matching the field names above.
+        clause_refs: For every field you populate (not null, not "Not Included"), include the
+        clause or section reference from the contract where that information was found.
+        Return as a JSON object mapping field_key to clause reference string.
+        Example: {"liability_aggregate_cap": "Clause 14.3", "governing_law": "Section 22.1(a)"}
+        Use null if no clause reference is identifiable for a field.
+
+        Return ONLY valid JSON with all the field keys above PLUS a "clause_refs" key.
         No markdown code fences, no preamble, no explanation — only the JSON object.
       PROMPT
     end

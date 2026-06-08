@@ -51,16 +51,24 @@
       <% current_value = @data[key] %>
       <% prov = @provenance[key] %>
 
+      <% clause_ref = @data.dig('clause_refs', key) %>
       <div style="background:#fff;border:1px solid #E5E7EB;border-radius:10px;padding:20px;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
           <label for="field_<%= key %>" style="font-size:13px;font-weight:700;color:#0B1722;">
             <%= field[:label] %>
           </label>
-          <% if prov == 'ai' %>
-            <span style="background:#DCFCE7;color:#166534;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;">AI</span>
-          <% elsif prov == 'manual' %>
-            <span style="background:#F3F4F6;color:#6B7280;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;">Manual</span>
-          <% end %>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <% if clause_ref.present? %>
+              <span title="Source clause from contract" style="background:#EFF6FF;color:#1D4ED8;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;cursor:default;">
+                📄 <%= clause_ref %>
+              </span>
+            <% end %>
+            <% if prov == 'ai' %>
+              <span style="background:#DCFCE7;color:#166534;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;">AI</span>
+            <% elsif prov == 'manual' %>
+              <span style="background:#F3F4F6;color:#6B7280;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;">Manual</span>
+            <% end %>
+          </div>
         </div>
 
         <% case field[:type]
@@ -169,9 +177,18 @@
       </div>
     <% end %>
 
-    <div style="margin-top:24px;display:flex;justify-content:flex-end;">
-      <button type="submit" onclick="ptSyncAllBeforeSubmit()"
-        style="background:#00C853;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;">
+    <%# Validation feedback banner — shown by JS when fields are missing %>
+    <div id="validation_banner" style="display:none;margin-top:16px;padding:14px 18px;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;">
+      <p style="font-size:13px;font-weight:700;color:#DC2626;margin-bottom:6px;">Please review the following before saving:</p>
+      <ul id="validation_list" style="font-size:13px;color:#DC2626;margin:0;padding-left:18px;line-height:1.8;"></ul>
+    </div>
+
+    <div style="margin-top:24px;display:flex;align-items:center;justify-content:space-between;">
+      <p style="font-size:12px;color:#9CA3AF;margin:0;">
+        Fields marked <strong>AI</strong> were extracted automatically. Review and correct before sending.
+      </p>
+      <button type="button" id="save_btn" onclick="handleSave(event)"
+        style="background:#00C853;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;min-width:160px;transition:opacity 0.15s;">
         Save contract data
       </button>
     </div>
@@ -180,6 +197,68 @@
 </div>
 
 <script>
+// ── Save with feedback ─────────────────────────────────────────────────────
+
+// Key fields that should be populated before sending — not hard-blocked but warned
+var RECOMMENDED_FIELDS = {
+  'contract_type':      'Contract Type',
+  'high_level_summary': 'High-Level Summary',
+  'effective_date':     'Effective Date',
+  'governing_law':      'Governing Law'
+};
+
+window.handleSave = function(e) {
+  ptSyncAllBeforeSubmit();
+
+  var warnings = [];
+  Object.keys(RECOMMENDED_FIELDS).forEach(function(key) {
+    var el = document.getElementById('field_' + key) ||
+             document.querySelector('[name="' + key + '"]');
+    if (!el) return;
+    var val = (el.value || el.textContent || '').trim();
+    if (!val) warnings.push(RECOMMENDED_FIELDS[key] + ' is empty');
+  });
+
+  var banner = document.getElementById('validation_banner');
+  var list   = document.getElementById('validation_list');
+  var btn    = document.getElementById('save_btn');
+  var form   = btn.closest('form');
+
+  if (warnings.length > 0) {
+    // Show warnings but still allow save after user acknowledges
+    list.innerHTML = warnings.map(function(w) { return '<li>' + w + '</li>'; }).join('');
+    banner.style.display = 'block';
+    banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // Add a second "Save anyway" option
+    if (!document.getElementById('save_anyway_btn')) {
+      var saveAnyway = document.createElement('button');
+      saveAnyway.id = 'save_anyway_btn';
+      saveAnyway.type = 'button';
+      saveAnyway.textContent = 'Save anyway →';
+      saveAnyway.style.cssText = 'margin-top:10px;background:none;border:1px solid #DC2626;color:#DC2626;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;';
+      saveAnyway.onclick = function() { submitForm(form, btn); };
+      banner.appendChild(saveAnyway);
+    }
+    return;
+  }
+
+  submitForm(form, btn);
+};
+
+function submitForm(form, btn) {
+  // Show loading state
+  btn.textContent = 'Saving…';
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+
+  // Hide any existing validation banner
+  var banner = document.getElementById('validation_banner');
+  if (banner) banner.style.display = 'none';
+
+  form.submit();
+}
+
 // ── Payment Terms Builder ──────────────────────────────────────────────────
 var PT_TYPES = ['$/sale','$/hr','$/head','Fixed fee','Retainer','Milestone','Revenue share %','Other'];
 
