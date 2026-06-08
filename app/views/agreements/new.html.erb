@@ -229,30 +229,99 @@
         <%= f.text_area :mandate_description, rows:3, style:'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:14px;resize:none;box-sizing:border-box;', placeholder:'Briefly describe what this agreement covers and why it is needed.' %>
       </div>
 
-      <%# ── Agreement Summary (CAF fields) ─────────────────────────────────── %>
-      <div style="border-radius:10px;border:1px solid #e5e7eb;background:#f9fafb;padding:1rem;">
+      <%# ── Agreement Summary (CAF fields — labels adapt to agreement type) ── %>
+      <div id="caf_summary_block" style="border-radius:10px;border:1px solid #e5e7eb;background:#f9fafb;padding:1rem;">
         <p style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Agreement Summary <span style="font-weight:400;text-transform:none;color:#9ca3af;">(populates the CAF — leave blank if unknown)</span></p>
         <div>
-          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Business Purpose / Rationale</label>
-          <%= f.text_area :agreement_purpose, rows:2, style:'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:13px;resize:none;box-sizing:border-box;background:white;', placeholder:'Describe the commercial purpose of this agreement for the CAF (can differ from Mandate above).' %>
+          <label id="lbl_purpose" style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Commercial Purpose</label>
+          <%= f.text_area :agreement_purpose, id: 'inp_purpose', rows:2, style:'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:13px;resize:none;box-sizing:border-box;background:white;', placeholder:'Describe the commercial purpose of this agreement for the CAF.' %>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
+          <%# Currency selector — always visible %>
           <div>
+            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Currency</label>
+            <%= f.select :currency, [['ZAR (R)', 'ZAR'], ['USD ($)', 'USD'], ['GBP (£)', 'GBP']],
+                         { selected: @agreement.currency.presence || 'ZAR' },
+                         style: 'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:13px;box-sizing:border-box;background:white;' %>
+          </div>
+          <div id="caf_value_block">
             <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Total Value</label>
-            <%= f.text_field :agreement_value, style:'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:13px;box-sizing:border-box;background:white;', placeholder:'e.g. R 250 000 per annum' %>
+            <%= f.text_field :agreement_value, style:'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:13px;box-sizing:border-box;background:white;', placeholder:'e.g. 250 000 per annum' %>
           </div>
           <div>
-            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Term / Duration</label>
-            <%= f.text_field :agreement_term, style:'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:13px;box-sizing:border-box;background:white;', placeholder:'e.g. 2 years from effective date' %>
+            <label id="lbl_term" style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Duration &amp; Exit Mechanism</label>
+            <%= f.text_field :agreement_term, id: 'inp_term', style:'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:13px;box-sizing:border-box;background:white;', placeholder:'e.g. 2 years, 30-day notice period' %>
           </div>
-          <div>
+          <div id="caf_payment_block">
             <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Payment Terms</label>
             <%= f.text_field :payment_terms, style:'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:13px;box-sizing:border-box;background:white;', placeholder:'e.g. Net 30 days' %>
           </div>
         </div>
+
+        <%# Payment metrics — only for Comit and Ignition Digital %>
+        <div id="payment_metrics_block" style="display:none;margin-top:0.75rem;border-radius:8px;border:1px solid #dbeafe;background:#eff6ff;padding:0.75rem;">
+          <p style="font-size:11px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Commercial Metrics</p>
+          <div style="margin-bottom:0.5rem;">
+            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Metric Type</label>
+            <%= f.select :payment_metric_type,
+                         [['— Select —', ''], ['Seat Based', 'seat_based'], ['Connection Incentive Bonus (CIB)', 'cib'], ['Commission', 'commission'], ['Standard', 'standard']],
+                         { selected: @agreement.payment_metric_type.to_s },
+                         id: 'payment_metric_type_select',
+                         style: 'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:13px;box-sizing:border-box;background:white;' %>
+          </div>
+          <%# Seat sub-fields — shown only when Seat Based is selected %>
+          <div id="seat_metrics_block" style="display:none;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;margin-top:0.5rem;">
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Seat Cost</label>
+              <%= f.text_field :seat_cost, style:'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:13px;box-sizing:border-box;background:white;', placeholder:'e.g. 450.00' %>
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Training Cost</label>
+              <%= f.text_field :training_cost, style:'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:13px;box-sizing:border-box;background:white;', placeholder:'e.g. 1 200.00' %>
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Number of Seats</label>
+              <%= f.text_field :number_of_seats, style:'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:13px;box-sizing:border-box;background:white;', placeholder:'e.g. 50' %>
+            </div>
+          </div>
+        </div>
+
+        <script>
+        (function() {
+          var METRIC_ENTITIES = ['comit', 'ignition_digital'];
+          var entitySel  = document.getElementById('agreement_entity');
+          var metricBlk  = document.getElementById('payment_metrics_block');
+          var metricType = document.getElementById('payment_metric_type_select');
+          var seatBlk    = document.getElementById('seat_metrics_block');
+
+          function toggleMetrics() {
+            var val = entitySel ? entitySel.value : '';
+            if (METRIC_ENTITIES.indexOf(val) !== -1) {
+              metricBlk.style.display = 'block';
+            } else {
+              metricBlk.style.display = 'none';
+            }
+            toggleSeats();
+          }
+
+          function toggleSeats() {
+            if (metricType && metricType.value === 'seat_based') {
+              seatBlk.style.display = 'grid';
+            } else {
+              seatBlk.style.display = 'none';
+            }
+          }
+
+          if (entitySel)  entitySel.addEventListener('change', toggleMetrics);
+          if (metricType) metricType.addEventListener('change', toggleSeats);
+
+          // Run on load in case form is pre-filled (edit flow)
+          toggleMetrics();
+        })();
+        </script>
         <div style="margin-top:0.75rem;">
-          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Key Clauses / Risks <span style="font-weight:400;color:#9ca3af;">(optional)</span></label>
-          <%= f.text_area :key_risks, rows:2, style:'width:100%;border-radius:8px;border:1px solid #fbbf24;background:#fffbeb;padding:9px 12px;font-size:13px;resize:none;box-sizing:border-box;color:#92400e;', placeholder:'Flag any unusual indemnities, liability caps, IP ownership clauses, or compliance concerns.' %>
+          <label id="lbl_risks" style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">High Level Legal Notes <span style="font-weight:400;color:#9ca3af;">(optional)</span></label>
+          <%= f.text_area :key_risks, id: 'inp_risks', rows:2, style:'width:100%;border-radius:8px;border:1px solid #fbbf24;background:#fffbeb;padding:9px 12px;font-size:13px;resize:none;box-sizing:border-box;color:#92400e;', placeholder:'Flag any unusual indemnities, liability caps, IP ownership, or compliance concerns.' %>
         </div>
       </div>
 
@@ -316,10 +385,10 @@
   end
 %>
 <script id="ig-entities-data" type="application/json" nonce="<%= content_security_policy_nonce %>">
-  <%= IgSignatories.entities_for_js.to_json %>
+  <%= raw IgSignatories.entities_for_js.to_json %>
 </script>
 <script id="ig-chains-data" type="application/json" nonce="<%= content_security_policy_nonce %>">
-  <%= _ig_chains.to_json %>
+  <%= raw _ig_chains.to_json %>
 </script>
 <script nonce="<%= content_security_policy_nonce %>">
 (function(){
@@ -353,7 +422,36 @@
     if (btnUp)  { btnUp.style.background  = isNda ? '#f9fafb' : '#162B3C'; btnUp.style.color  = isNda ? '#374151' : '#fff'; }
     updatePanel();
     setRelStyle();
+    updateCafSummaryLabels(mode);
   };
+
+  function updateCafSummaryLabels(mode) {
+    var lblPurpose = document.getElementById('lbl_purpose');
+    var lblTerm    = document.getElementById('lbl_term');
+    var lblRisks   = document.getElementById('lbl_risks');
+    var inpPurpose = document.getElementById('inp_purpose');
+    var inpTerm    = document.getElementById('inp_term');
+    var valBlock   = document.getElementById('caf_value_block');
+    var payBlock   = document.getElementById('caf_payment_block');
+    if (!lblPurpose) return;
+    if (mode === 'nda') {
+      lblPurpose.textContent = 'Purpose of NDA';
+      if (inpPurpose) inpPurpose.placeholder = 'Describe the reason for this NDA and what confidential information is being shared.';
+      lblTerm.textContent = 'Duration';
+      if (inpTerm) inpTerm.placeholder = 'e.g. 2 years from effective date';
+      lblRisks.innerHTML = 'Legal Notes <span style="font-weight:400;color:#9ca3af;">(optional)</span>';
+      if (valBlock) valBlock.style.display = 'none';
+      if (payBlock) payBlock.style.display = 'none';
+    } else {
+      lblPurpose.textContent = 'Commercial Purpose';
+      if (inpPurpose) inpPurpose.placeholder = 'Describe the commercial purpose of this agreement for the CAF.';
+      lblTerm.innerHTML = 'Duration &amp; Exit Mechanism';
+      if (inpTerm) inpTerm.placeholder = 'e.g. 2 years, 30-day notice period';
+      lblRisks.innerHTML = 'High Level Legal Notes <span style="font-weight:400;color:#9ca3af;">(optional)</span>';
+      if (valBlock) valBlock.style.display = '';
+      if (payBlock) payBlock.style.display = '';
+    }
+  }
 
   window.setRelStyle = function() {
     var isSupplier = document.getElementById('rel_supplier') && document.getElementById('rel_supplier').checked;
@@ -595,7 +693,9 @@
   }
 
   /* ── Page-load initialisation ────────────────────────────────────────── */
-  var bootMode = '<%= preselect_mode.present? ? preselect_mode : 'nda' %>';
+  // Default to upload mode so entity + type selectors are immediately visible.
+  // NDA mode can be selected by clicking "Standard NDA".
+  var bootMode = '<%= preselect_mode.present? ? preselect_mode : 'upload' %>';
   setDocMode(bootMode);
 })();
 </script>
