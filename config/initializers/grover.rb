@@ -3,6 +3,10 @@
 # Grover — headless Chrome PDF rendering for IGSIGN CAF documents.
 # Uses system Chromium installed in the Docker image.
 # LibreOffice is retained for DOCX→PDF conversion (CafSubmissionCreator#convert_docx).
+# Guard: if grover gem is not installed (e.g. Gemfile.lock not yet updated),
+# skip configuration silently. CafPdfGenerator will fall back gracefully.
+return unless defined?(Grover)
+
 Grover.configure do |config|
   config.options = {
     executable_path: '/usr/bin/chromium',

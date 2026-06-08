@@ -18,7 +18,6 @@ gem 'dotenv', require: false
 gem 'email_typo'
 gem 'faraday'
 gem 'faraday-follow_redirects'
-gem 'grover'
 gem 'google-cloud-storage', require: false
 gem 'hexapdf'
 gem 'image_processing'
@@ -79,3 +78,5 @@ group :test do
   gem 'cuprite'
   gem 'webmock'
 end
+
+gem "grover", "~> 1.2"
