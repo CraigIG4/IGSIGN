@@ -16,6 +16,20 @@
     <div style="width:32px;height:3px;background:#00C853;border-radius:2px;margin-top:8px;"></div>
   </div>
 
+  <%# Flash messages — save confirmation, errors %>
+  <% if flash[:notice].present? %>
+    <div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:10px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="#059669" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+      <span style="font-size:13px;color:#065F46;font-weight:600;"><%= flash[:notice] %></span>
+    </div>
+  <% end %>
+  <% if flash[:alert].present? %>
+    <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:10px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="#DC2626" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+      <span style="font-size:13px;color:#DC2626;font-weight:600;"><%= flash[:alert] %></span>
+    </div>
+  <% end %>
+
   <%# Parse status banner %>
   <% if @data['error'].present? %>
     <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:16px 20px;margin-bottom:20px;color:#DC2626;">
@@ -58,8 +72,8 @@
             <%= field[:label] %>
           </label>
           <div style="display:flex;align-items:center;gap:8px;">
-            <% if clause_ref.present? %>
-              <span title="Source clause from contract" style="background:#EFF6FF;color:#1D4ED8;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;cursor:default;">
+            <% if clause_ref.present? && clause_ref.to_s.downcase != 'null' %>
+              <span title="Jump to this clause in the contract document" style="background:#EFF6FF;color:#1D4ED8;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;cursor:default;">
                 📄 <%= clause_ref %>
               </span>
             <% end %>
@@ -187,7 +201,7 @@
       <p style="font-size:12px;color:#9CA3AF;margin:0;">
         Fields marked <strong>AI</strong> were extracted automatically. Review and correct before sending.
       </p>
-      <button type="button" id="save_btn" onclick="handleSave(event)"
+      <button type="submit" id="save_btn" onclick="return handleSaveClick(this)"
         style="background:#00C853;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;min-width:160px;transition:opacity 0.15s;">
         Save contract data
       </button>
@@ -198,8 +212,9 @@
 
 <script>
 // ── Save with feedback ─────────────────────────────────────────────────────
+// Uses type="submit" — JS enhances with validation warnings and loading state.
+// If JS errors, the form still submits normally (progressive enhancement).
 
-// Key fields that should be populated before sending — not hard-blocked but warned
 var RECOMMENDED_FIELDS = {
   'contract_type':      'Contract Type',
   'high_level_summary': 'High-Level Summary',
@@ -207,56 +222,57 @@ var RECOMMENDED_FIELDS = {
   'governing_law':      'Governing Law'
 };
 
-window.handleSave = function(e) {
-  ptSyncAllBeforeSubmit();
+// Called from onclick="return handleSaveClick(this)".
+// Returns false to cancel submit (show warnings first), true to allow it.
+window.handleSaveClick = function(btn) {
+  try {
+    ptSyncAllBeforeSubmit();
+  } catch(e) { /* payment terms sync is optional */ }
+
+  var banner = document.getElementById('validation_banner');
+  var list   = document.getElementById('validation_list');
+
+  // If banner already showing (user saw warnings), allow save through
+  if (banner && banner.style.display !== 'none') {
+    setLoadingState(btn);
+    if (banner) banner.style.display = 'none';
+    return true;
+  }
 
   var warnings = [];
   Object.keys(RECOMMENDED_FIELDS).forEach(function(key) {
     var el = document.getElementById('field_' + key) ||
              document.querySelector('[name="' + key + '"]');
     if (!el) return;
-    var val = (el.value || el.textContent || '').trim();
-    if (!val) warnings.push(RECOMMENDED_FIELDS[key] + ' is empty');
+    var val = (el.tagName === 'SELECT' ? el.options[el.selectedIndex] && el.options[el.selectedIndex].value : el.value || '').trim();
+    if (!val) warnings.push('<strong>' + RECOMMENDED_FIELDS[key] + '</strong> is empty');
   });
 
-  var banner = document.getElementById('validation_banner');
-  var list   = document.getElementById('validation_list');
-  var btn    = document.getElementById('save_btn');
-  var form   = btn.closest('form');
-
-  if (warnings.length > 0) {
-    // Show warnings but still allow save after user acknowledges
-    list.innerHTML = warnings.map(function(w) { return '<li>' + w + '</li>'; }).join('');
+  if (warnings.length > 0 && banner && list) {
+    list.innerHTML = warnings.map(function(w){ return '<li style="margin-bottom:4px;">' + w + '</li>'; }).join('');
     banner.style.display = 'block';
     banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-    // Add a second "Save anyway" option
-    if (!document.getElementById('save_anyway_btn')) {
-      var saveAnyway = document.createElement('button');
-      saveAnyway.id = 'save_anyway_btn';
-      saveAnyway.type = 'button';
-      saveAnyway.textContent = 'Save anyway →';
-      saveAnyway.style.cssText = 'margin-top:10px;background:none;border:1px solid #DC2626;color:#DC2626;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;';
-      saveAnyway.onclick = function() { submitForm(form, btn); };
-      banner.appendChild(saveAnyway);
-    }
-    return;
+    // Remove existing save-anyway if present
+    var old = document.getElementById('save_anyway_btn');
+    if (old) old.remove();
+    // Add save-anyway button inside the banner
+    var sa = document.createElement('button');
+    sa.id = 'save_anyway_btn';
+    sa.type = 'submit';
+    sa.textContent = 'Save anyway (with empty fields) →';
+    sa.style.cssText = 'margin-top:10px;background:none;border:1px solid #DC2626;color:#DC2626;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;display:block;';
+    banner.appendChild(sa);
+    return false; // cancel this click — user must click "save anyway" or fix fields
   }
 
-  submitForm(form, btn);
+  setLoadingState(btn);
+  return true; // allow form to submit
 };
 
-function submitForm(form, btn) {
-  // Show loading state
+function setLoadingState(btn) {
   btn.textContent = 'Saving…';
   btn.disabled = true;
   btn.style.opacity = '0.7';
-
-  // Hide any existing validation banner
-  var banner = document.getElementById('validation_banner');
-  if (banner) banner.style.display = 'none';
-
-  form.submit();
 }
 
 // ── Payment Terms Builder ──────────────────────────────────────────────────
