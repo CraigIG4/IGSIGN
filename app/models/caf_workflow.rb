@@ -246,6 +246,46 @@ class CafWorkflow < ApplicationRecord
 
   private
 
+  # ── Sprint 5: Contracts Dashboard ─────────────────────────────────────────
+
+  # Returns an array of risk flag strings derived from native columns.
+  # Used by the dashboard to show colour-coded risk badges per agreement.
+  # rubocop:disable Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+  def risk_flags
+    flags = []
+    flags << 'No liability cap'                     if liability_cap.blank? || liability_cap == 'Not Included'
+    flags << 'No indirect/consequential exclusion'  if liability_exclusion_indirect == 'Not Included'
+    flags << 'Auto-renewal — notice <30 days'       if auto_renewal? && notice_period_days.present? && notice_period_days < 30
+    flags << 'Auto-renewal — no notice period'      if auto_renewal? && notice_period_days.nil?
+    flags << 'Expired'                              if expiry_date.present? && expiry_date < Date.today && !complete?
+    flags << 'No expiry date'                       if expiry_date.nil? && !auto_renewal?
+    flags << 'No governing law'                     if governing_law.blank?
+    flags << 'No dispute resolution clause'         if dispute_resolution == 'Not Included'
+    flags << 'Late payment terms (>60 days)'        if payment_terms_days.present? && payment_terms_days > 60 && commercial_supplier?
+    flags << 'IG locked in exclusively'             if exclusivity == 'IG exclusive (locked in)'
+    flags << 'Subcontracting without consent'       if subcontracting.present? && subcontracting.downcase.include?('without consent')
+    flags << 'No data protection clause'            if data_protection_clause == 'Not Included'
+    flags << 'Change of control — no provision'     if change_of_control == 'No provision'
+    flags << 'Assignment — no provision'            if assignment == 'No provision'
+    flags
+  end
+  # rubocop:enable Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+
+  # Percentage of CafFieldSchema dashboard fields that have a non-nil value.
+  # Used as a data quality indicator in the contracts register.
+  def data_completeness_score
+    cols = CafFieldSchema.dashboard_fields.filter_map { |f| f[:caf_column] }
+    return 0 if cols.empty?
+
+    filled = cols.count do |col|
+      val = public_send(col)
+      val.present?
+    rescue StandardError
+      false
+    end
+    (filled * 100.0 / cols.count).round
+  end
+
   def derived_caf_type
     AGREEMENT_TO_CAF_TYPE.fetch(agreement_type.to_s, caf_type.presence || 'long_form')
   end

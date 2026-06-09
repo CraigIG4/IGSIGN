@@ -1,66 +1,268 @@
-<% content_for :title, 'Legal Ops' %>
+<% content_for :title, 'Contracts Register — Legal Ops' %>
 
-<div class="max-w-4xl mx-auto px-4 py-8">
+<div style="max-width:1100px; margin:0 auto; padding:24px 16px;">
 
-  <div style="margin-bottom:32px;">
-    <p style="font-size:11px;color:#7B787F;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;">IGSIGN</p>
-    <h1 style="font-size:28px;font-weight:800;color:#162B3C;letter-spacing:-0.03em;margin:0;">Legal Ops</h1>
-    <div style="width:32px;height:3px;background:#45AC34;border-radius:2px;margin-top:8px;"></div>
-    <p style="margin-top:12px;font-size:14px;color:#7B787F;max-width:520px;line-height:1.6;">
-      Manage approval workflows, templates, signatories and matrices. Admin access only.
-    </p>
+  <%# ── Header ──────────────────────────────────────────────────────────────── %>
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:28px;">
+    <div>
+      <p style="font-size:11px;color:#7B787F;letter-spacing:3px;text-transform:uppercase;margin-bottom:4px;">IGSIGN</p>
+      <h1 style="font-size:26px;font-weight:800;color:#0B1722;letter-spacing:-0.02em;margin:0;">Contracts Register</h1>
+      <div style="width:32px;height:3px;background:#00C853;border-radius:2px;margin-top:8px;"></div>
+    </div>
+    <%= link_to new_agreement_path,
+          style: "display:inline-flex;align-items:center;gap:8px;background:#0B1722;color:#fff;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;text-decoration:none;" do %>
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      New Agreement
+    <% end %>
   </div>
 
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;">
+  <%# ── Stat cards ──────────────────────────────────────────────────────────── %>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:28px;">
 
-    <%# Workflow Log %>
-    <%= link_to legal_ops_workflows_path,
-          style: 'display:block;background:#fff;border-radius:12px;border:1px solid #edf0f3;padding:24px;text-decoration:none;box-shadow:0 1px 6px rgba(22,43,60,0.06);transition:box-shadow 0.15s,border-color 0.15s;',
-          onmouseover: "this.style.boxShadow='0 4px 18px rgba(22,43,60,0.12)';this.style.borderColor='#45AC34';",
-          onmouseout: "this.style.boxShadow='0 1px 6px rgba(22,43,60,0.06)';this.style.borderColor='#edf0f3';" do %>
-      <div style="width:40px;height:40px;border-radius:10px;background:#f0faf0;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
-        <%= svg_icon('collection', class: 'w-5 h-5', style: 'color:#45AC34;') %>
-      </div>
-      <div style="font-size:15px;font-weight:700;color:#162B3C;margin-bottom:4px;">Workflow Log</div>
-      <div style="font-size:12px;color:#7B787F;line-height:1.5;">View and manage all CAF agreement workflows across entities.</div>
+    <% [
+      { label: 'Active',           value: @stats[:total_active],         color: '#0B1722', bg: '#f8fafc', href: legal_ops_root_path(status: nil) },
+      { label: 'Expiring <30 days', value: @stats[:expiring_30],          color: '#DC2626', bg: '#FEF2F2', href: legal_ops_root_path(expiry: 'soon') },
+      { label: 'Expiring <90 days', value: @stats[:expiring_90],          color: '#D97706', bg: '#FFFBEB', href: legal_ops_root_path(expiry: 'soon') },
+      { label: 'Auto-renewal risk', value: @stats[:auto_renewal_at_risk], color: '#D97706', bg: '#FFFBEB', href: legal_ops_root_path(expiry: 'soon') },
+      { label: 'Completed',         value: @stats[:complete],              color: '#059669', bg: '#ECFDF5', href: legal_ops_root_path(status: 'complete') },
+      { label: 'Drafts',            value: @stats[:draft],                 color: '#6B7280', bg: '#F9FAFB', href: legal_ops_root_path(status: 'draft') },
+    ].each do |card| %>
+      <%= link_to card[:href], style: "display:block;background:#{card[:bg]};border-radius:12px;border:1px solid #e5e7eb;padding:18px 20px;text-decoration:none;" do %>
+        <div style="font-size:28px;font-weight:800;color:#{card[:color]};line-height:1;margin-bottom:6px;"><%= card[:value] %></div>
+        <div style="font-size:11px;color:#6B7280;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;"><%= card[:label] %></div>
+      <% end %>
     <% end %>
 
-    <%# Approval Matrices %>
-    <%= link_to legal_ops_approval_matrices_path,
-          style: 'display:block;background:#fff;border-radius:12px;border:1px solid #edf0f3;padding:24px;text-decoration:none;box-shadow:0 1px 6px rgba(22,43,60,0.06);transition:box-shadow 0.15s,border-color 0.15s;',
-          onmouseover: "this.style.boxShadow='0 4px 18px rgba(22,43,60,0.12)';this.style.borderColor='#45AC34';",
-          onmouseout: "this.style.boxShadow='0 1px 6px rgba(22,43,60,0.06)';this.style.borderColor='#edf0f3';" do %>
-      <div style="width:40px;height:40px;border-radius:10px;background:#f0faf0;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
-        <%= svg_icon('table', class: 'w-5 h-5', style: 'color:#45AC34;') %>
-      </div>
-      <div style="font-size:15px;font-weight:700;color:#162B3C;margin-bottom:4px;">Approval Matrices</div>
-      <div style="font-size:12px;color:#7B787F;line-height:1.5;">Configure which signatories are required for each agreement type and entity.</div>
-    <% end %>
+  </div>
 
-    <%# Templates %>
-    <%= link_to legal_ops_templates_path,
-          style: 'display:block;background:#fff;border-radius:12px;border:1px solid #edf0f3;padding:24px;text-decoration:none;box-shadow:0 1px 6px rgba(22,43,60,0.06);transition:box-shadow 0.15s,border-color 0.15s;',
-          onmouseover: "this.style.boxShadow='0 4px 18px rgba(22,43,60,0.12)';this.style.borderColor='#45AC34';",
-          onmouseout: "this.style.boxShadow='0 1px 6px rgba(22,43,60,0.06)';this.style.borderColor='#edf0f3';" do %>
-      <div style="width:40px;height:40px;border-radius:10px;background:#f0faf0;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
-        <%= svg_icon('document', class: 'w-5 h-5', style: 'color:#45AC34;') %>
-      </div>
-      <div style="font-size:15px;font-weight:700;color:#162B3C;margin-bottom:4px;">Templates</div>
-      <div style="font-size:12px;color:#7B787F;line-height:1.5;">Manage IGSIGN document templates, their metadata and active status.</div>
-    <% end %>
+  <%# ── Filter bar ──────────────────────────────────────────────────────────── %>
+  <%= form_with url: legal_ops_root_path, method: :get, data: { turbo: true },
+        style: "background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 20px;margin-bottom:20px;" do |f| %>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
 
-    <%# Signatory Registry %>
-    <%= link_to legal_ops_signatories_path,
-          style: 'display:block;background:#fff;border-radius:12px;border:1px solid #edf0f3;padding:24px;text-decoration:none;box-shadow:0 1px 6px rgba(22,43,60,0.06);transition:box-shadow 0.15s,border-color 0.15s;',
-          onmouseover: "this.style.boxShadow='0 4px 18px rgba(22,43,60,0.12)';this.style.borderColor='#45AC34';",
-          onmouseout: "this.style.boxShadow='0 1px 6px rgba(22,43,60,0.06)';this.style.borderColor='#edf0f3';" do %>
-      <div style="width:40px;height:40px;border-radius:10px;background:#f0faf0;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
-        <%= svg_icon('users', class: 'w-5 h-5', style: 'color:#45AC34;') %>
+      <div style="flex:2;min-width:160px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;">Search counterparty</label>
+        <input type="text" name="q" value="<%= @q %>" placeholder="PayJoy, Acme…"
+          style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:8px 10px;font-size:13px;box-sizing:border-box;">
       </div>
-      <div style="font-size:15px;font-weight:700;color:#162B3C;margin-bottom:4px;">Signatory Registry</div>
-      <div style="font-size:12px;color:#7B787F;line-height:1.5;">View and manage authorised signatories across all Ignition Group entities.</div>
-    <% end %>
 
+      <div style="min-width:130px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;">IG Entity</label>
+        <select name="entity" style="border:1px solid #d1d5db;border-radius:6px;padding:8px 10px;font-size:13px;width:100%;">
+          <option value="">All entities</option>
+          <% @entities.each do |e| %>
+            <option value="<%= e.key %>" <%= 'selected' if @filter_entity == e.key %>><%= e.short_name.presence || e.name %></option>
+          <% end %>
+        </select>
+      </div>
+
+      <div style="min-width:130px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;">Type</label>
+        <select name="agreement_type" style="border:1px solid #d1d5db;border-radius:6px;padding:8px 10px;font-size:13px;width:100%;">
+          <option value="">All types</option>
+          <% @agreement_types.each do |key, label| %>
+            <option value="<%= key %>" <%= 'selected' if @filter_type == key %>><%= label %></option>
+          <% end %>
+        </select>
+      </div>
+
+      <div style="min-width:120px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;">Relationship</label>
+        <select name="relationship" style="border:1px solid #d1d5db;border-radius:6px;padding:8px 10px;font-size:13px;width:100%;">
+          <option value="">Both</option>
+          <option value="customer" <%= 'selected' if @filter_relationship == 'customer' %>>Customer</option>
+          <option value="supplier" <%= 'selected' if @filter_relationship == 'supplier' %>>Supplier</option>
+        </select>
+      </div>
+
+      <div style="min-width:120px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;">Expiry</label>
+        <select name="expiry" style="border:1px solid #d1d5db;border-radius:6px;padding:8px 10px;font-size:13px;width:100%;">
+          <option value="">All</option>
+          <option value="soon"    <%= 'selected' if @filter_expiry == 'soon' %>>Expiring &lt;90d</option>
+          <option value="overdue" <%= 'selected' if @filter_expiry == 'overdue' %>>Expired</option>
+          <option value="none"    <%= 'selected' if @filter_expiry == 'none' %>>No expiry set</option>
+        </select>
+      </div>
+
+      <div style="min-width:110px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;">Status</label>
+        <select name="status" style="border:1px solid #d1d5db;border-radius:6px;padding:8px 10px;font-size:13px;width:100%;">
+          <option value="">All statuses</option>
+          <% @statuses.each do |s| %>
+            <option value="<%= s %>" <%= 'selected' if @filter_status == s %>><%= s.humanize.gsub('Ig', 'IG') %></option>
+          <% end %>
+        </select>
+      </div>
+
+      <button type="submit" style="background:#0B1722;color:#fff;border:none;border-radius:6px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">
+        Filter
+      </button>
+      <% if [@filter_entity,@filter_type,@filter_relationship,@filter_status,@filter_expiry,@q].any?(&:present?) %>
+        <%= link_to 'Clear', legal_ops_root_path, style: "font-size:12px;color:#6B7280;text-decoration:none;padding:9px 8px;" %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# ── Agreements table ────────────────────────────────────────────────────── %>
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+
+    <% if @workflows.empty? %>
+      <div style="padding:48px 24px;text-align:center;color:#9CA3AF;">
+        <p style="font-size:15px;font-weight:600;margin-bottom:6px;">No agreements match your filters</p>
+        <p style="font-size:13px;"><%= link_to 'Clear all filters', legal_ops_root_path, style: 'color:#00C853;' %></p>
+      </div>
+    <% else %>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr style="background:#f8fafc;border-bottom:1px solid #e5e7eb;">
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;">Counterparty</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;">Type</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;">Entity</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;">Value</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;">Expiry</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;">Status</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;">Data</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;">Risks</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @workflows.each do |wf| %>
+            <%
+              flags       = wf.risk_flags
+              score       = wf.data_completeness_score
+              expiry      = wf.expiry_date
+              days_to_exp = expiry ? (expiry - Date.today).to_i : nil
+              exp_color   = if expiry.nil? then '#9CA3AF'
+                            elsif days_to_exp < 0    then '#DC2626'
+                            elsif days_to_exp <= 30  then '#DC2626'
+                            elsif days_to_exp <= 90  then '#D97706'
+                            else '#374151'
+                            end
+              score_color = score >= 80 ? '#059669' : (score >= 50 ? '#D97706' : '#DC2626')
+              data_dot_color = score >= 80 ? '#00C853' : (score >= 50 ? '#D97706' : '#DC2626')
+              data_dot_title = "#{score}% complete — click to fill gaps"
+            %>
+            <tr style="border-bottom:1px solid #f3f4f6;" onmouseover="this.style.background='#fafbfc'" onmouseout="this.style.background='transparent'">
+
+              <%# Counterparty + relationship %>
+              <td style="padding:12px 14px;">
+                <%= link_to legal_ops_workflow_path(wf), style: "text-decoration:none;" do %>
+                  <div style="font-weight:700;color:#0B1722;"><%= wf.contracting_party.presence || wf.counterparty_name.presence || '—' %></div>
+                  <div style="font-size:11px;color:#9CA3AF;margin-top:1px;">
+                    <% if wf.commercial_relationship.present? %>
+                      <span style="background:<%= wf.commercial_supplier? ? '#FEF3C7' : '#DBEAFE' %>;color:<%= wf.commercial_supplier? ? '#92400E' : '#1E40AF' %>;padding:1px 6px;border-radius:4px;font-weight:600;font-size:10px;">
+                        <%= wf.commercial_supplier? ? 'Supplier' : 'Customer' %>
+                      </span>
+                    <% end %>
+                    <% if wf.auto_renewal? %>&nbsp;
+                      <span style="background:#FFFBEB;color:#D97706;padding:1px 6px;border-radius:4px;font-weight:600;font-size:10px;" title="Auto-renews — check notice period">↻ Auto</span>
+                    <% end %>
+                  </div>
+                <% end %>
+              </td>
+
+              <%# Agreement type %>
+              <td style="padding:12px 14px;color:#374151;">
+                <span style="background:#F3F4F6;color:#374151;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;"><%= wf.agreement_type_label %></span>
+              </td>
+
+              <%# IG entity %>
+              <td style="padding:12px 14px;color:#374151;font-size:12px;max-width:120px;">
+                <span title="<%= wf.entity_name %>" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                  <%= wf.entity.to_s.upcase %>
+                </span>
+              </td>
+
+              <%# Contract value %>
+              <td style="padding:12px 14px;color:#374151;white-space:nowrap;">
+                <%= wf.agreement_value.presence || '<span style="color:#9CA3AF;">—</span>'.html_safe %>
+              </td>
+
+              <%# Expiry date with colour coding %>
+              <td style="padding:12px 14px;white-space:nowrap;">
+                <% if expiry %>
+                  <span style="color:<%= exp_color %>;font-weight:<%= days_to_exp&.<= 90 ? '700' : '400' %>;">
+                    <%= expiry.strftime('%d %b %Y') %>
+                  </span>
+                  <% if days_to_exp && days_to_exp >= 0 && days_to_exp <= 90 %>
+                    <div style="font-size:10px;color:<%= exp_color %>;font-weight:700;"><%= days_to_exp %> days</div>
+                  <% elsif days_to_exp && days_to_exp < 0 %>
+                    <div style="font-size:10px;color:#DC2626;font-weight:700;">EXPIRED <%= days_to_exp.abs %>d ago</div>
+                  <% end %>
+                <% else %>
+                  <span style="color:#9CA3AF;font-size:12px;">Not set</span>
+                <% end %>
+              </td>
+
+              <%# Status %>
+              <td style="padding:12px 14px;">
+                <span class="badge <%= wf.status_badge_class %>" style="font-size:11px;padding:3px 10px;">
+                  <%= wf.status_label %>
+                </span>
+              </td>
+
+              <%# Data completeness dot %>
+              <td style="padding:12px 14px;text-align:center;">
+                <%= link_to contract_data_legal_ops_workflow_path(wf), title: data_dot_title,
+                      style: "display:inline-flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;" do %>
+                  <span style="width:10px;height:10px;border-radius:50%;background:<%= data_dot_color %>;display:block;"></span>
+                  <span style="font-size:10px;color:<%= score_color %>;font-weight:700;"><%= score %>%</span>
+                <% end %>
+              </td>
+
+              <%# Risk flags %>
+              <td style="padding:12px 14px;max-width:200px;">
+                <% if flags.any? %>
+                  <div style="display:flex;flex-wrap:wrap;gap:3px;">
+                    <% flags.first(3).each do |flag| %>
+                      <span title="<%= flag %>"
+                            style="background:#FEF2F2;color:#DC2626;font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;white-space:nowrap;cursor:default;">
+                        ⚠ <%= flag.truncate(22) %>
+                      </span>
+                    <% end %>
+                    <% if flags.length > 3 %>
+                      <span title="<%= flags.drop(3).join(', ') %>"
+                            style="background:#F3F4F6;color:#6B7280;font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;cursor:default;">
+                        +<%= flags.length - 3 %> more
+                      </span>
+                    <% end %>
+                  </div>
+                <% else %>
+                  <span style="font-size:11px;color:#9CA3AF;">✓ Clean</span>
+                <% end %>
+              </td>
+
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+
+  <%# ── Results count ───────────────────────────────────────────────────────── %>
+  <div style="text-align:right;font-size:12px;color:#9CA3AF;margin-top:10px;">
+    <%= @workflows.count %> agreement<%= @workflows.count == 1 ? '' : 's' %> shown
+  </div>
+
+  <%# ── Management nav ──────────────────────────────────────────────────────── %>
+  <div style="margin-top:40px;border-top:1px solid #e5e7eb;padding-top:28px;">
+    <p style="font-size:11px;font-weight:700;color:#7B787F;text-transform:uppercase;letter-spacing:2px;margin-bottom:16px;">Management</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+      <% [
+        [legal_ops_approval_matrices_path, 'Approval Matrices', 'Configure which signatories are required for each agreement type and entity.'],
+        [legal_ops_templates_path,         'Templates',         'Manage IGSIGN document templates and their metadata.'],
+        [legal_ops_signatories_path,       'Signatory Registry','View and manage authorised signatories across all IG entities.'],
+      ].each do |path, title, desc| %>
+        <%= link_to path,
+              style: 'display:block;background:#fff;border-radius:10px;border:1px solid #edf0f3;padding:18px;text-decoration:none;',
+              onmouseover: "this.style.borderColor='#00C853'",
+              onmouseout:  "this.style.borderColor='#edf0f3'" do %>
+          <div style="font-size:14px;font-weight:700;color:#0B1722;margin-bottom:4px;"><%= title %></div>
+          <div style="font-size:12px;color:#7B787F;line-height:1.5;"><%= desc %></div>
+        <% end %>
+      <% end %>
+    </div>
   </div>
 
 </div>
