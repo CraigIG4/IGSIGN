@@ -1,14 +1,13 @@
 <%#
-  POCKET GC floating chat panel.
-  Only rendered when @gcip_enabled is true (Stage 0/1 signers, AI_API_KEY set).
-  Stage 2 (counterparty) signers never see this — zero elements, zero exposure.
-  Self-contained vanilla JS — no Stimulus compilation required.
+  POCKET GC — upload wizard panel.
+  Available to authenticated users (admins/legal ops) during the agreement wizard.
+  Uses user session auth (no submitter token).
+  Rendered on the review step once a document has been uploaded.
 %>
 
-<%# ── Toggle button (bottom-right, always visible when panel is closed) ── %>
 <button id="gcip-toggle"
         aria-label="Ask POCKET GC"
-        title="POCKET GC — AI Legal Assistant"
+        title="POCKET GC — Document Assistant"
         style="
           position:fixed; bottom:24px; right:24px; z-index:1200;
           width:52px; height:52px; border-radius:50%;
@@ -26,24 +25,22 @@
   </svg>
 </button>
 
-<%# ── Chat panel ─────────────────────────────────────────────────────────── %>
 <div id="gcip-panel"
      role="dialog"
      aria-modal="true"
-     aria-label="POCKET GC AI Legal Assistant"
+     aria-label="POCKET GC Document Assistant"
      style="
        position:fixed; bottom:24px; right:24px; z-index:1200;
-       width:360px; max-width:calc(100vw - 32px); height:520px; max-height:calc(100dvh - 48px);
+       width:380px; max-width:calc(100vw - 32px); height:540px; max-height:calc(100dvh - 48px);
        background:#fff; border-radius:16px;
        box-shadow:0 8px 40px rgba(11,23,34,0.28);
        display:none; flex-direction:column; overflow:hidden;
      ">
 
-  <%# Header %>
   <div style="background:#0B1722; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
     <div>
       <div style="font-size:14px; font-weight:700; color:#fff; letter-spacing:0.3px;">POCKET GC</div>
-      <div style="font-size:11px; color:rgba(255,255,255,0.5); margin-top:1px;">AI Legal Assistant · Internal signers only</div>
+      <div style="font-size:11px; color:rgba(255,255,255,0.5); margin-top:1px;">Ask about this document — helps you complete the CAF</div>
     </div>
     <button id="gcip-close" aria-label="Close" style="background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;padding:4px;line-height:1;">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -52,18 +49,16 @@
     </button>
   </div>
 
-  <%# Message thread %>
   <div id="gcip-messages" style="flex:1; overflow-y:auto; padding:14px 14px 8px; display:flex; flex-direction:column; gap:10px;">
     <div style="font-size:12px; color:#9ca3af; text-align:center; padding:8px 0;">
-      Ask about this agreement — clauses, obligations, risks, or the signing process.
+      Ask about clauses, obligations, payment terms, liability — then copy the answer into the CAF fields.
     </div>
   </div>
 
-  <%# Footer %>
   <div style="border-top:1px solid #e5e7eb; padding:10px 12px; flex-shrink:0;">
     <div style="display:flex; gap:8px; align-items:flex-end;">
       <textarea id="gcip-input"
-                placeholder="Ask a question…"
+                placeholder="e.g. What are the payment terms?"
                 rows="1"
                 aria-label="Ask POCKET GC"
                 style="
@@ -88,16 +83,15 @@
       </button>
     </div>
     <p style="font-size:10px; color:#9ca3af; margin-top:6px; text-align:center;">
-      For legal interpretation advice, consult your legal team.
+      Answers are based on the uploaded document only.
     </p>
   </div>
 </div>
 
 <script nonce="<%= content_security_policy_nonce %>">
 (function () {
-  var SUBMITTER_SLUG = '<%= j(@submitter.slug) %>';
-  var WORKFLOW_ID    = '<%= @gcip_workflow_id.to_i %>';
-  var CHAT_URL       = '<%= internal_gcip_chats_path %>';
+  var WORKFLOW_ID = '<%= local_assigns[:workflow]&.id.to_i || @caf&.id.to_i || @agreement&.id.to_i %>';
+  var CHAT_URL    = '<%= internal_gcip_wizard_chats_path %>';
 
   var panel    = document.getElementById('gcip-panel');
   var toggle   = document.getElementById('gcip-toggle');
@@ -111,76 +105,52 @@
   var history = [];
   var loading = false;
 
-  function openPanel() {
-    panel.style.display = 'flex';
-    toggle.style.display = 'none';
-    input.focus();
-  }
+  function openPanel()  { panel.style.display = 'flex'; toggle.style.display = 'none'; input.focus(); }
+  function closePanel() { panel.style.display = 'none'; toggle.style.display = 'flex'; }
 
-  function closePanel() {
-    panel.style.display = 'none';
-    toggle.style.display = 'flex';
-  }
-
-  // Parse [Refs: Clause X.X, Section Y.Y] from the last line of assistant responses.
-  // Returns { body: string, refs: string[] }
   function parseRefs(text) {
     var refMatch = text.match(/\[Refs:\s*([^\]]*)\]\s*$/i);
     if (!refMatch) return { body: text.trim(), refs: [] };
-    var body = text.slice(0, text.lastIndexOf(refMatch[0])).trim();
+    var body   = text.slice(0, text.lastIndexOf(refMatch[0])).trim();
     var refStr = refMatch[1].trim();
     if (!refStr || refStr.toLowerCase() === 'none identified') return { body: body, refs: [] };
-    var refs = refStr.split(',').map(function(r) { return r.trim(); }).filter(Boolean);
-    return { body: body, refs: refs };
+    return { body: body, refs: refStr.split(',').map(function(r){ return r.trim(); }).filter(Boolean) };
   }
 
-  // Strip any residual markdown the LLM sends despite instructions.
   function cleanText(text) {
     return text
-      .replace(/\*\*(.+?)\*\*/g, '$1')   // **bold** → plain
-      .replace(/\*(.+?)\*/g, '$1')        // *italic* → plain
-      .replace(/^[\*\-] /gm, '• ')        // * item / - item → bullet
-      .replace(/#{1,6} /g, '')            // ## heading → plain
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/\*(.+?)\*/g, '$1')
+      .replace(/^[\*\-] /gm, '• ')
+      .replace(/#{1,6} /g, '')
       .trim();
   }
 
   function appendMessage(role, text) {
-    var isUser = role === 'user';
+    var isUser  = role === 'user';
     var wrapper = document.createElement('div');
     wrapper.style.cssText = 'display:flex;flex-direction:column;gap:4px;' + (isUser ? 'align-items:flex-end;' : 'align-items:flex-start;');
 
-    var parsed = isUser ? { body: text, refs: [] } : parseRefs(text);
+    var parsed      = isUser ? { body: text, refs: [] } : parseRefs(text);
     var displayText = isUser ? text : cleanText(parsed.body);
 
     var bubble = document.createElement('div');
     bubble.style.cssText = [
-      'max-width:85%;',
-      'padding:9px 12px;',
+      'max-width:88%;padding:9px 12px;',
       'border-radius:' + (isUser ? '12px 12px 2px 12px' : '12px 12px 12px 2px') + ';',
-      'font-size:13px;',
-      'line-height:1.5;',
-      'white-space:pre-wrap;',
-      isUser
-        ? 'background:#0B1722;color:#fff;'
-        : 'background:#f3f4f6;color:#111827;'
+      'font-size:13px;line-height:1.5;white-space:pre-wrap;',
+      isUser ? 'background:#0B1722;color:#fff;' : 'background:#f3f4f6;color:#111827;'
     ].join('');
     bubble.textContent = displayText;
     wrapper.appendChild(bubble);
 
-    // Render clause reference chips below assistant messages
     if (!isUser && parsed.refs.length > 0) {
       var refRow = document.createElement('div');
-      refRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;max-width:85%;padding:0 2px;';
+      refRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;max-width:88%;padding:0 2px;';
       parsed.refs.forEach(function(ref) {
         var chip = document.createElement('span');
-        chip.style.cssText = [
-          'font-size:10px;font-weight:600;',
-          'padding:2px 7px;border-radius:4px;',
-          'background:#e0f2fe;color:#0369a1;',
-          'border:1px solid #bae6fd;',
-          'white-space:nowrap;cursor:default;'
-        ].join('');
-        chip.title = 'Clause reference — verify in the contract';
+        chip.style.cssText = 'font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;white-space:nowrap;cursor:default;';
+        chip.title       = 'Clause reference — verify in the document';
         chip.textContent = ref;
         refRow.appendChild(chip);
       });
@@ -193,18 +163,15 @@
   }
 
   function appendSpinner() {
-    var spinner = document.createElement('div');
-    spinner.id  = 'gcip-spinner';
-    spinner.style.cssText = 'align-self:flex-start;font-size:20px;line-height:1;color:#9ca3af;';
-    spinner.textContent = '…';
-    messages.appendChild(spinner);
+    var s = document.createElement('div');
+    s.id = 'gcip-spinner';
+    s.style.cssText = 'align-self:flex-start;font-size:20px;line-height:1;color:#9ca3af;';
+    s.textContent = '…';
+    messages.appendChild(s);
     messages.scrollTop = messages.scrollHeight;
   }
 
-  function removeSpinner() {
-    var s = document.getElementById('gcip-spinner');
-    if (s) s.remove();
-  }
+  function removeSpinner() { var s = document.getElementById('gcip-spinner'); if (s) s.remove(); }
 
   function send() {
     if (loading) return;
@@ -215,7 +182,7 @@
     input.value = '';
     input.style.height = 'auto';
     appendSpinner();
-    loading  = true;
+    loading = true;
     sendBtn.disabled = true;
 
     fetch(CHAT_URL, {
@@ -224,15 +191,10 @@
         'Content-Type': 'application/json',
         'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
       },
-      body: JSON.stringify({
-        submitter_slug:  SUBMITTER_SLUG,
-        caf_workflow_id: WORKFLOW_ID,
-        question:        q,
-        history:         history
-      })
+      body: JSON.stringify({ caf_workflow_id: WORKFLOW_ID, question: q, history: history })
     })
-    .then(function (res) { return res.json(); })
-    .then(function (data) {
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
       removeSpinner();
       if (data.error) {
         appendMessage('assistant', '⚠ ' + data.error);
@@ -240,15 +202,14 @@
         appendMessage('assistant', data.answer);
         history.push({ role: 'user',      content: q });
         history.push({ role: 'assistant', content: data.answer });
-        // Keep last 6 turns (12 messages) in memory
         if (history.length > 12) history = history.slice(-12);
       }
     })
-    .catch(function (err) {
+    .catch(function() {
       removeSpinner();
       appendMessage('assistant', '⚠ Network error. Please try again.');
     })
-    .finally(function () {
+    .finally(function() {
       loading = false;
       sendBtn.disabled = false;
       input.focus();
@@ -259,13 +220,11 @@
   closeBtn.addEventListener('click', closePanel);
   sendBtn.addEventListener('click', send);
 
-  // ESC closes the panel
-  document.addEventListener('keydown', function (e) {
+  document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && panel.style.display !== 'none') closePanel();
   });
 
-  // Auto-resize textarea
-  input.addEventListener('input', function () {
+  input.addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 100) + 'px';
   });

@@ -5,7 +5,7 @@
 # Sprint 6 will add Azure OpenAI fallback here without changing callers.
 module IgsignLlmClient
   BASE_URL      = -> { ENV.fetch('AI_BASE_URL', 'https://openrouter.ai/api/v1') }
-  API_KEY       = -> { ENV['AI_API_KEY'] }
+  API_KEY       = -> { ENV.fetch('AI_API_KEY', nil) }
   DEFAULT_MODEL = 'meta-llama/llama-3.3-70b-instruct:free'
 
   def self.configured?
@@ -26,7 +26,7 @@ module IgsignLlmClient
     end
 
     payload = {
-      model:       model || ENV.fetch('AI_MODEL', DEFAULT_MODEL),
+      model: model || ENV.fetch('AI_MODEL', DEFAULT_MODEL),
       messages:,
       temperature:
     }

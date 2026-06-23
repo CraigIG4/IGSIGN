@@ -20,15 +20,22 @@ class ContractChatService
     new(question:, caf_workflow_id:, submitter:, conversation_history:).answer
   end
 
-  def initialize(question:, caf_workflow_id:, submitter:, conversation_history:)
+  # Used by the upload wizard — authenticated user (not a submitter).
+  # Skips the stage-position check; auth is handled by the controller.
+  def self.answer_for_uploader(question:, caf_workflow_id:, user:, conversation_history: [])
+    new(question:, caf_workflow_id:, submitter: nil, conversation_history:, uploader: user).answer
+  end
+
+  def initialize(question:, caf_workflow_id:, submitter:, conversation_history:, uploader: nil)
     @question             = question
     @caf_workflow_id      = caf_workflow_id
     @submitter            = submitter
+    @uploader             = uploader
     @conversation_history = conversation_history
   end
 
   def answer
-    return { error: 'Not available' } unless internal_signer?
+    return { error: 'Not available' } unless @uploader || internal_signer?
     return { error: 'AI_API_KEY not configured' } unless IgsignLlmClient.configured?
 
     context = assemble_context
@@ -130,13 +137,18 @@ class ContractChatService
   end
 
   def log_exchange(result)
+    token_digest = if @uploader
+                     Digest::SHA256.hexdigest("uploader:#{@uploader.id}")
+                   else
+                     Digest::SHA256.hexdigest(@submitter.slug.to_s)
+                   end
     ChatAuditLog.create!(
-      caf_workflow_id:       @caf_workflow_id,
-      submitter_token_digest: Digest::SHA256.hexdigest(@submitter.slug.to_s),
-      signer_role:           'internal',
-      question:              @question,
-      answer:                result[:answer],
-      error:                 result[:error]
+      caf_workflow_id:        @caf_workflow_id,
+      submitter_token_digest: token_digest,
+      signer_role:            @uploader ? 'uploader' : 'internal',
+      question:               @question,
+      answer:                 result[:answer],
+      error:                  result[:error]
     )
   rescue StandardError => e
     Rails.logger.warn("[IGSIGN] ChatAuditLog write failed: #{e.message}")

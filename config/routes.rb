@@ -24,9 +24,10 @@ Rails.application.routes.draw do
   namespace :internal do
     resources :caf_webhooks, only: %i[create]
 
-    # GCinmyPOCKET chat endpoint — authenticated by submitter token
+    # POCKET GC — signing form (submitter token) and upload wizard (user session)
     namespace :gcip do
-      resources :chats, only: %i[create]
+      resources :chats,        only: %i[create]
+      resources :wizard_chats, only: %i[create]
     end
   end
   get 'manifest' => 'pwa#manifest'
