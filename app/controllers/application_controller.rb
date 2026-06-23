@@ -13,7 +13,8 @@ class ApplicationController < ActionController::Base
   before_action :maybe_redirect_to_setup, unless: :signed_in?
   before_action :authenticate_user!, unless: :devise_controller?
 
-  before_action :set_csp, if: -> { request.get? && !request.headers['HTTP_X_TURBO'] }
+  # CSP disabled for on-prem POC — internal network only, no public exposure
+  # before_action :set_csp, if: -> { request.get? && !request.headers['HTTP_X_TURBO'] }
 
   helper_method :button_title,
                 :current_account,
@@ -130,7 +131,7 @@ class ApplicationController < ActionController::Base
   def set_csp
     request.content_security_policy = ActionDispatch::ContentSecurityPolicy.new.tap do |policy|
       policy.default_src :self
-      policy.script_src :self
+      policy.script_src :self, :unsafe_inline
       policy.style_src :self, :unsafe_inline
       policy.img_src :self, :https, :http, :blob, :data
       policy.font_src :self, :https, :http, :blob, :data

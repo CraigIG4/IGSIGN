@@ -34,12 +34,12 @@
           <%= link_to t('notifications'), settings_notifications_path, class: 'text-base hover:bg-base-300' %>
         </li>
       <% end %>
-      <% if can?(:read, EncryptedConfig.new(key: EncryptedConfig::ESIGN_CERTS_KEY, account: current_account)) %>
+      <% if current_user.role == User::ADMIN_ROLE && can?(:read, EncryptedConfig.new(key: EncryptedConfig::ESIGN_CERTS_KEY, account: current_account)) %>
         <li>
           <%= link_to t('e_signature'), settings_esign_path, class: 'text-base hover:bg-base-300' %>
         </li>
       <% end %>
-      <% if can?(:read, AccountConfig) %>
+      <% if current_user.role == User::ADMIN_ROLE && can?(:read, AccountConfig) %>
         <li>
           <%= link_to t('personalization'), settings_personalization_path, class: 'text-base hover:bg-base-300' %>
         </li>

@@ -79,7 +79,7 @@ Rails.application.configure do
 
   config.action_mailer.default_url_options = {
     host:     ENV.fetch('ACTION_MAILER_HOST', 'igsign.onrender.com'),
-    protocol: 'https'
+    protocol: ENV.fetch('ACTION_MAILER_PROTOCOL', 'https')
   }
 
   if ENV['SMTP_FROM'].present?

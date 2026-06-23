@@ -17,7 +17,7 @@
           <%= svg_icon('download', class: 'w-6 h-6 stroke-2') %>
           <span><%= t('export') %></span>
         <% end %>
-        <% if !@template.archived_at? && can?(:create, Submission) %>
+        <% if !@template.archived_at? && current_user.role == User::ADMIN_ROLE && can?(:create, Submission) %>
           <%= link_to new_template_submission_path(@template), id: 'add_recipients_button', class: 'white-button !border', data: { turbo_frame: 'modal' } do %>
             <%= svg_icon('plus', class: 'w-6 h-6 stroke-2') %>
             <%= t('add_recipients_html') %>
@@ -84,7 +84,7 @@
         <p class="text-3xl font-bold text-base-content">
           <%= t('there_are_no_submissions') %>
         </p>
-        <% if @template.archived_at.blank? && params[:q].blank? && filter_params.blank? %>
+        <% if @template.archived_at.blank? && params[:q].blank? && filter_params.blank? && current_user.role == User::ADMIN_ROLE %>
           <div class="mt-4">
             <p><%= t('send_an_invitation_to_fill_and_complete_the_form') %></p>
             <div class="space-y-2 flex flex-col">

@@ -1,39 +1,43 @@
 services:
   app:
+    build:
+      context: ./src
+      dockerfile: Dockerfile
+    image: igsign:local
+    command: sh -c "cd /app && bundle exec rails db:migrate && exec bundle exec puma -C /app/config/puma.rb --dir /app"
+    restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
-    image: docuseal/docuseal:latest
+      - db
     ports:
-      - 3000:3000
+      - "127.0.0.1:8004:3000"
     volumes:
-      - ./docuseal:/data/docuseal
+      - app_data:/data/docuseal
+      - ./src/app:/app/app
+      - ./src/config:/app/config
+      - ./src/lib:/app/lib
+      - ./src/db/seeds:/app/db/seeds
+      - ./src/db/migrate:/app/db/migrate
+    env_file:
+      - .env
     environment:
-      - FORCE_SSL=${HOST}
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/docuseal
+      RAILS_ENV: production
+      DATABASE_URL: "postgres://igsign:${POSTGRES_PASSWORD}@db:5432/igsign"
+      WORKDIR: /data/docuseal
+      RAILS_SERVE_STATIC_FILES: "true"
+      RAILS_LOG_TO_STDOUT: "true"
+      FORCE_SSL: "false"
+      PORT: "3000"
 
-  postgres:
-    image: postgres:18
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
     volumes:
-      - './pg_data:/var/lib/postgresql/18/docker'
+      - postgres_data:/var/lib/postgresql/data
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: docuseal
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      POSTGRES_DB: igsign
+      POSTGRES_USER: igsign
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
-  caddy:
-    image: caddy:latest
-    command: caddy reverse-proxy --from $HOST --to app:3000
-    ports:
-      - 80:80
-      - 443:443
-      - 443:443/udp
-    volumes:
-      - ./caddy:/data/caddy
-    environment:
-      - HOST=${HOST}
+volumes:
+  app_data:
+  postgres_data:

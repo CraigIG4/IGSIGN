@@ -137,7 +137,7 @@
                 <% end %>
               </li>
             <% end %>
-            <% if can?(:read, EncryptedConfig.new(key: EncryptedConfig::ESIGN_CERTS_KEY, account: current_account)) %>
+            <% if current_user.role == User::ADMIN_ROLE && can?(:read, EncryptedConfig.new(key: EncryptedConfig::ESIGN_CERTS_KEY, account: current_account)) %>
               <li>
                 <%= link_to settings_esign_path, class: 'flex items-center gap-2 text-sm' do %>
                   <%= svg_icon('zoom_check', class: 'w-4 h-4 flex-shrink-0') %><%= t('verify_pdf') %>

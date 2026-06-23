@@ -1,0 +1,36 @@
+# IGSIGN — Local demo stack
+# Single container, SQLite storage, embedded Redis — no external services needed.
+#
+# First run (builds image, ~18 min):
+#   docker compose -f docker-compose.local.yml up --build
+#
+# Subsequent runs (< 15 seconds):
+#   docker compose -f docker-compose.local.yml up
+#
+# App: http://localhost:3001
+# Login: craig@ignitiongroup.co.za / IgSign2026!
+#
+# NOTE: SECRET_KEY_BASE and ENCRYPTION_SECRET below are demo-only values.
+# Do NOT use this file for production deployment.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: igsign:local
+    ports:
+      - "3001:3000"
+    environment:
+      RAILS_ENV: production
+      SECRET_KEY_BASE: "igsign_local_demo_key_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ENCRYPTION_SECRET: "igsign_local_demo_enc_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      WORKDIR: /data/docuseal
+      RAILS_SERVE_STATIC_FILES: "true"
+      RAILS_LOG_TO_STDOUT: "true"
+      FORCE_SSL: "false"
+    volumes:
+      - igsign_local_data:/data/docuseal
+
+volumes:
+  igsign_local_data:
