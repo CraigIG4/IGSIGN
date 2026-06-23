@@ -40,6 +40,7 @@ class ContractParsingJob < ApplicationJob
 
     unless result['error']
       write_native_columns(agreement, result)
+      autofill_counterparty(agreement, result)
     end
 
     Rails.logger.info("[IGSIGN] ContractParsingJob: complete for #{caf_workflow_id}, keys=#{result.keys.join(',')}")
@@ -59,6 +60,19 @@ class ContractParsingJob < ApplicationJob
   rescue StandardError => e
     Rails.logger.warn("[IGSIGN] ContractParsingJob text extraction error: #{e.message}")
     ''
+  end
+
+  # Fills counterparty name + email only when the handler has not entered them yet.
+  # Never overwrites a manually entered value — this is a convenience pre-fill only.
+  def autofill_counterparty(agreement, result)
+    updates = {}
+    updates[:contracting_party] = result['counterparty_name'].strip if
+      result['counterparty_name'].present? && agreement.contracting_party.blank?
+    updates[:counterparty_email] = result['counterparty_contact_email'].strip if
+      result['counterparty_contact_email'].present? && agreement.counterparty_email.blank?
+    agreement.update_columns(updates) if updates.any?
+  rescue StandardError => e
+    Rails.logger.warn("[IGSIGN] ContractParsingJob autofill_counterparty error: #{e.message}")
   end
 
   # Writes AI-extracted values to native columns for dashboard queries.

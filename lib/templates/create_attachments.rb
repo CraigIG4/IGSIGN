@@ -167,19 +167,21 @@ module Templates
 
       stdout, stderr, status = Open3.capture3(
         soffice,
-        "--env:UserInstallation=#{user_profile}",
+        "-env:UserInstallation=#{user_profile}",
         '--headless', '--convert-to', 'pdf', '--outdir', output_dir,
         file.tempfile.path
       )
 
-      unless status.success?
+      # LibreOffice exits non-zero when optional Java components (javaldx) are absent,
+      # even though the DOCX→PDF conversion itself succeeded.  Check for output first.
+      pdf_files = Dir.glob(File.join(output_dir, '*.pdf'))
+
+      if pdf_files.empty?
         Rails.logger.error "[IGSIGN] LibreOffice stderr: #{stderr}" if stderr.present?
         Rails.logger.error "[IGSIGN] LibreOffice stdout: #{stdout}" if stdout.present?
-        raise InvalidFileType, "Document conversion failed: #{stderr.strip}"
+        err = stderr.present? ? stderr.strip : 'no PDF output produced'
+        raise InvalidFileType, "Document conversion failed: #{err}"
       end
-
-      pdf_files = Dir.glob(File.join(output_dir, '*.pdf'))
-      raise InvalidFileType, 'Document conversion produced no PDF output' if pdf_files.empty?
 
       File.binread(pdf_files.first)
     rescue Errno::ENOENT => e

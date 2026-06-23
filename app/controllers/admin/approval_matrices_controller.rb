@@ -15,6 +15,10 @@ module Admin
                     .caf_approval_matrices
                     .includes(:matrix_audit_events)
                     .order(active: :desc, name: :asc)
+
+      # BU-segmented signing authority panel
+      @entities_with_signatories = IgEntity.active.ordered
+                                           .includes(ig_entity_signatories: :ig_signatory)
     end
 
     def new

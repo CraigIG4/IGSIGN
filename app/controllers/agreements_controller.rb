@@ -6,7 +6,9 @@ class AgreementsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_agreement,
                 only: %i[show upload process_upload position save_fields
-                         review send_agreement sent caf_preview signing_journey remind destroy]
+                         review send_agreement sent caf_preview signing_journey remind destroy
+                         confirm_counterparty update_signing_chain
+                         withdraw update_counterparty_email replace_document]
   before_action :set_gcip_state, only: :show  # Sprint 4: GCinmyPOCKET
 
   # ── Index ──────────────────────────────────────────────────────────────────
@@ -52,6 +54,11 @@ class AgreementsController < ApplicationController
                                 &.ordered_by_position
                                 &.to_a || []
     @entity_record = IgEntity.find_by(key: @agreement.entity)
+    @submission_events = @agreement.caf_submission
+                           &.submission_events
+                           &.order(event_timestamp: :desc)
+                           &.limit(25)
+                           &.to_a || []
   end
 
   # ── Signing Journey fragment (Turbo Frame polling endpoint) ────────────
@@ -102,11 +109,23 @@ class AgreementsController < ApplicationController
 
     if @agreement.save
       attach_nda_template!(@agreement) if @agreement.agreement_type == 'nda'
-      redirect_to @agreement.agreement_type == 'nda' ? review_agreement_path(@agreement)
-                                                     : upload_agreement_path(@agreement)
+      if @agreement.agreement_type == 'nda'
+        redirect_to review_agreement_path(@agreement)
+      elsif params[:contract_file].present?
+        attach_and_process_inline_upload!(@agreement, params[:contract_file])
+      else
+        redirect_to upload_agreement_path(@agreement)
+      end
     else
       @companies = current_account.companies.alphabetical
       @step = 1
+      @new_company_draft = {
+        name:                params[:new_company_name].to_s,
+        registration_number: params[:new_company_registration_number].to_s,
+        contact_name:        params[:new_company_contact_name].to_s,
+        contact_email:       params[:new_company_contact_email].to_s,
+        domain:              params[:new_company_domain].to_s
+      }
       render :new, status: :unprocessable_content
     end
   end
@@ -145,8 +164,13 @@ class AgreementsController < ApplicationController
       ContractParsingJob.perform_later(@agreement.id)
       FieldDetectionJob.perform_later(template.id)
 
-      redirect_to position_agreement_path(@agreement),
-                  notice: 'Document uploaded. Detecting signing fields — review placements below.'
+      # Set up signatories and auto-place signing fields synchronously so the
+      # agreement is ready to send without requiring the field-placement step.
+      sync_template_submitters!
+      auto_place_fields!
+
+      redirect_to review_agreement_path(@agreement),
+                  notice: 'Document uploaded — analysing contract. Fields will be auto-filled shortly.'
     rescue StandardError => e
       template.destroy
       Rails.logger.error "[IGSIGN] Upload failed agreement=#{@agreement.id}: #{e.message}"
@@ -227,6 +251,26 @@ class AgreementsController < ApplicationController
     @provenance = @agreement.parsed_data_provenance.to_h
     @prefill_present   = @provenance.any? { |_, v| v == 'ai' }
     @amends_suggestion = @parsed['amends_or_relates_to'].presence
+
+    # Counterparty auto-detect banner: show only when AI found a name AND the handler
+    # hasn't filled in the company yet.  Once contracting_party is populated (manual
+    # entry or a prior confirm), the banner stays hidden.
+    @detected_cp_name  = @parsed['counterparty_name'].presence
+    @detected_cp_email = @parsed['counterparty_contact_email'].presence
+    @show_cp_detect    = @detected_cp_name.present? &&
+                         @agreement.draft? &&
+                         @agreement.contracting_party.blank?
+
+    # Signing chain editor data (admin only — loaded for all to avoid extra query on admin check)
+    @available_signatories = IgSignatory.active.ordered.map do |s|
+      {
+        id:         s.id,
+        name:       s.full_name,
+        email:      s.email,
+        role_title: s.role_title.presence || 'Signatory',
+        entities:   s.ig_entities.map(&:name).join(', ')
+      }
+    end
   end
 
   # ── Send ───────────────────────────────────────────────────────────────────
@@ -293,6 +337,171 @@ class AgreementsController < ApplicationController
       redirect_to agreement_path(@agreement),
                   alert: 'No pending signatories to remind — everyone has already signed.'
     end
+  end
+
+  # ── Confirm counterparty (AI-detected) ───────────────────────────────────
+
+  # PATCH /agreements/:id/confirm_counterparty
+  # Accepts the handler-confirmed counterparty details from the review page banner.
+  # Optionally creates or links a Company record for future search/recall.
+  def confirm_counterparty
+    cp_name  = params[:contracting_party].to_s.strip
+    cp_email = params[:counterparty_email].to_s.strip
+
+    if cp_name.blank?
+      return redirect_to review_agreement_path(@agreement), alert: 'Company name is required.'
+    end
+
+    updates = { contracting_party: cp_name }
+    updates[:counterparty_email] = cp_email if cp_email.present?
+
+    # Find or create a Company record so the counterparty appears in future searches.
+    if cp_name.present?
+      company = current_account.companies.find_by('LOWER(name) = ?', cp_name.downcase) ||
+                current_account.companies.create!(name: cp_name)
+      updates[:company_id] = company.id
+
+      # Save contact as a CompanySignatory if we have an email
+      if cp_email.present? && company.persisted?
+        existing = company.company_signatories.find_by('LOWER(email) = ?', cp_email.downcase)
+        unless existing
+          company.company_signatories.create!(
+            name:  params[:counterparty_contact_name].to_s.strip.presence || cp_name,
+            email: cp_email,
+            times_signed: 0
+          )
+        end
+      end
+    end
+
+    @agreement.update!(updates)
+    redirect_to review_agreement_path(@agreement), notice: 'Counterparty details confirmed.'
+  rescue StandardError => e
+    Rails.logger.error("[IGSIGN] confirm_counterparty error: #{e.message}")
+    redirect_to review_agreement_path(@agreement), alert: 'Could not save counterparty details.'
+  end
+
+  # ── Update signing chain (admin override) ────────────────────────────────
+
+  # PATCH /agreements/:id/update_signing_chain
+  # Allows admins to modify the signing chain before submission.
+  # Accepts a JSON array of signatory hashes from the review page editor.
+  def update_signing_chain
+    unless current_user.role == User::ADMIN_ROLE
+      return redirect_to review_agreement_path(@agreement), alert: 'Not authorised.'
+    end
+
+    unless @agreement.draft?
+      return redirect_to review_agreement_path(@agreement),
+                         alert: 'The signing chain cannot be changed once an agreement has been submitted.'
+    end
+
+    raw = params[:signatories_json].to_s.strip
+    if raw.blank?
+      return redirect_to review_agreement_path(@agreement), alert: 'No chain data received.'
+    end
+
+    new_chain = JSON.parse(raw)
+    unless new_chain.is_a?(Array) && new_chain.all? { |s| s['name'].present? && s['email'].present? }
+      return redirect_to review_agreement_path(@agreement), alert: 'Invalid chain — every signatory needs a name and email.'
+    end
+
+    # Preserve the counterparty placeholder at the end of the chain
+    cp_sig = @agreement.signatories&.find { |s| s['chain_position'] == 'counterparty' }
+    chain_without_cp = new_chain.reject { |s| s['chain_position'] == 'counterparty' }
+    final_chain = cp_sig ? chain_without_cp + [cp_sig] : chain_without_cp
+
+    @agreement.update!(signatories: final_chain)
+    redirect_to review_agreement_path(@agreement), notice: 'Signing chain updated.'
+  rescue JSON::ParserError
+    redirect_to review_agreement_path(@agreement), alert: 'Could not parse chain data.'
+  rescue StandardError => e
+    Rails.logger.error("[IGSIGN] update_signing_chain error: #{e.message}")
+    redirect_to review_agreement_path(@agreement), alert: 'Could not update signing chain.'
+  end
+
+  # ── Withdraw ──────────────────────────────────────────────────────────────────
+
+  # PATCH /agreements/:id/withdraw
+  # Cancels a draft or pending-IG agreement.  Preserves the record for audit.
+  def withdraw
+    unless @agreement.draft? || @agreement.pending_ig?
+      return redirect_to agreement_path(@agreement),
+                         alert: 'Only draft or pending-approval agreements can be withdrawn.'
+    end
+
+    reason = params[:reason].to_s.strip.presence || 'Withdrawn by handler'
+    @agreement.update!(status: 'cancelled', status_updated_at: Time.current)
+    Rails.logger.info("[IGSIGN] Agreement #{@agreement.id} withdrawn by user #{current_user.id}: #{reason}")
+    redirect_to agreements_path, notice: "Agreement withdrawn. Reason: #{reason}"
+  rescue StandardError => e
+    Rails.logger.error("[IGSIGN] withdraw error for #{@agreement.id}: #{e.message}")
+    redirect_to agreement_path(@agreement), alert: 'Could not withdraw the agreement.'
+  end
+
+  # ── Update counterparty email ──────────────────────────────────────────────
+
+  # PATCH /agreements/:id/update_counterparty_email
+  # Admin only. Updates the counterparty email on both the agreement record and
+  # the DocuSeal Submitter so the signing link goes to the corrected address.
+  # After updating, admin should use Remind All to resend the invitation.
+  def update_counterparty_email
+    unless current_user.role == User::ADMIN_ROLE
+      return redirect_to agreement_path(@agreement), alert: 'Not authorised.'
+    end
+
+    unless @agreement.sent_counterparty?
+      return redirect_to agreement_path(@agreement),
+                         alert: 'Email can only be corrected while the agreement is with the counterparty.'
+    end
+
+    new_email = params[:counterparty_email].to_s.strip
+    new_name  = params[:counterparty_name].to_s.strip
+    old_email = @agreement.counterparty_email.to_s.strip.downcase
+
+    if new_email.blank? || !new_email.match?(URI::MailTo::EMAIL_REGEXP)
+      return redirect_to agreement_path(@agreement), alert: 'A valid email address is required.'
+    end
+
+    updates = { counterparty_email: new_email }
+    updates[:counterparty_name] = new_name if new_name.present?
+    @agreement.update!(updates)
+
+    if @agreement.caf_submission
+      sub = @agreement.caf_submission.submitters
+                      .find { |s| s.email&.strip&.downcase == old_email }
+      if sub
+        sub.update!(email: new_email)
+        sub.update!(name: new_name) if new_name.present?
+      end
+    end
+
+    redirect_to agreement_path(@agreement),
+                notice: "Counterparty email updated to #{new_email}. Use Remind All to resend the signing invitation."
+  rescue StandardError => e
+    Rails.logger.error("[IGSIGN] update_counterparty_email error for #{@agreement.id}: #{e.message}")
+    redirect_to agreement_path(@agreement), alert: 'Could not update the email. Please try again.'
+  end
+
+  # ── Replace document ──────────────────────────────────────────────────────
+
+  # PATCH /agreements/:id/replace_document
+  # Draft only. Detaches the current template so the handler can re-upload.
+  def replace_document
+    unless @agreement.draft?
+      return redirect_to agreement_path(@agreement),
+                         alert: 'Documents can only be replaced on draft agreements.'
+    end
+
+    old_template = @agreement.template
+    @agreement.update!(template_id: nil, parsed_contract_data: nil, parsed_data_provenance: nil)
+    old_template&.destroy
+
+    redirect_to upload_agreement_path(@agreement),
+                notice: 'Document removed. Upload a replacement below.'
+  rescue StandardError => e
+    Rails.logger.error("[IGSIGN] replace_document error for #{@agreement.id}: #{e.message}")
+    redirect_to review_agreement_path(@agreement), alert: 'Could not remove the document.'
   end
 
   # ── Destroy (draft only) ──────────────────────────────────────────────────
@@ -384,6 +593,41 @@ class AgreementsController < ApplicationController
     tpl = IgsignTemplateMetadata.entity_nda_for(current_account, agreement.entity)&.template
     tpl ||= current_account.templates.find_by(name: 'IGSIGN NDA Template')
     agreement.update!(template: tpl) if tpl
+  end
+
+  def attach_and_process_inline_upload!(agreement, file)
+    template = Template.new(
+      account: current_account,
+      author:  current_user,
+      name:    "#{agreement.agreement_type_label} — #{agreement.contracting_party.presence || 'Agreement'}"
+    )
+    unless template.save
+      return redirect_to upload_agreement_path(agreement),
+                         alert: 'Could not initialise document record.'
+    end
+
+    begin
+      documents, = Templates::CreateAttachments.call(template, { files: [file] }, extract_fields: true)
+      schema = documents.map { |doc| { attachment_uuid: doc.uuid, name: doc.filename.base } }
+      template.update!(schema: schema)
+      agreement.update!(template_id: template.id)
+
+      ContractParsingJob.perform_later(agreement.id)
+      FieldDetectionJob.perform_later(template.id)
+
+      redirect_to position_agreement_path(agreement),
+                  notice: 'Document uploaded. Detecting signing fields — review placements below.'
+    rescue StandardError => e
+      template.destroy
+      Rails.logger.error "[IGSIGN] Inline upload failed agreement=#{agreement.id}: #{e.message}"
+      user_message = if e.message.match?(/LibreOffice|not installed/i)
+                       'Word documents require LibreOffice which is not available. ' \
+                       'Please convert to PDF and try again.'
+                     else
+                       'Upload failed. Please try again or proceed to the next step to upload.'
+                     end
+      redirect_to upload_agreement_path(agreement), alert: user_message
+    end
   end
 
   def set_agreement
@@ -586,6 +830,17 @@ class AgreementsController < ApplicationController
   def load_current_holder
     return nil if @agreement.draft? || @agreement.complete? || @agreement.cancelled?
     return nil unless @agreement.caf_submission
+
+    if @agreement.ig_complete?
+      return {
+        name:       'IGSIGN',
+        role:       'IG approval complete — activating counterparty signing',
+        email:      nil,
+        invited_at: nil,
+        days:       0,
+        transitioning: true
+      }
+    end
 
     if @agreement.sent_counterparty?
       return {

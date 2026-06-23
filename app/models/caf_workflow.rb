@@ -244,8 +244,6 @@ class CafWorkflow < ApplicationRecord
     :review
   end
 
-  private
-
   # ── Sprint 5: Contracts Dashboard ─────────────────────────────────────────
 
   # Returns an array of risk flag strings derived from native columns.
@@ -272,7 +270,6 @@ class CafWorkflow < ApplicationRecord
   # rubocop:enable Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
   # Percentage of CafFieldSchema dashboard fields that have a non-nil value.
-  # Used as a data quality indicator in the contracts register.
   def data_completeness_score
     cols = CafFieldSchema.dashboard_fields.filter_map { |f| f[:caf_column] }
     return 0 if cols.empty?
@@ -285,6 +282,8 @@ class CafWorkflow < ApplicationRecord
     end
     (filled * 100.0 / cols.count).round
   end
+
+  private
 
   def derived_caf_type
     AGREEMENT_TO_CAF_TYPE.fetch(agreement_type.to_s, caf_type.presence || 'long_form')

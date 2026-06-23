@@ -91,6 +91,11 @@ Rails.application.routes.draw do
       get  :caf_preview
       get  :signing_journey
       post :remind
+      patch :confirm_counterparty
+      patch :update_signing_chain
+      patch :withdraw
+      patch :update_counterparty_email
+      patch :replace_document
     end
     collection do
       get :search_companies

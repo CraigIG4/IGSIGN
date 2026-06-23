@@ -22,22 +22,23 @@
   <p style="font-size:14px;color:#6b7280;margin-bottom:1.5rem;">Signatories are assigned automatically based on entity and agreement type.</p>
 
   <%# ── Document type toggle: NDA | Upload Agreement ─────────────────────── %>
+  <%# Initial button styles rendered server-side so the page is usable without JS %>
+  <% _is_nda = (preselect_mode == 'nda') %>
   <div id="doc_type_toggle" style="display:flex;gap:0;border:1px solid #d1d5db;border-radius:10px;overflow:hidden;margin-bottom:1.5rem;max-width:440px;">
     <button type="button" id="btn_mode_nda"
-            style="flex:1;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:background 0.15s,color 0.15s;"
-            onclick="setDocMode('nda')">
+            style="flex:1;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:background 0.15s,color 0.15s;background:<%= _is_nda ? '#162B3C' : '#f9fafb' %>;color:<%= _is_nda ? '#fff' : '#374151' %>;">
       <svg style="width:14px;height:14px;display:inline;vertical-align:-2px;margin-right:5px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 9h3.75M3.75 5.25h16.5c.621 0 1.125.504 1.125 1.125v13.5c0 .621-.504 1.125-1.125 1.125H3.75c-.621 0-1.125-.504-1.125-1.125V6.375c0-.621.504-1.125 1.125-1.125Z"/></svg>
       Standard NDA
     </button>
     <button type="button" id="btn_mode_upload"
-            style="flex:1;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;border:none;border-left:1px solid #d1d5db;transition:background 0.15s,color 0.15s;"
-            onclick="setDocMode('upload')">
+            style="flex:1;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;border:none;border-left:1px solid #d1d5db;transition:background 0.15s,color 0.15s;background:<%= _is_nda ? '#f9fafb' : '#162B3C' %>;color:<%= _is_nda ? '#374151' : '#fff' %>;">
       <svg style="width:14px;height:14px;display:inline;vertical-align:-2px;margin-right:5px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
       Upload Agreement
     </button>
   </div>
 
-  <%= form_with scope: :agreement, url: agreements_path, method: :post, html: { id: 'agwiz' } do |f| %>
+  <%= form_with scope: :agreement, url: agreements_path, method: :post,
+                html: { id: 'agwiz' }, multipart: true, data: { turbo: false } do |f| %>
     <%# Pass template_id through the form if pre-selected from the library %>
     <% if @preselected_template_id.present? %>
       <%= hidden_field_tag :template_id, @preselected_template_id %>
@@ -57,10 +58,10 @@
     <div style="display:grid;gap:1.25rem;">
 
       <%# ── NDA mode: entity selector (type is hidden / set to 'nda') ──────── %>
-      <div id="nda_fields" style="display:none;">
+      <div id="nda_fields" style="<%= _is_nda ? '' : 'display:none;' %>">
         <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">IG Entity signing this NDA <span style="color:#ef4444">*</span></label>
-        <%# Hidden type field — always 'nda' in NDA mode %>
-        <input type="hidden" id="ag_type_nda_hidden" name="agreement[agreement_type]" value="nda">
+        <%# Hidden type field — always 'nda' in NDA mode. Disabled when not in NDA mode so it doesn't override the upload type select. %>
+        <input type="hidden" id="ag_type_nda_hidden" name="agreement[agreement_type]" value="nda"<%= _is_nda ? '' : ' disabled' %>>
         <select id="ag_entity_nda" name="agreement[entity]"
                 style="width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:14px;background:white;">
           <option value="">-- Select entity --</option>
@@ -71,7 +72,7 @@
       </div>
 
       <%# ── Upload mode: type + entity side-by-side ──────────────────────── %>
-      <div id="upload_fields" style="display:none;">
+      <div id="upload_fields" style="<%= _is_nda ? 'display:none;' : '' %>">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
           <div>
             <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Agreement Type <span style="color:#ef4444">*</span></label>
@@ -92,19 +93,52 @@
                   required: false %>
           </div>
         </div>
+
+        <%# ── Inline document upload (optional) ──────────────────────────── %>
+        <div style="margin-top:1rem;">
+          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">
+            Agreement Document
+            <span style="font-weight:400;color:#9ca3af;">(optional — you can upload on the next step)</span>
+          </label>
+          <div id="doc_dropzone"
+               style="border:2px dashed #d1d5db;border-radius:10px;padding:24px 16px;text-align:center;cursor:pointer;transition:border-color 0.15s,background 0.15s;background:#fafafa;">
+            <div id="doc_dropzone_idle">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+                   stroke="#9ca3af" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                   style="margin:0 auto 8px;">
+                <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+              </svg>
+              <p style="font-size:13px;font-weight:600;color:#374151;margin:0 0 3px;">Drop your PDF or Word document here</p>
+              <p style="font-size:12px;color:#9ca3af;margin:0;">or click to browse &mdash; PDF, DOC, DOCX</p>
+            </div>
+            <div id="doc_dropzone_selected" style="display:none;align-items:center;justify-content:center;gap:10px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                   stroke="#00C853" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+              </svg>
+              <span id="doc_file_name" style="font-size:13px;font-weight:600;color:#162B3C;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+              <button type="button" id="doc_clear_btn"
+                      style="background:none;border:none;color:#9ca3af;cursor:pointer;font-size:18px;line-height:1;padding:0;"
+                      title="Remove">&times;</button>
+            </div>
+          </div>
+          <input type="file" id="contract_file_input" name="contract_file"
+                 accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                 style="display:none;">
+        </div>
       </div>
 
       <%# ── Customer / Supplier toggle (Upload mode) ──────────────────────── %>
-      <div id="rel_fields" style="display:none;">
+      <div id="rel_fields" style="<%= _is_nda ? 'display:none;' : '' %>">
         <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:7px;">Relationship <span style="color:#ef4444">*</span></label>
         <div style="display:flex;gap:0;border:1px solid #d1d5db;border-radius:8px;overflow:hidden;max-width:280px;">
           <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 14px;cursor:pointer;font-size:13px;font-weight:600;transition:background 0.12s;background-color:#f9fafb;color:#374151;" id="rel_customer_lbl">
-            <%= f.radio_button :commercial_relationship, 'customer', id: 'rel_customer', style: 'display:none;', checked: true, onchange: "setRelStyle()" %>
+            <%= f.radio_button :commercial_relationship, 'customer', id: 'rel_customer', style: 'display:none;', checked: true %>
             <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg>
             Customer
           </label>
           <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 14px;cursor:pointer;font-size:13px;font-weight:600;border-left:1px solid #d1d5db;transition:background 0.12s;background-color:#f9fafb;color:#374151;" id="rel_supplier_lbl">
-            <%= f.radio_button :commercial_relationship, 'supplier', id: 'rel_supplier', style: 'display:none;', onchange: "setRelStyle()" %>
+            <%= f.radio_button :commercial_relationship, 'supplier', id: 'rel_supplier', style: 'display:none;' %>
             <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.125-.504 1.125-1.125V11.25m-14.25 0h11.25m-11.25 0V9.75m11.25 1.5V9.75m0 0h-11.25m11.25 0a3 3 0 0 1 3 3v4.5m-14.25-7.5a3 3 0 0 0-3 3v4.5m14.25-4.5v3.75"/></svg>
             Supplier
           </label>
@@ -113,7 +147,7 @@
       </div>
 
       <%# NDA path info note — shown in NDA mode %>
-      <div id="nda_note" style="display:none;border-radius:10px;border:1px solid #d1fae5;background:#f0fdf4;padding:1rem;">
+      <div id="nda_note" style="<%= _is_nda ? '' : 'display:none;' %>border-radius:10px;border:1px solid #d1fae5;background:#f0fdf4;padding:1rem;">
         <div style="display:flex;align-items:flex-start;gap:10px;">
           <svg style="width:18px;height:18px;flex-shrink:0;margin-top:1px;color:#16a34a;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
@@ -169,13 +203,14 @@
             </div>
             <button type="button" id="co_new_btn" style="border-radius:8px;border:1px dashed #d1d5db;padding:9px 14px;font-size:12px;font-weight:500;color:#6b7280;background:none;cursor:pointer;white-space:nowrap;">+ Add new company</button>
           </div>
-          <div id="co_new_form" style="display:none;margin-top:10px;border-top:1px solid #e5e7eb;padding-top:10px;">
+          <% nc = @new_company_draft || {} %>
+          <div id="co_new_form" style="display:<%= nc[:name].present? ? 'block' : 'none' %>;margin-top:10px;border-top:1px solid #e5e7eb;padding-top:10px;">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-              <input type="text" name="new_company_name" autocomplete="organization" placeholder="Company name *" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
-              <input type="text" name="new_company_registration_number" autocomplete="off" placeholder="Reg number" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
-              <input type="text" name="new_company_contact_name" id="nc_name" autocomplete="name" placeholder="Contact name" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
-              <input type="email" name="new_company_contact_email" id="nc_email" autocomplete="email" placeholder="Contact email" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
-              <input type="text" name="new_company_domain" autocomplete="off" placeholder="Domain (e.g. acme.co.za)" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
+              <input type="text" name="new_company_name" autocomplete="organization" placeholder="Company name *" value="<%= h(nc[:name]) %>" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
+              <input type="text" name="new_company_registration_number" autocomplete="off" placeholder="Reg number" value="<%= h(nc[:registration_number]) %>" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
+              <input type="text" name="new_company_contact_name" id="nc_name" autocomplete="name" placeholder="Contact name" value="<%= h(nc[:contact_name]) %>" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
+              <input type="email" name="new_company_contact_email" id="nc_email" autocomplete="email" placeholder="Contact email" value="<%= h(nc[:contact_email]) %>" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
+              <input type="text" name="new_company_domain" autocomplete="off" placeholder="Domain (e.g. acme.co.za)" value="<%= h(nc[:domain]) %>" style="border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;">
             </div>
             <p style="margin-top:6px;font-size:11px;color:#9ca3af;">Saved to your counterparty directory.</p>
           </div>
@@ -231,7 +266,11 @@
 
       <%# ── Agreement Summary (CAF fields — labels adapt to agreement type) ── %>
       <div id="caf_summary_block" style="border-radius:10px;border:1px solid #e5e7eb;background:#f9fafb;padding:1rem;">
-        <p style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Agreement Summary <span style="font-weight:400;text-transform:none;color:#9ca3af;">(populates the CAF — leave blank if unknown)</span></p>
+        <p style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Agreement Summary <span style="font-weight:400;text-transform:none;color:#9ca3af;">(populates the CAF — leave blank if unknown)</span></p>
+        <div id="ai_extract_hint" style="display:none;margin-bottom:10px;padding:8px 10px;border-radius:6px;background:#eff6ff;border:1px solid #bfdbfe;font-size:12px;color:#1d4ed8;align-items:flex-start;gap:7px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/></svg>
+          <span>AI will extract these details from your document — you can leave any field blank and they will be filled automatically.</span>
+        </div>
         <div>
           <label id="lbl_purpose" style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;">Commercial Purpose</label>
           <%= f.text_area :agreement_purpose, id: 'inp_purpose', rows:2, style:'width:100%;border-radius:8px;border:1px solid #d1d5db;padding:9px 12px;font-size:13px;resize:none;box-sizing:border-box;background:white;', placeholder:'Describe the commercial purpose of this agreement for the CAF.' %>
@@ -286,10 +325,10 @@
           </div>
         </div>
 
-        <script>
+        <script nonce="<%= content_security_policy_nonce %>">
         (function() {
           var METRIC_ENTITIES = ['comit', 'ignition_digital'];
-          var entitySel  = document.getElementById('agreement_entity');
+          var entitySel  = document.getElementById('ag_entity');
           var metricBlk  = document.getElementById('payment_metrics_block');
           var metricType = document.getElementById('payment_metric_type_select');
           var seatBlk    = document.getElementById('seat_metrics_block');
@@ -330,7 +369,7 @@
     </div>
     <div style="margin-top:2rem;display:flex;align-items:center;justify-content:space-between;padding-top:1.5rem;border-top:1px solid #e5e7eb;">
       <%= link_to agreements_path, style: 'font-size:14px;color:#6b7280;text-decoration:none;' do %>&larr; Cancel<% end %>
-      <%= f.submit 'Continue to Upload →', id: 'ag_submit', style: 'padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;color:white;background-color:#162B3C;cursor:pointer;border:none;' %>
+      <%= f.submit _is_nda ? 'Continue to Review →' : 'Continue →', id: 'ag_submit', style: 'padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;color:white;background-color:#162B3C;cursor:pointer;border:none;' %>
     </div>
   <% end %>
 </div>
@@ -404,6 +443,10 @@
     var el = document.getElementById(containerId);
     if (!el) return;
     el.querySelectorAll('input,select,textarea').forEach(function(f) { f.disabled = !enabled; });
+    if (!enabled) {
+      var fileIn = el.querySelector('input[type="file"]');
+      if (fileIn) { fileIn.value = ''; clearDocFile(); }
+    }
     el.style.display = enabled ? '' : 'none';
   }
   window.setDocMode = function(mode) {
@@ -415,7 +458,10 @@
     var relFields = document.getElementById('rel_fields');
     if (relFields) relFields.style.display = isNda ? 'none' : 'block';
     var submitBtn = document.getElementById('ag_submit');
-    if (submitBtn) submitBtn.value = isNda ? 'Continue to Review →' : 'Continue to Upload →';
+    if (submitBtn) {
+      if (isNda) { submitBtn.value = 'Continue to Review →'; }
+      else { updateSubmitLabel(); }
+    }
     var btnNda = document.getElementById('btn_mode_nda');
     var btnUp  = document.getElementById('btn_mode_upload');
     if (btnNda) { btnNda.style.background = isNda ? '#162B3C' : '#f9fafb'; btnNda.style.color = isNda ? '#fff' : '#374151'; }
@@ -692,7 +738,97 @@
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  /* ── Inline document dropzone ───────────────────────────────────────── */
+  function updateSubmitLabel() {
+    var fi = document.getElementById('contract_file_input');
+    var hasFile = fi && fi.files && fi.files.length > 0;
+    var submitBtn = document.getElementById('ag_submit');
+    var label = hasFile ? 'Save & Process Document →' : 'Continue →';
+    if (submitBtn) submitBtn.value = label;
+    return label;
+  }
+
+  function handleDocFile(files, fromInput) {
+    if (!files || !files.length) return;
+    var f = files[0];
+    var fi = document.getElementById('contract_file_input');
+    if (fi && !fromInput) {
+      var dt = new DataTransfer();
+      dt.items.add(f);
+      fi.files = dt.files;
+    }
+    var idle = document.getElementById('doc_dropzone_idle');
+    var sel  = document.getElementById('doc_dropzone_selected');
+    var nm   = document.getElementById('doc_file_name');
+    if (idle) idle.style.display = 'none';
+    if (sel)  sel.style.display  = 'flex';
+    if (nm)   nm.textContent     = f.name;
+    var dz = document.getElementById('doc_dropzone');
+    if (dz) { dz.style.borderColor = '#00C853'; dz.style.background = '#f0fdf4'; }
+    var hint = document.getElementById('ai_extract_hint');
+    if (hint) hint.style.display = 'flex';
+    updateSubmitLabel();
+  };
+
+  window.clearDocFile = function() {
+    var fi   = document.getElementById('contract_file_input');
+    var idle = document.getElementById('doc_dropzone_idle');
+    var sel  = document.getElementById('doc_dropzone_selected');
+    var dz   = document.getElementById('doc_dropzone');
+    if (fi)   fi.value   = '';
+    if (idle) idle.style.display = '';
+    if (sel)  sel.style.display  = 'none';
+    if (dz)   { dz.style.borderColor = '#d1d5db'; dz.style.background = '#fafafa'; }
+    var hint = document.getElementById('ai_extract_hint');
+    if (hint) hint.style.display = 'none';
+    updateSubmitLabel();
+  };
+
   /* ── Page-load initialisation ────────────────────────────────────────── */
+  // Wire toggle buttons
+  var btnNdaEl  = document.getElementById('btn_mode_nda');
+  var btnUpEl   = document.getElementById('btn_mode_upload');
+  if (btnNdaEl)  btnNdaEl.addEventListener('click',  function() { setDocMode('nda'); });
+  if (btnUpEl)   btnUpEl.addEventListener('click',   function() { setDocMode('upload'); });
+
+  // Wire relationship radios
+  var relCust = document.getElementById('rel_customer');
+  var relSupp = document.getElementById('rel_supplier');
+  if (relCust) relCust.addEventListener('change', setRelStyle);
+  if (relSupp) relSupp.addEventListener('change', setRelStyle);
+
+  // Wire dropzone
+  var dz = document.getElementById('doc_dropzone');
+  var fi = document.getElementById('contract_file_input');
+  var clearBtn = document.getElementById('doc_clear_btn');
+  if (dz) {
+    dz.addEventListener('click', function() { if (fi) fi.click(); });
+    dz.addEventListener('dragover', function(ev) {
+      ev.preventDefault();
+      dz.style.borderColor = '#162B3C';
+      dz.style.background  = '#f0f4f8';
+    });
+    dz.addEventListener('dragleave', function() {
+      dz.style.borderColor = '#d1d5db';
+      dz.style.background  = '#fafafa';
+    });
+    dz.addEventListener('drop', function(ev) {
+      ev.preventDefault();
+      dz.style.borderColor = '#d1d5db';
+      dz.style.background  = '#fafafa';
+      handleDocFile(ev.dataTransfer.files, false);
+    });
+  }
+  if (fi) {
+    fi.addEventListener('change', function() { handleDocFile(fi.files, true); });
+  }
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      clearDocFile();
+    });
+  }
+
   // Default to upload mode so entity + type selectors are immediately visible.
   // NDA mode can be selected by clicking "Standard NDA".
   var bootMode = '<%= preselect_mode.present? ? preselect_mode : 'upload' %>';

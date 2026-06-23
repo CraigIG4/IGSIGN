@@ -14,6 +14,22 @@ module CafFieldSchema
   FIELDS = [
     # ── IDENTITY ─────────────────────────────────────────────────────────────
     {
+      key: :counterparty_name,
+      label: 'Counterparty Name',
+      type: :string,
+      dashboard: false,
+      caf_column: nil,
+      prompt_guide: 'Return the full legal name of the OTHER party — not Ignition Group or any of its subsidiaries. If the agreement is between "Ignition Group (Pty) Ltd" and "Acme Solutions (Pty) Ltd", return "Acme Solutions (Pty) Ltd". Return null if only one party is named or you cannot determine the counterparty name with confidence.'
+    },
+    {
+      key: :counterparty_contact_email,
+      label: 'Counterparty Contact Email',
+      type: :string,
+      dashboard: false,
+      caf_column: nil,
+      prompt_guide: 'Return the email address of the counterparty signatory or contact person if explicitly stated in the document (e.g. in a signature block, notice clause, or contact details section). Return null if no email address is visible. Do not infer or construct email addresses.'
+    },
+    {
       key: :contract_type,
       label: 'Contract Type',
       type: :enum,

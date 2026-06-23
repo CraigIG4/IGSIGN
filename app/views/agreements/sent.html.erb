@@ -1,0 +1,64 @@
+<% content_for :title, 'Agreement Sent — IGSIGN' %>
+
+<div class="min-h-screen flex items-center justify-center px-4" style="background:#f8fafc;">
+  <div style="max-width:520px;width:100%;text-align:center;">
+
+    <%# Animated checkmark %>
+    <div style="width:80px;height:80px;border-radius:50%;background:#162B3C;display:flex;align-items:center;justify-content:center;margin:0 auto 28px;box-shadow:0 8px 32px rgba(22,43,60,0.18);">
+      <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#45AC34" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+
+    <%# Heading %>
+    <h1 style="font-size:26px;font-weight:700;color:#162B3C;margin:0 0 10px;line-height:1.25;">
+      Sent to <%= @first_approver_name %>
+    </h1>
+    <p style="font-size:15px;color:#5a6572;margin:0 0 32px;line-height:1.6;">
+      Your agreement has been submitted for internal approval.<br>
+      <strong style="color:#162B3C;"><%= @first_approver_name %></strong> will receive a signing request by email and the workflow will progress automatically.
+    </p>
+
+    <%# Agreement detail card %>
+    <div style="background:#ffffff;border:1px solid #e5e7eb;border-left:4px solid #45AC34;border-radius:10px;padding:18px 22px;margin-bottom:28px;text-align:left;">
+      <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;">Agreement</div>
+      <div style="font-size:16px;font-weight:700;color:#162B3C;margin-bottom:4px;"><%= @agreement.agreement_type_label %></div>
+      <div style="font-size:13px;color:#6b7280;"><%= @agreement.contracting_party.presence || @agreement.company&.name %></div>
+      <% if @agreement.agreement_value.present? %>
+        <div style="font-size:13px;color:#6b7280;margin-top:2px;"><%= @agreement.currency.presence || 'ZAR' %> <%= @agreement.agreement_value %></div>
+      <% end %>
+    </div>
+
+    <%# What happens next %>
+    <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:18px 22px;margin-bottom:28px;text-align:left;">
+      <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:14px;">What happens next</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="width:24px;height:24px;border-radius:50%;background:#162B3C;color:#45AC34;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+          <div style="font-size:13px;color:#374151;line-height:1.5;"><strong style="color:#162B3C;">Internal approval</strong> — IG signatories review and sign the CAF in sequence.</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="width:24px;height:24px;border-radius:50%;background:#162B3C;color:#45AC34;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
+          <div style="font-size:13px;color:#374151;line-height:1.5;"><strong style="color:#162B3C;">Counterparty signing</strong> — once all IG approvals are complete, the agreement is sent to the counterparty.</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="width:24px;height:24px;border-radius:50%;background:#162B3C;color:#45AC34;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
+          <div style="font-size:13px;color:#374151;line-height:1.5;"><strong style="color:#162B3C;">Executed copy</strong> — all parties receive a fully signed PDF automatically.</div>
+        </div>
+      </div>
+    </div>
+
+    <%# Actions %>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <%= link_to agreement_path(@agreement),
+                  style: 'padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;color:white;background:#162B3C;text-decoration:none;display:inline-block;' do %>
+        View Agreement →
+      <% end %>
+      <%= link_to agreements_path,
+                  style: 'padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;color:#374151;background:white;border:1px solid #d1d5db;text-decoration:none;display:inline-block;' do %>
+        Back to Agreements
+      <% end %>
+    </div>
+
+  </div>
+</div>

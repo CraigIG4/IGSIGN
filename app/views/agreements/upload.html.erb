@@ -74,6 +74,12 @@
            accept=".pdf,.doc,.docx,.xls,.xlsx,.odt,.rtf"
            class="hidden">
 
+    <%# File size warning — shown by JS when a rejected file is dropped %>
+    <div id="size_warning" class="hidden rounded-lg border border-red-200 bg-red-50 px-4 py-3 mb-3 flex items-start gap-3">
+      <svg class="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+      <p id="size_warning_text" class="text-sm text-red-700 font-medium"></p>
+    </div>
+
     <%# File card list — populated by JS %>
     <div id="file_list" class="space-y-2 mb-4"></div>
 
@@ -127,18 +133,32 @@
   var selectedFiles = [];
   var nextId = 0;
 
-  var input    = document.getElementById('file_input');
-  var fileList = document.getElementById('file_list');
-  var dropzone = document.getElementById('dropzone');
-  var btn      = document.getElementById('submit_btn');
-  var form     = document.getElementById('upload_form');
+  var input       = document.getElementById('file_input');
+  var fileList    = document.getElementById('file_list');
+  var dropzone    = document.getElementById('dropzone');
+  var btn         = document.getElementById('submit_btn');
+  var form        = document.getElementById('upload_form');
+  var sizeWarn    = document.getElementById('size_warning');
+  var sizeWarnTxt = document.getElementById('size_warning_text');
+  var MAX_BYTES   = 50 * 1024 * 1024; // 50 MB
 
   // ── File list management ──────────────────────────────────────────────────
 
   function addFiles(fileArray) {
+    var rejected = [];
     Array.prototype.forEach.call(fileArray, function (f) {
-      selectedFiles.push({ file: f, id: nextId++ });
+      if (f.size > MAX_BYTES) {
+        rejected.push(f.name + ' (' + (f.size / (1024 * 1024)).toFixed(1) + ' MB)');
+      } else {
+        selectedFiles.push({ file: f, id: nextId++ });
+      }
     });
+    if (rejected.length) {
+      sizeWarnTxt.textContent = 'File' + (rejected.length > 1 ? 's' : '') + ' exceeding 50 MB cannot be uploaded: ' + rejected.join(', ') + '. Please reduce the file size and try again.';
+      sizeWarn.classList.remove('hidden');
+    } else {
+      sizeWarn.classList.add('hidden');
+    }
     syncInputFiles();
     renderCards();
   }

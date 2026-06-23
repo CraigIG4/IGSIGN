@@ -18,7 +18,7 @@
       <p class="text-slate-900"><%= @signatory.email %></p>
     </div>
 
-    <%= form_with model: [:legal_ops, @signatory], local: true do |f| %>
+    <%= form_with model: @signatory, url: legal_ops_signatory_path(@signatory), method: :patch, local: true do |f| %>
       <div class="mb-4">
         <%= f.label :role_title, 'Role Title', class: 'block text-sm font-medium text-slate-700 mb-1' %>
         <%= f.text_field :role_title,

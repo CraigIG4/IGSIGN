@@ -63,13 +63,65 @@
     </div>
   </div>
 
+  <%# ── Detected Counterparty Banner ──────────────────────────────────────── %>
+  <% if @show_cp_detect %>
+    <div id="cp_detect_card" class="rounded-xl border mb-4 overflow-hidden" style="border-color:#bfdbfe;background:#eff6ff;">
+      <div class="px-5 py-3 border-b flex items-center justify-between gap-2" style="border-color:#bfdbfe;background:#dbeafe;">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:#2563eb;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/>
+          </svg>
+          <span class="text-sm font-semibold text-blue-800">Counterparty detected from document</span>
+        </div>
+        <button type="button" onclick="document.getElementById('cp_detect_card').style.display='none';"
+                class="text-blue-400 hover:text-blue-600 text-lg leading-none font-light" title="Dismiss">&times;</button>
+      </div>
+      <div class="px-5 py-4">
+        <p class="text-xs text-blue-600 mb-3">AI identified the counterparty from the uploaded document. Review and confirm before sending — details will be saved to your counterparty directory.</p>
+        <%= form_with url: confirm_counterparty_agreement_path(@agreement), method: :patch, data: { turbo: false } do |f| %>
+          <div class="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Company Name <span class="text-red-500">*</span></label>
+              <%= text_field_tag :contracting_party, @detected_cp_name,
+                    required: true, placeholder: 'Legal entity name',
+                    style: 'width:100%;border-radius:8px;border:1px solid #93c5fd;padding:8px 10px;font-size:13px;background:white;box-sizing:border-box;' %>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Contact Email</label>
+              <%= email_field_tag :counterparty_email, @detected_cp_email,
+                    placeholder: 'signatory@company.com',
+                    style: 'width:100%;border-radius:8px;border:1px solid #93c5fd;padding:8px 10px;font-size:13px;background:white;box-sizing:border-box;' %>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <%= f.submit 'Confirm & Save to Directory',
+                  style: 'padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;color:white;background:#162B3C;border:none;cursor:pointer;' %>
+            <button type="button"
+                    onclick="document.getElementById('cp_detect_card').style.display='none';"
+                    style="padding:8px 14px;border-radius:8px;font-size:13px;font-weight:500;color:#6b7280;background:white;border:1px solid #d1d5db;cursor:pointer;">
+              Dismiss
+            </button>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
   <%# ── Card 2: Signing Package ────────────────────────────────────────────── %>
   <div class="rounded-xl border border-gray-200 bg-white mb-4 overflow-hidden">
-    <div class="px-5 py-3 border-b border-gray-100 flex items-center gap-2" style="background-color:#f8fafc;">
-      <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path d="M19 11H5m14 0a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2m14 0V9a2 2 0 0 0-2-2M5 11V9a2 2 0 0 1 2-2m0 0V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2M7 7h10"/>
-      </svg>
-      <span class="text-sm font-semibold text-gray-700">Signing Package — Shared with counterparty</span>
+    <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-2" style="background-color:#f8fafc;">
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M19 11H5m14 0a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2m14 0V9a2 2 0 0 0-2-2M5 11V9a2 2 0 0 1 2-2m0 0V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2M7 7h10"/>
+        </svg>
+        <span class="text-sm font-semibold text-gray-700">Signing Package — Shared with counterparty</span>
+      </div>
+      <% if @agreement.draft? && @agreement.template %>
+        <%= link_to position_agreement_path(@agreement),
+              class: 'text-xs text-gray-400 hover:text-gray-600' do %>
+          Adjust field placements →
+        <% end %>
+      <% end %>
     </div>
     <div class="px-5 py-4 space-y-3">
       <%# Document 1: auto-generated CAF (internal only — shown for sender context) %>
@@ -112,20 +164,139 @@
 
   <%# ── Card 3: Signing Journey ───────────────────────────────────────────── %>
   <div class="rounded-xl border border-gray-200 bg-white mb-4 overflow-hidden">
-    <div class="px-5 py-3 border-b border-gray-100 flex items-center gap-2" style="background-color:#f8fafc;">
-      <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-      </svg>
-      <span class="text-sm font-semibold text-gray-700">Signing journey</span>
+    <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-2" style="background-color:#f8fafc;">
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <span class="text-sm font-semibold text-gray-700">Signing journey</span>
+      </div>
+      <% if current_user.role == User::ADMIN_ROLE && @agreement.draft? %>
+        <button type="button" id="sj_edit_btn"
+                onclick="document.getElementById('sj_editor').style.display='block';document.getElementById('sj_journey').style.display='none';this.style.display='none';"
+                style="font-size:12px;font-weight:500;color:#162B3C;background:none;border:1px solid #d1d5db;border-radius:6px;padding:4px 10px;cursor:pointer;">
+          Edit chain
+        </button>
+      <% end %>
     </div>
-    <div class="px-5 py-5 overflow-x-auto">
+    <div id="sj_journey" class="px-5 py-5 overflow-x-auto">
       <%= render 'signing_journey',
                  agreement:              @agreement,
                  signatories:            @signatories,
                  mode:                   :preview,
                  counterparty_signatory: @counterparty_signatory %>
     </div>
+
+    <%# ── Signing Chain Editor (admin, draft only) ──── %>
+    <% if current_user.role == User::ADMIN_ROLE && @agreement.draft? %>
+      <div id="sj_editor" style="display:none;padding:16px 20px;border-top:1px solid #e5e7eb;">
+        <p style="font-size:12px;color:#6b7280;margin-bottom:12px;">
+          Modify the internal signing chain. The counterparty is always the final signer and cannot be removed.
+          Changes apply to this agreement only and are logged for audit.
+        </p>
+
+        <%# Available signatories JSON for the JS picker %>
+        <script id="avail_sigs_data" type="application/json"><%= raw @available_signatories.to_json %></script>
+
+        <div id="sj_chain_list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;"></div>
+
+        <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;">
+          <select id="sj_add_select"
+                  style="flex:1;border-radius:8px;border:1px solid #d1d5db;padding:8px 10px;font-size:13px;background:white;">
+            <option value="">— Add a signatory —</option>
+          </select>
+          <button type="button" id="sj_add_btn"
+                  onclick="sjAddSelected();"
+                  style="padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;color:white;background:#162B3C;border:none;cursor:pointer;">
+            Add
+          </button>
+        </div>
+
+        <%= form_with url: update_signing_chain_agreement_path(@agreement), method: :patch, data: { turbo: false }, html: { id: 'sj_edit_form' } do |f| %>
+          <%= hidden_field_tag :signatories_json, '', id: 'sj_json_field' %>
+          <div style="display:flex;gap:8px;">
+            <%= f.submit 'Save chain',
+                  style: 'padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;color:white;background:#45AC34;border:none;cursor:pointer;',
+                  onclick: 'return sjPrepareSubmit()' %>
+            <button type="button"
+                    onclick="document.getElementById('sj_editor').style.display='none';document.getElementById('sj_journey').style.display='block';document.getElementById('sj_edit_btn').style.display='inline-flex';"
+                    style="padding:8px 14px;border-radius:8px;font-size:13px;font-weight:500;color:#6b7280;background:white;border:1px solid #d1d5db;cursor:pointer;">
+              Cancel
+            </button>
+          </div>
+        <% end %>
+      </div>
+
+      <script nonce="<%= content_security_policy_nonce %>">
+      (function() {
+        var AVAIL = JSON.parse(document.getElementById('avail_sigs_data').textContent || '[]');
+        var CHAIN = <%= raw (@signatories.reject { |s| s['chain_position'] == 'counterparty' }).to_json %>;
+
+        var chainList = document.getElementById('sj_chain_list');
+        var addSelect = document.getElementById('sj_add_select');
+
+        // Populate add dropdown
+        AVAIL.forEach(function(s) {
+          var opt = document.createElement('option');
+          opt.value = s.id;
+          opt.textContent = s.name + ' — ' + s.role_title + (s.entities ? ' (' + s.entities + ')' : '');
+          addSelect.appendChild(opt);
+        });
+
+        function renderChain() {
+          chainList.innerHTML = '';
+          if (!CHAIN.length) {
+            chainList.innerHTML = '<p style="font-size:12px;color:#9ca3af;padding:4px 0;">No internal signatories — add at least one.</p>';
+            return;
+          }
+          CHAIN.forEach(function(sig, idx) {
+            var row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:#f9fafb;border:1px solid #e5e7eb;';
+            row.innerHTML =
+              '<span style="width:22px;height:22px;border-radius:50%;background:#162B3C;color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">' + (idx + 1) + '</span>' +
+              '<div style="flex:1;min-width:0;">' +
+                '<p style="font-size:13px;font-weight:600;color:#111827;margin:0;">' + escH(sig.name || sig.role || '') + '</p>' +
+                '<p style="font-size:11px;color:#6b7280;margin:0;">' + escH(sig.email || '') + ' &bull; ' + escH(sig.role || sig.chain_position || '') + '</p>' +
+              '</div>' +
+              '<button type="button" data-idx="' + idx + '" style="color:#ef4444;background:none;border:none;cursor:pointer;font-size:16px;line-height:1;" title="Remove">&times;</button>';
+            row.querySelector('button').addEventListener('click', function() {
+              var i = parseInt(this.dataset.idx, 10);
+              CHAIN.splice(i, 1);
+              renderChain();
+            });
+            chainList.appendChild(row);
+          });
+        }
+
+        window.sjAddSelected = function() {
+          var sel = addSelect;
+          var id = parseInt(sel.value, 10);
+          if (!id) return;
+          var sig = AVAIL.find(function(s) { return s.id === id; });
+          if (!sig) return;
+          if (CHAIN.find(function(s) { return s.email === sig.email; })) {
+            alert(sig.name + ' is already in the chain.');
+            return;
+          }
+          CHAIN.push({ name: sig.name, email: sig.email, role: sig.role_title, chain_position: 'approver_only', placeholder: false });
+          sel.value = '';
+          renderChain();
+        };
+
+        window.sjPrepareSubmit = function() {
+          if (!CHAIN.length) { alert('Add at least one internal signatory before saving.'); return false; }
+          document.getElementById('sj_json_field').value = JSON.stringify(CHAIN);
+          return true;
+        };
+
+        function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+        renderChain();
+      })();
+      </script>
+    <% end %>
+
     <%# Authority note (shown below journey when there's a memorised signatory) %>
     <% if @counterparty_signatory %>
       <div class="px-5 pb-4">
@@ -156,10 +327,12 @@
       <%= link_to contract_data_legal_ops_workflow_path(@agreement),
             class: 'shrink-0 text-xs font-semibold text-red-700 underline' do %>Complete now →<% end %>
     </div>
-  <% elsif @parsed.blank? %>
+  <% elsif @parsed.blank? && @template_docs.any? %>
+    <%# Parsing job is in flight — poll every 5 seconds until it completes %>
+    <script nonce="<%= content_security_policy_nonce %>">setTimeout(function(){ location.reload(); }, 5000);</script>
     <div class="rounded-xl border mb-4 px-4 py-3 flex items-center gap-3 text-sm" style="background:#fffbeb;border-color:#fde68a;">
-      <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:#d97706;"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01"/></svg>
-      <p class="text-amber-700">AI extraction is pending — fields will be pre-filled automatically once complete.</p>
+      <svg class="w-4 h-4 shrink-0 animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:#d97706;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+      <p class="text-amber-700">Analysing your document — fields will be auto-filled shortly. This page will refresh automatically.</p>
     </div>
   <% elsif @prefill_present %>
     <div class="rounded-xl border mb-4 px-4 py-3 flex items-center justify-between gap-3 text-sm" style="background:#f0fdf4;border-color:#bbf7d0;">
@@ -272,9 +445,19 @@
     <%# NDA agreements skip the upload + field-placement steps, so the back link
         would point to a page the user was never on. Show it only for upload path. %>
     <% unless @agreement.agreement_type == 'nda' %>
-      <%= link_to position_agreement_path(@agreement), class: 'text-sm text-gray-500 hover:text-gray-700' do %>
-        ← Back to Field Placement
-      <% end %>
+      <div class="flex flex-col gap-2">
+        <%= link_to position_agreement_path(@agreement), class: 'text-sm text-gray-500 hover:text-gray-700' do %>
+          ← Back to Field Placement
+        <% end %>
+        <% if @agreement.draft? %>
+          <%= link_to replace_document_agreement_path(@agreement),
+                      method: :patch,
+                      data: { turbo: false, confirm: 'Remove the current document and upload a replacement? Field placements will be lost.' },
+                      class: 'text-xs text-red-400 hover:text-red-600' do %>
+            Replace document…
+          <% end %>
+        <% end %>
+      </div>
     <% else %>
       <div></div>
     <% end %>
@@ -289,15 +472,28 @@
           Preview CAF
         </span>
       <% end %>
-      <% if @agreement.signatories&.any? { |s| s['placeholder'] } %>
-        <p class="text-xs text-amber-600">Some signatories need to be assigned before sending.</p>
+      <% unfilled_roles = (@agreement.signatories || []).select { |s| s['placeholder'] }.map { |s| s['role'].presence || 'Unknown role' } %>
+      <% if unfilled_roles.any? %>
+        <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 max-w-sm">
+          <p class="font-semibold mb-1">Assign signatories before sending:</p>
+          <ul class="list-disc list-inside space-y-0.5">
+            <% unfilled_roles.each do |role| %>
+              <li><%= role %></li>
+            <% end %>
+          </ul>
+        </div>
       <% end %>
       <%= form_with url: send_agreement_agreement_path(@agreement), method: :post, data: { turbo: false } do |f| %>
         <%= f.submit 'Send for Internal Approval →',
-                     class: 'px-6 py-2.5 rounded-lg text-sm font-semibold text-white cursor-pointer transition-colors hover:opacity-90',
+                     disabled: unfilled_roles.any?,
+                     class: "px-6 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors #{unfilled_roles.any? ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:opacity-90'}",
                      style: 'background-color:#45AC34;' %>
       <% end %>
     </div>
   </div>
 
 </div>
+
+<% if IgsignLlmClient.configured? %>
+  <%= render 'gcip/wizard_panel', workflow: @agreement %>
+<% end %>
