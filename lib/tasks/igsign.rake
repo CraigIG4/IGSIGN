@@ -96,7 +96,9 @@ namespace :igsign do
     end
 
     puts "\n[2] Database connectivity"
-    results << check('PostgreSQL connection') { ActiveRecord::Base.connection.active? }
+    # Force a real query round-trip — connections open lazily, so .active? alone
+    # reports false until the first query has run.
+    results << check('PostgreSQL connection') { ActiveRecord::Base.connection.select_value('SELECT 1').to_i == 1 }
 
     puts "\n[3] Signatory registry"
     entity_keys = %w[iti comit mvnx spot_connect ignition_digital ignition_cx_us ifs gumtree spot_money]
@@ -131,8 +133,10 @@ namespace :igsign do
 
     puts "\n[7] Signing chain resolution"
     results << check("ITI NDA chain resolves (Craig Lawrence)") do
+      # NDAs bypass Stage 0 — Craig is the sole signer in stage1. Search all stages
+      # so the check survives future chain-structure changes.
       chain = IgSignatories.chain_for('iti', 'nda')
-      Array(chain[:stage0]).any? { |s| s[:email].to_s.downcase.include?('clawre') }
+      chain.values.flatten.compact.any? { |s| s[:email].to_s.downcase.include?('clawre') }
     end
     results << check("ITI MSA group signer is Sean or Don Bergsma") do
       chain = IgSignatories.chain_for('iti', 'long_form')
